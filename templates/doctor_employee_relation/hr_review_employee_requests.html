@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}Review Employee Requests - PharmaSFO{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="card">
+        <h2>Pending Requests for {{ employee.get_full_name|default:employee.username }}</h2>
+
+        {% if pending_relations %}
+            <table style="width: 100%; border-collapse: collapse; margin-top: 16px;">
+                <thead>
+                    <tr>
+                        <th style="text-align: left; padding: 8px; border-bottom: 1px solid #ddd;">Doctor</th>
+                        <th style="text-align: left; padding: 8px; border-bottom: 1px solid #ddd;">NMC Number</th>
+                        <th style="text-align: left; padding: 8px; border-bottom: 1px solid #ddd;">MSL Number</th>
+                        <th style="text-align: left; padding: 8px; border-bottom: 1px solid #ddd;">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for relation in pending_relations %}
+                        <tr>
+                            <td style="padding: 8px; border-bottom: 1px solid #ddd;">{{ relation.doctor.name }}</td>
+                            <td style="padding: 8px; border-bottom: 1px solid #ddd;">{{ relation.doctor.nmc_number }}</td>
+                            <td style="padding: 8px; border-bottom: 1px solid #ddd;">{{ relation.msl_number|default:"-" }}</td>
+                            <td style="padding: 8px; border-bottom: 1px solid #ddd;">
+                                <form method="post" style="display: inline;">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="relation_id" value="{{ relation.id }}">
+                                    <button type="submit" name="action" value="approve" class="btn">Approve</button>
+                                    <button type="submit" name="action" value="reject" class="btn" style="background-color: #c0392b;">Reject</button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>No pending doctor requests for this employee.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

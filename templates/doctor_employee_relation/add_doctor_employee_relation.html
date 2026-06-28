@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}Add Doctor to Employee - PharmaSFO{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="card">
+        <h2>Add Doctor</h2>
+        <p><strong>Employee:</strong> {{ employee.get_full_name|default:employee.username }}</p>
+
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="doctor_search">Search Doctor</label>
+                <input type="text" id="doctor_search" placeholder="Type doctor name, area, or NMC number" autocomplete="off">
+            </div>
+
+            <div class="form-group">
+                <label for="doctor">Doctor</label>
+                <select name="doctor" id="doctor" required size="8">
+                    <option value="">Select a doctor</option>
+                    {% for doctor in available_doctors %}
+                        <option value="{{ doctor.id }}" data-search="{{ doctor.name }} {{ doctor.nmc_number }} {{ doctor.area }}">
+                            {{ doctor.name }} (NMC: {{ doctor.nmc_number }}) - {{ doctor.area }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="msl_number">MSL Number</label>
+                <input type="number" name="msl_number" id="msl_number" min="1" placeholder="Enter MSL number">
+            </div>
+
+            <button type="submit" class="btn">Add Doctor</button>
+            <a href="{% url 'doctor_employee_relation' %}" class="btn" style="margin-left: 8px;">Cancel</a>
+        </form>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                const searchInput = document.getElementById('doctor_search');
+                const doctorSelect = document.getElementById('doctor');
+
+                if (!searchInput || !doctorSelect) return;
+
+                searchInput.addEventListener('input', function () {
+                    const query = this.value.toLowerCase().trim();
+                    Array.from(doctorSelect.options).forEach(function (option) {
+                        if (!option.value) {
+                            option.hidden = false;
+                            return;
+                        }
+
+                        const haystack = (option.getAttribute('data-search') || '').toLowerCase();
+                        option.hidden = haystack.indexOf(query) === -1;
+                    });
+                });
+            });
+        </script>
+    </div>
+</div>
+{% endblock %}

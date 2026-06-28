@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}Tour Plans - PharmaSFO{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="card">
+        <h2>Tour Plans</h2>
+
+        <form method="get" style="margin-bottom: 16px;">
+            <label for="month" style="margin-right: 8px;">Select Month:</label>
+            <select name="month" id="month">
+                {% for value, label in month_choices %}
+                    <option value="{{ value }}" {% if selected_month == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+            <button type="submit" class="btn">Show</button>
+        </form>
+
+        <p style="margin-bottom: 16px;">
+            <a href="{% url 'add_tour_plan' %}" class="btn">Add Tour Plan</a>
+        </p>
+
+        {% if selected_month %}
+            <h3>{{ selected_month_label }}</h3>
+            {% if tour_plans %}
+                <table style="width: 100%; border-collapse: collapse; margin-top: 16px;">
+                    <thead>
+                        <tr>
+                            <th style="text-align: left; padding: 8px; border-bottom: 1px solid #ddd;">Date</th>
+                            <th style="text-align: left; padding: 8px; border-bottom: 1px solid #ddd;">Area</th>
+                            <th style="text-align: left; padding: 8px; border-bottom: 1px solid #ddd;">Worked With</th>
+                            <th style="text-align: left; padding: 8px; border-bottom: 1px solid #ddd;">Remarks</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for plan in tour_plans %}
+                            <tr>
+                                <td style="padding: 8px; border-bottom: 1px solid #ddd;">{{ plan.plan_date }}</td>
+                                <td style="padding: 8px; border-bottom: 1px solid #ddd;">{{ plan.area }}</td>
+                                <td style="padding: 8px; border-bottom: 1px solid #ddd;">{{ plan.worked_with|default:"-" }}</td>
+                                <td style="padding: 8px; border-bottom: 1px solid #ddd;">{{ plan.remarks|default:"-" }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p>No tour plans found for this month.</p>
+            {% endif %}
+        {% else %}
+            <p>Select a month to view tour plans.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

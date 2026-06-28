@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}Daily Coverage - PharmaSFO{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="card">
+        <h2>Daily Coverage</h2>
+        <div style="margin-bottom: 16px;">
+            <a href="{% url 'daily_coverage_calendar_month' year=year|add:'-1' month=month %}" class="btn">Previous</a>
+            <strong>{{ month_name }} {{ year }}</strong>
+            <a href="{% url 'daily_coverage_calendar_month' year=year|add:'1' month=month %}" class="btn">Next</a>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px;">
+            {% for day_name in day_names %}
+                <div style="font-weight: bold; text-align: center;">{{ day_name }}</div>
+            {% endfor %}
+            {% for week in calendar %}
+                {% for day in week %}
+                    <div style="min-height: 70px; border: 1px solid #ddd; padding: 6px;">
+                        {% if day %}
+                            <a href="{% url 'add_daily_coverage' %}?date={{ year }}-{{ month|stringformat:'02d' }}-{{ day|stringformat:'02d' }}" style="display:block; text-decoration:none; color:inherit;">
+                                <strong>{{ day }}</strong>
+                            </a>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

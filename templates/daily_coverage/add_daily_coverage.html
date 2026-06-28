@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block title %}Add Daily Coverage - PharmaSFO{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="card">
+        <h2>Add Daily Coverage</h2>
+        <form method="post" id="daily-coverage-form">
+            {% csrf_token %}
+            {{ form.entries }}
+            <div id="entry-list" style="display:grid; gap:16px; margin-top:16px;"></div>
+
+            <div style="margin-top: 16px;">
+                <button type="button" id="add-entry-btn" class="btn">Add Another</button>
+                <button type="submit" class="btn">Save</button>
+                <button type="button" id="clear-btn" class="btn">Clear</button>
+                <a href="{% url 'daily_coverage_calendar' %}" class="btn">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script id="area-options" type="application/json">{{ area_options|safe }}</script>
+<script id="doctor-options" type="application/json">{{ doctor_options|safe }}</script>
+<script>
+const areaOptions = JSON.parse(document.getElementById('area-options').textContent);
+const doctorOptions = JSON.parse(document.getElementById('doctor-options').textContent);
+const entryList = document.getElementById('entry-list');
+const entriesInput = document.getElementById('id_entries');
+let entryIndex = 0;
+
+function renderEntry(index) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'entry-row';
+    wrapper.style.border = '1px solid #ddd';
+    wrapper.style.padding = '12px';
+    wrapper.style.borderRadius = '6px';
+    wrapper.style.position = 'relative';
+    wrapper.innerHTML = `
+        <button type="button" class="remove-entry-btn" style="position:absolute; top:8px; right:8px; border:none; background:none; color:#c00; cursor:pointer; font-size:18px;">×</button>
+        <div style="display:grid; gap:10px; max-width:480px;">
+            <div><label>Date</label><input type="date" name="entries[${index}][report_date]" required></div>
+            <div><label>Doctor</label><select name="entries[${index}][doctor]" required><option value="">Select doctor</option>${doctorOptions.map(option => `<option value="${option.value}">${option.label}</option>`).join('')}</select></div>
+            <div><label>Actual working place</label><select name="entries[${index}][actual_working_place]" required><option value="">Select place</option>${areaOptions.map(option => `<option value="${option.value}">${option.label}</option>`).join('')}</select></div>
+            <div><label>Call time</label><input type="time" name="entries[${index}][call_time]" required></div>
+            <div><label>Products</label><input type="text" name="entries[${index}][products]"></div>
+            <div><label>Worked with</label><input type="text" name="entries[${index}][worked_with]"></div>
+            <div><label>Remarks</label><textarea name="entries[${index}][remarks]" rows="3"></textarea></div>
+        </div>
+    `;
+    wrapper.querySelector('.remove-entry-btn').addEventListener('click', () => {
+        wrapper.remove();
+        syncEntries();
+    });
+    entryList.appendChild(wrapper);
+    syncEntries();
+}
+
+function syncEntries() {
+    const rows = Array.from(entryList.querySelectorAll('.entry-row'));
+    const payload = rows.map((row) => ({
+        report_date: row.querySelector('input[name$="[report_date]"]')?.value || '',
+        doctor: row.querySelector('select[name$="[doctor]"]')?.value || '',
+        actual_working_place: row.querySelector('select[name$="[actual_working_place]"]')?.value || '',
+        call_time: row.querySelector('input[name$="[call_time]"]')?.value || '',
+        products: row.querySelector('input[name$="[products]"]')?.value || '',
+        worked_with: row.querySelector('input[name$="[worked_with]"]')?.value || '',
+        remarks: row.querySelector('textarea[name$="[remarks]"]')?.value || ''
+    }));
+    entriesInput.value = JSON.stringify(payload);
+}
+
+document.getElementById('add-entry-btn').addEventListener('click', () => {
+    renderEntry(entryIndex);
+    entryIndex += 1;
+});
+
+document.getElementById('clear-btn').addEventListener('click', () => {
+    entryList.innerHTML = '';
+    entriesInput.value = '[]';
+    entryIndex = 0;
+});
+
+entryList.addEventListener('input', syncEntries);
+entryList.addEventListener('change', syncEntries);
+
+renderEntry(entryIndex);
+entryIndex += 1;
+</script>
+{% endblock %}

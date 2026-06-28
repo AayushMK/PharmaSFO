@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}Doctors - PharmaSFO{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="card">
+        <h2 style="margin-bottom: 16px;">Doctors List</h2>
+
+        {% if doctors %}
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Doctor Name</th>
+                    <th>NMC Number</th>
+                    <th>Area</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for doctor in doctors %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>Dr. {{ doctor.name }}</td>
+                    <td>{{ doctor.nmc_number }}</td>
+                    <td>{{ doctor.area }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state">
+            <p>No doctors found.</p>
+        </div>
+        {% endif %}
+
+        <div style="margin-top: 16px;">
+            <a href="{% url 'dashboard' %}" class="btn">Back to Dashboard</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

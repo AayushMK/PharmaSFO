@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}Doctor-Employee Relations - PharmaSFO{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="card">
+        <h2>Doctor-Employee Relations</h2>
+        <p><strong>Employee:</strong> {{ employee.get_full_name|default:employee.username }}</p>
+
+        <p style="margin-bottom: 16px;">
+            <a href="{% url 'add_doctor_employee_relation' %}" class="btn">Add Doctor</a>
+        </p>
+
+        <form method="get" style="margin-bottom: 16px;">
+            <label for="status" style="margin-right: 8px;">Filter by status:</label>
+            <select name="status" id="status" onchange="this.form.submit()">
+                <option value="all" {% if selected_status == 'all' %}selected{% endif %}>All</option>
+                <option value="approved" {% if selected_status == 'approved' %}selected{% endif %}>Approved</option>
+                <option value="rejected" {% if selected_status == 'rejected' %}selected{% endif %}>Rejected</option>
+                <option value="pending" {% if selected_status == 'pending' %}selected{% endif %}>Pending</option>
+            </select>
+        </form>
+
+        {% if doctor_employee_relations %}
+            <table style="width: 100%; border-collapse: collapse; margin-top: 16px;">
+                <thead>
+                    <tr>
+                        <th style="text-align: left; padding: 8px; border-bottom: 1px solid #ddd;">Doctor</th>
+                        <th style="text-align: left; padding: 8px; border-bottom: 1px solid #ddd;">Specialization</th>
+                        <th style="text-align: left; padding: 8px; border-bottom: 1px solid #ddd;">NMC Number</th>
+                        <th style="text-align: left; padding: 8px; border-bottom: 1px solid #ddd;">Area</th>
+                        <th style="text-align: left; padding: 8px; border-bottom: 1px solid #ddd;">MSL Number</th>
+                        <th style="text-align: left; padding: 8px; border-bottom: 1px solid #ddd;">Relation Date</th>
+                        <th style="text-align: left; padding: 8px; border-bottom: 1px solid #ddd;">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for relation in doctor_employee_relations %}
+                        <tr>
+                            <td style="padding: 8px; border-bottom: 1px solid #ddd;">{{ relation.doctor.name }}</td>
+                            <td style="padding: 8px; border-bottom: 1px solid #ddd;">{{ relation.doctor.specialization|default:"-" }}</td>
+                            <td style="padding: 8px; border-bottom: 1px solid #ddd;">{{ relation.doctor.nmc_number }}</td>
+                            <td style="padding: 8px; border-bottom: 1px solid #ddd;">{{ relation.doctor.area }}</td>
+                            <td style="padding: 8px; border-bottom: 1px solid #ddd;">{{ relation.msl_number|default:"-" }}</td>
+                            <td style="padding: 8px; border-bottom: 1px solid #ddd;">{{ relation.relation_date|default:"-" }}</td>
+                            <td style="padding: 8px; border-bottom: 1px solid #ddd;">
+                                {% if relation.status == 'approved' %}
+                                    <span style="color: green; font-weight: bold;">Approved</span>
+                                {% elif relation.status == 'rejected' %}
+                                    <span style="color: red; font-weight: bold;">Rejected</span>
+                                {% else %}
+                                    <span style="color: orange; font-weight: bold;">Pending</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>No doctors assigned to this employee yet.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

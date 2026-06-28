@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block title %}Add Tour Plan - PharmaSFO{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="card">
+        <h2>Add Tour Plan</h2>
+        <form method="post" id="tour-plan-form">
+            {% csrf_token %}
+            {{ form.entries }}
+            <div id="entry-list" style="display: grid; gap: 16px; margin-top: 16px;"></div>
+
+            <div style="margin-top: 16px;">
+                <button type="button" id="add-entry-btn" class="btn">Add Other</button>
+                <button type="submit" class="btn">Bulk Save</button>
+                <a href="{% url 'tour_plans' %}" class="btn">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script id="area-options" type="application/json">{{ area_options|safe }}</script>
+<script id="user-options" type="application/json">{{ user_options|safe }}</script>
+<script>
+const areaOptions = JSON.parse(document.getElementById('area-options').textContent);
+const userOptions = JSON.parse(document.getElementById('user-options').textContent);
+const entryList = document.getElementById('entry-list');
+const entriesInput = document.getElementById('id_entries');
+let entryIndex = 0;
+
+function renderEntry(index) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'entry-row';
+    wrapper.style.border = '1px solid #ddd';
+    wrapper.style.padding = '12px';
+    wrapper.style.borderRadius = '6px';
+    wrapper.style.position = 'relative';
+    wrapper.innerHTML = `
+        <button type="button" class="remove-entry-btn" style="position:absolute; top:8px; right:8px; border:none; background:none; color:#c00; cursor:pointer; font-size:18px;">×</button>
+        <div style="display:grid; gap:10px; max-width:480px;">
+            <div>
+                <label>Date</label>
+                <input type="date" name="entries[${index}][plan_date]" required>
+            </div>
+            <div>
+                <label>Area</label>
+                <select name="entries[${index}][area]" required>
+                    <option value="">Select area</option>
+                    ${areaOptions.map(option => `<option value="${option.value}">${option.label}</option>`).join('')}
+                </select>
+            </div>
+            <div>
+                <label>Worked with</label>
+                <select name="entries[${index}][worked_with]">
+                    <option value="">Select member</option>
+                    ${userOptions.map(option => `<option value="${option.value}">${option.label}</option>`).join('')}
+                </select>
+            </div>
+            <div>
+                <label>Remarks</label>
+                <textarea name="entries[${index}][remarks]" rows="3"></textarea>
+            </div>
+        </div>
+    `;
+    wrapper.querySelector('.remove-entry-btn').addEventListener('click', () => {
+        wrapper.remove();
+        syncEntries();
+    });
+    entryList.appendChild(wrapper);
+    syncEntries();
+}
+
+function syncEntries() {
+    const rows = Array.from(entryList.querySelectorAll('.entry-row'));
+    const payload = rows.map((row, idx) => {
+        const planDate = row.querySelector('input[name^="entries["][name$="[plan_date]"]');
+        const area = row.querySelector('select[name^="entries["][name$="[area]"]');
+        const workedWith = row.querySelector('select[name^="entries["][name$="[worked_with]"]');
+        const remarks = row.querySelector('textarea[name^="entries["][name$="[remarks]"]');
+        return {
+            plan_date: planDate ? planDate.value : '',
+            area: area ? area.value : '',
+            worked_with: workedWith ? workedWith.value : '',
+            remarks: remarks ? remarks.value : ''
+        };
+    });
+    entriesInput.value = JSON.stringify(payload);
+}
+
+document.getElementById('add-entry-btn').addEventListener('click', () => {
+    renderEntry(entryIndex);
+    entryIndex += 1;
+});
+
+renderEntry(entryIndex);
+entryIndex += 1;
+
+entryList.addEventListener('input', syncEntries);
+entryList.addEventListener('change', syncEntries);
+</script>
+{% endblock %}

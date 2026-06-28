@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block title %}HR Review Requests - PharmaSFO{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="card">
+        <h2>HR Review Requests</h2>
+        <p>Employees with pending doctor addition requests.</p>
+
+        {% if employees_with_pending %}
+            <table style="width: 100%; border-collapse: collapse; margin-top: 16px;">
+                <thead>
+                    <tr>
+                        <th style="text-align: left; padding: 8px; border-bottom: 1px solid #ddd;">Employee</th>
+                        <th style="text-align: left; padding: 8px; border-bottom: 1px solid #ddd;">Pending Requests</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in employees_with_pending %}
+                        <tr>
+                            <td style="padding: 8px; border-bottom: 1px solid #ddd;">
+                                <a href="{% url 'hr_review_employee_requests' item.employee.id %}">
+                                    {{ item.employee.get_full_name|default:item.employee.username }}
+                                </a>
+                            </td>
+                            <td style="padding: 8px; border-bottom: 1px solid #ddd;">{{ item.count }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>No pending doctor addition requests.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
