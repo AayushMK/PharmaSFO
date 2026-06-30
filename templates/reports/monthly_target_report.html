@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block title %}Monthly Target Report - PharmaSFO{% endblock %}
+
+{% block content %}
+<div class="container">
+
+    <div class="card">
+        <h2>Monthly Target Report</h2>
+        <form method="get" style="margin-top:16px; display:flex; align-items:flex-end; gap:12px; flex-wrap:wrap;">
+            <div>
+                <label style="display:block; margin-bottom:4px; font-weight:600;">Choose Month to view Report</label>
+                <input type="month" name="month" value="{{ month_str }}"
+                       style="padding:6px 10px; border:1px solid #ccc; border-radius:4px;">
+            </div>
+            {% if is_staff %}
+            <div>
+                <label style="display:block; margin-bottom:4px; font-weight:600;">Employee</label>
+                <select name="employee_id" style="padding:6px 10px; border:1px solid #ccc; border-radius:4px; min-width:180px;">
+                    <option value="">— Select employee —</option>
+                    {% for emp in all_employees %}
+                        <option value="{{ emp.pk }}" {% if emp.pk == selected_employee_id %}selected{% endif %}>
+                            {{ emp.get_full_name|default:emp.username }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+            <button type="submit" class="btn">Go</button>
+        </form>
+    </div>
+
+    <div class="card" style="margin-top:16px; padding:0; overflow:hidden;">
+        <div style="background:#4a90c4; color:#fff; padding:10px 16px; font-weight:700;">
+            Target Achieved — {{ month_name }} {{ year }}
+        </div>
+
+        <!-- Legend -->
+        <div style="padding:12px 16px; display:flex; gap:20px; font-size:0.85rem; border-bottom:1px solid #eee;">
+            <span><span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:#2e7d32;vertical-align:middle;margin-right:4px;"></span> Target met</span>
+            <span><span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:#e67e22;vertical-align:middle;margin-right:4px;"></span> Partially visited</span>
+            <span><span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:#c0392b;vertical-align:middle;margin-right:4px;"></span> Not visited</span>
+            <span style="margin-left:auto; color:#666;">Targets: Super Core = 4/month &nbsp;|&nbsp; Core = 2/month &nbsp;|&nbsp; VIP = 1/month</span>
+        </div>
+
+        <h3 style="padding:12px 16px 4px; margin:0; font-size:1rem; text-align:center;">Doctor</h3>
+
+        {% if rows %}
+        <div style="overflow-x:auto;">
+            <table style="width:100%; border-collapse:collapse; font-size:0.9rem;">
+                <thead>
+                    <tr>
+                        <th style="padding:10px 16px; text-align:center; background:#1a4f7a; color:#fff; width:80px;">State</th>
+                        <th style="padding:10px 16px; text-align:center; background:#1a4f7a; color:#fff;">Doctor's Name</th>
+                        <th style="padding:10px 16px; text-align:center; background:#1a4f7a; color:#fff; width:110px;">MSL No.</th>
+                        <th style="padding:10px 16px; text-align:center; background:#1a4f7a; color:#fff; width:130px;">No. of visits</th>
+                        <th style="padding:10px 16px; text-align:center; background:#1a4f7a; color:#fff; width:120px;">Class</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in rows %}
+                    <tr style="{% cycle 'background:#fff;' 'background:#f7f9fc;' %} border-bottom:1px solid #eee;">
+                        <td style="padding:10px 16px; text-align:center;">
+                            {% if row.state == "green" %}
+                                <span style="display:inline-block; width:18px; height:18px; border-radius:50%; background:#2e7d32;"></span>
+                            {% elif row.state == "orange" %}
+                                <span style="display:inline-block; width:18px; height:18px; border-radius:50%; background:#e67e22;"></span>
+                            {% else %}
+                                <span style="display:inline-block; width:18px; height:18px; border-radius:50%; background:#c0392b;"></span>
+                            {% endif %}
+                        </td>
+                        <td style="padding:10px 16px; text-align:center;">{{ row.doctor_name }}</td>
+                        <td style="padding:10px 16px; text-align:center;">{{ row.msl }}</td>
+                        <td style="padding:10px 16px; text-align:center;">
+                            {{ row.visits }}
+                            <span style="color:#aaa; font-size:0.8rem;">/ {{ row.target }}</span>
+                        </td>
+                        <td style="padding:10px 16px; text-align:center;">{{ row.category }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p style="padding:16px; color:#888;">No assigned doctors found. Add approved doctor-employee relations first.</p>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}

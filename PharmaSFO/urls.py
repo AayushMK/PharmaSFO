@@ -3,7 +3,13 @@ from django.urls import path
 from django.contrib.auth import views as auth_views
 
 from api.api import api
-from reports.views import daily_activity_report
+from reports.views import (
+    daily_activity_report,
+    monthly_activity_report,
+    monthly_target_report,
+    yearly_activity_report,
+    yearly_activity_report_excel,
+)
 from users.views import dashboard
 from daily_coverage.views import (
     add_daily_coverage,
@@ -64,6 +70,10 @@ urlpatterns = [
     path("daily_coverage/add/<str:selected_date>/", add_daily_coverage, name="add_daily_coverage_with_date"),
     path("daily_coverage/records/", daily_coverage_list, name="daily_coverage_list"),
     path("reports/daily-activity/", daily_activity_report, name="daily_activity_report"),
+    path("reports/monthly-activity/", monthly_activity_report, name="monthly_activity_report"),
+    path("reports/monthly-target/", monthly_target_report, name="monthly_target_report"),
+    path("reports/yearly-activity/", yearly_activity_report, name="yearly_activity_report"),
+    path("reports/yearly-activity/export/", yearly_activity_report_excel, name="yearly_activity_report_excel"),
     path("daily_coverage/<int:pk>/edit/", edit_daily_coverage, name="edit_daily_coverage"),
     path("daily_coverage/<int:pk>/delete/", delete_daily_coverage, name="delete_daily_coverage"),
 ]

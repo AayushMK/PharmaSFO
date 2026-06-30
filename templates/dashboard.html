@@ -13,6 +13,9 @@
         <a href="{% url 'daily_coverage_calendar' %}" class="btn">Daily Coverage</a>
         <a href="{% url 'daily_coverage_list' %}" class="btn">My Coverage Records</a>
         <a href="{% url 'daily_activity_report' %}" class="btn">Daily Activity Report</a>
+        <a href="{% url 'monthly_activity_report' %}" class="btn">Monthly Activity Report</a>
+        <a href="{% url 'monthly_target_report' %}" class="btn">Monthly Target Report</a>
+        <a href="{% url 'yearly_activity_report' %}" class="btn">Yearly Activity Report</a>
         {% if user.is_authenticated and user.is_staff and user.type == 'HR' %}
             <a href="{% url 'hr_review_requests' %}" class="btn">Review Doctor Requests</a>
             <a href="{% url 'hr_review_tour_plans' %}" class="btn">Review Tour Plans</a>
