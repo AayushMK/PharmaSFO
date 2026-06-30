@@ -12,7 +12,7 @@ from doctors.models import Doctor
 from tour_plans.models import Area, TourPlan
 
 from .forms import DailyCoverageBulkForm, DailyCoverageForm
-from .models import DailyCoverage
+from .models import ChemistCoverage, DailyCoverage, StockistCoverage
 
 EDIT_WINDOW_DAYS = 2
 
@@ -84,43 +84,110 @@ def daily_coverage_calendar(request, year=None, month=None):
 def add_daily_coverage(request, selected_date=None):
     initial_date = selected_date or request.GET.get("date") or ""
 
+    form_error = None
+
     if request.method == "POST":
         form = DailyCoverageBulkForm(request.POST)
         if form.is_valid():
-            entries = form.cleaned_data.get("entries") or []
+            doctor_entries   = form.cleaned_data.get("entries") or []
+            chemist_entries  = form.cleaned_data.get("chemist_entries") or []
+            stockist_entries = form.cleaned_data.get("stockist_entries") or []
+            no_doctor_reason = (form.cleaned_data.get("no_doctor_reason") or "").strip()
+
             approved_dates = set(
                 TourPlan.objects.filter(
                     created_by=request.user,
                     status=TourPlan.Status.APPROVED,
                 ).values_list("plan_date", flat=True)
             )
-            for entry in entries:
-                report_date_str = entry.get("report_date")
-                doctor_id = entry.get("doctor")
-                actual_place_id = entry.get("actual_working_place")
-                call_time = entry.get("call_time")
-                products = entry.get("products") or ""
-                worked_with = entry.get("worked_with") or ""
-                remarks = entry.get("remarks") or ""
-                if not report_date_str or not doctor_id or not actual_place_id or not call_time:
-                    continue
+
+            # Determine which dates have doctor entries being submitted
+            def _parse_date(s):
                 try:
-                    report_date = datetime.strptime(report_date_str, "%Y-%m-%d").date()
-                except ValueError:
-                    continue
-                if report_date not in approved_dates:
-                    continue
-                DailyCoverage.objects.create(
+                    return datetime.strptime(s, "%Y-%m-%d").date()
+                except (ValueError, TypeError):
+                    return None
+
+            submitted_doctor_dates = {
+                _parse_date(e.get("report_date"))
+                for e in doctor_entries
+                if e.get("doctor") and e.get("report_date")
+            } - {None}
+
+            # Validate: chemist/stockist without doctor requires a reason
+            chemist_dates = {_parse_date(e.get("report_date")) for e in chemist_entries if e.get("report_date")} - {None}
+            stockist_dates = {_parse_date(e.get("report_date")) for e in stockist_entries if e.get("report_date")} - {None}
+            non_doctor_dates = (chemist_dates | stockist_dates) - submitted_doctor_dates
+
+            existing_doctor_dates = set(
+                DailyCoverage.objects.filter(
                     created_by=request.user,
-                    report_date=report_date,
-                    doctor_id=doctor_id,
-                    actual_working_place_id=actual_place_id,
-                    call_time=call_time,
-                    products=products,
-                    worked_with=worked_with,
-                    remarks=remarks,
-                )
-            return redirect("daily_coverage_calendar")
+                    report_date__in=non_doctor_dates,
+                ).values_list("report_date", flat=True)
+            ) if non_doctor_dates else set()
+
+            truly_missing = non_doctor_dates - existing_doctor_dates
+            if truly_missing and not no_doctor_reason:
+                form_error = "You must add at least one doctor entry or provide a reason for no doctor coverage."
+            else:
+                # Save doctor entries
+                for entry in doctor_entries:
+                    report_date = _parse_date(entry.get("report_date"))
+                    doctor_id = entry.get("doctor")
+                    actual_place_id = entry.get("actual_working_place")
+                    call_time = entry.get("call_time")
+                    if not report_date or not doctor_id or not actual_place_id or not call_time:
+                        continue
+                    if report_date not in approved_dates:
+                        continue
+                    DailyCoverage.objects.create(
+                        created_by=request.user,
+                        report_date=report_date,
+                        doctor_id=doctor_id,
+                        actual_working_place_id=actual_place_id,
+                        call_time=call_time,
+                        products=entry.get("products") or "",
+                        worked_with=entry.get("worked_with") or "",
+                        remarks=entry.get("remarks") or "",
+                    )
+
+                # Save chemist entries
+                for entry in chemist_entries:
+                    report_date = _parse_date(entry.get("report_date"))
+                    name = (entry.get("name") or "").strip()
+                    area_id = entry.get("area")
+                    call_time = entry.get("call_time")
+                    if not report_date or not name or not area_id or not call_time:
+                        continue
+                    if report_date not in approved_dates:
+                        continue
+                    ChemistCoverage.objects.create(
+                        created_by=request.user,
+                        report_date=report_date,
+                        name=name,
+                        area_id=area_id,
+                        call_time=call_time,
+                    )
+
+                # Save stockist entries
+                for entry in stockist_entries:
+                    report_date = _parse_date(entry.get("report_date"))
+                    name = (entry.get("name") or "").strip()
+                    area_id = entry.get("area")
+                    call_time = entry.get("call_time")
+                    if not report_date or not name or not area_id or not call_time:
+                        continue
+                    if report_date not in approved_dates:
+                        continue
+                    StockistCoverage.objects.create(
+                        created_by=request.user,
+                        report_date=report_date,
+                        name=name,
+                        area_id=area_id,
+                        call_time=call_time,
+                    )
+
+                return redirect("daily_coverage_calendar")
     else:
         form = DailyCoverageBulkForm()
 
@@ -135,6 +202,7 @@ def add_daily_coverage(request, selected_date=None):
             "area_options": json.dumps(area_options),
             "doctor_options": json.dumps(doctor_options),
             "initial_date": initial_date,
+            "form_error": form_error,
         },
     )
 

@@ -25,4 +25,7 @@ class DailyCoverageForm(forms.ModelForm):
 
 
 class DailyCoverageBulkForm(forms.Form):
-    entries = forms.JSONField(required=False, widget=forms.HiddenInput())
+    entries          = forms.JSONField(required=False, widget=forms.HiddenInput())
+    chemist_entries  = forms.JSONField(required=False, widget=forms.HiddenInput())
+    stockist_entries = forms.JSONField(required=False, widget=forms.HiddenInput())
+    no_doctor_reason = forms.CharField(required=False, widget=forms.HiddenInput())

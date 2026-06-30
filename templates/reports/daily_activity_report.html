@@ -30,68 +30,134 @@
     </div>
 
     {% if report_date %}
+    <!-- Doctor's Daily Activity Report -->
     <div class="card" style="margin-top:16px; padding:0; overflow:hidden;">
-
-        <div style="background:#4a90c4; color:#fff; padding:10px 16px; font-weight:700; font-size:1rem;">
-            Doctor's Daily Activity Report
+        <div style="background:#4a90c4; color:#fff; padding:10px 16px; font-weight:700; font-size:1rem; cursor:pointer;"
+             onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? '' : 'none';">
+            &#9660; Doctor's Daily Activity Report
         </div>
-
-        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; border-bottom:1px solid #ccc; background:#f0f4f8;">
-            <div style="padding:10px 16px; border-right:1px solid #ccc;">
-                <span style="font-weight:600;">Date: </span>{{ report_date }}
+        <div>
+            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; border-bottom:1px solid #ccc; background:#f0f4f8;">
+                <div style="padding:10px 16px; border-right:1px solid #ccc;">
+                    <span style="font-weight:600;">Date: </span>{{ report_date }}
+                </div>
+                <div style="padding:10px 16px; border-right:1px solid #ccc;">
+                    <span style="font-weight:600;">Work Planned: </span>
+                    {% if planned_areas %}{{ planned_areas|join:" / " }}/{% else %}<span style="color:#aaa;">None</span>{% endif %}
+                </div>
+                <div style="padding:10px 16px;">
+                    <span style="font-weight:600;">Worked Place: </span>
+                    {% if worked_areas %}{{ worked_areas|join:" / " }}/{% else %}<span style="color:#aaa;">None</span>{% endif %}
+                </div>
             </div>
-            <div style="padding:10px 16px; border-right:1px solid #ccc;">
-                <span style="font-weight:600;">Work Planned: </span>
-                {% if planned_areas %}
-                    {{ planned_areas|join:" / " }}/
+
+            {% if coverages %}
+            <table style="width:100%; border-collapse:collapse;">
+                <thead>
+                    <tr style="background:#4a90c4; color:#fff;">
+                        <th style="padding:10px 12px; text-align:left; white-space:nowrap;">SN</th>
+                        <th style="padding:10px 12px; text-align:left; white-space:nowrap;">Reported Date</th>
+                        <th style="padding:10px 12px; text-align:left; white-space:nowrap;">Area Covered</th>
+                        <th style="padding:10px 12px; text-align:left; white-space:nowrap;">Doctor's Name</th>
+                        <th style="padding:10px 12px; text-align:left; white-space:nowrap;">MSL</th>
+                        <th style="padding:10px 12px; text-align:left; white-space:nowrap;">Speciality</th>
+                        <th style="padding:10px 12px; text-align:left; white-space:nowrap;">Worked With</th>
+                        <th style="padding:10px 12px; text-align:left; white-space:nowrap;">Products Promoted</th>
+                        <th style="padding:10px 12px; text-align:left; white-space:nowrap;">Call Time</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in coverages %}
+                    <tr style="{% cycle 'background:#fff;' 'background:#f7f9fc;' %}">
+                        <td style="padding:9px 12px; border-bottom:1px solid #eee;">{{ forloop.counter }}</td>
+                        <td style="padding:9px 12px; border-bottom:1px solid #eee;">{{ c.report_date }}</td>
+                        <td style="padding:9px 12px; border-bottom:1px solid #eee;">{{ c.actual_working_place.name }}</td>
+                        <td style="padding:9px 12px; border-bottom:1px solid #eee;">{{ c.doctor.name }}</td>
+                        <td style="padding:9px 12px; border-bottom:1px solid #eee;">{{ c.msl }}</td>
+                        <td style="padding:9px 12px; border-bottom:1px solid #eee;">{{ c.doctor.specialization|default:"-" }}</td>
+                        <td style="padding:9px 12px; border-bottom:1px solid #eee;">{{ c.worked_with|default:"Self" }}</td>
+                        <td style="padding:9px 12px; border-bottom:1px solid #eee;">{{ c.products|default:"-" }}</td>
+                        <td style="padding:9px 12px; border-bottom:1px solid #eee;">{{ c.call_time }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p style="padding:16px; color:#888;">No records found.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Chemist & Stockist side by side -->
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:16px;">
+
+        <!-- Chemist Daily Activity Report -->
+        <div class="card" style="padding:0; overflow:hidden;">
+            <div style="background:#4a90c4; color:#fff; padding:10px 16px; font-weight:700; font-size:0.95rem; cursor:pointer;"
+                 onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? '' : 'none';">
+                &#9660; Chemist Daily Activity Report
+            </div>
+            <div>
+                {% if chemist_coverages %}
+                <table style="width:100%; border-collapse:collapse; font-size:0.9rem;">
+                    <thead>
+                        <tr>
+                            <th style="padding:9px 12px; background:#4a90c4; color:#fff; text-align:left; white-space:nowrap;">SN.</th>
+                            <th style="padding:9px 12px; background:#4a90c4; color:#fff; text-align:left; white-space:nowrap;">Reported Date</th>
+                            <th style="padding:9px 12px; background:#4a90c4; color:#fff; text-align:left; white-space:nowrap;">Chemist Name</th>
+                            <th style="padding:9px 12px; background:#4a90c4; color:#fff; text-align:left; white-space:nowrap;">Call Time</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for c in chemist_coverages %}
+                        <tr style="{% cycle 'background:#fff;' 'background:#f7f9fc;' %}">
+                            <td style="padding:8px 12px; border-bottom:1px solid #eee;">{{ forloop.counter }}</td>
+                            <td style="padding:8px 12px; border-bottom:1px solid #eee;">{{ c.report_date }}</td>
+                            <td style="padding:8px 12px; border-bottom:1px solid #eee;">{{ c.name }}</td>
+                            <td style="padding:8px 12px; border-bottom:1px solid #eee;">{{ c.call_time }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
                 {% else %}
-                    <span style="color:#aaa;">None</span>
+                <p style="padding:14px; color:#888; font-size:0.88rem;">No chemist records found.</p>
                 {% endif %}
             </div>
-            <div style="padding:10px 16px;">
-                <span style="font-weight:600;">Worked Place: </span>
-                {% if worked_areas %}
-                    {{ worked_areas|join:" / " }}/
+        </div>
+
+        <!-- Stockist Daily Activity Report -->
+        <div class="card" style="padding:0; overflow:hidden;">
+            <div style="background:#4a90c4; color:#fff; padding:10px 16px; font-weight:700; font-size:0.95rem; cursor:pointer;"
+                 onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? '' : 'none';">
+                &#9660; Stockist Daily Activity Report
+            </div>
+            <div>
+                {% if stockist_coverages %}
+                <table style="width:100%; border-collapse:collapse; font-size:0.9rem;">
+                    <thead>
+                        <tr>
+                            <th style="padding:9px 12px; background:#4a90c4; color:#fff; text-align:left; white-space:nowrap;">SN.</th>
+                            <th style="padding:9px 12px; background:#4a90c4; color:#fff; text-align:left; white-space:nowrap;">Reported Date</th>
+                            <th style="padding:9px 12px; background:#4a90c4; color:#fff; text-align:left; white-space:nowrap;">Stockist's Name</th>
+                            <th style="padding:9px 12px; background:#4a90c4; color:#fff; text-align:left; white-space:nowrap;">Call Time</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for c in stockist_coverages %}
+                        <tr style="{% cycle 'background:#fff;' 'background:#f7f9fc;' %}">
+                            <td style="padding:8px 12px; border-bottom:1px solid #eee;">{{ forloop.counter }}</td>
+                            <td style="padding:8px 12px; border-bottom:1px solid #eee;">{{ c.report_date }}</td>
+                            <td style="padding:8px 12px; border-bottom:1px solid #eee;">{{ c.name }}</td>
+                            <td style="padding:8px 12px; border-bottom:1px solid #eee;">{{ c.call_time }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
                 {% else %}
-                    <span style="color:#aaa;">None</span>
+                <p style="padding:14px; color:#888; font-size:0.88rem;">No stockist records found.</p>
                 {% endif %}
             </div>
         </div>
-
-        {% if coverages %}
-        <table style="width:100%; border-collapse:collapse;">
-            <thead>
-                <tr style="background:#4a90c4; color:#fff;">
-                    <th style="padding:10px 12px; text-align:left; white-space:nowrap;">SN</th>
-                    <th style="padding:10px 12px; text-align:left; white-space:nowrap;">Reported Date</th>
-                    <th style="padding:10px 12px; text-align:left; white-space:nowrap;">Area Covered</th>
-                    <th style="padding:10px 12px; text-align:left; white-space:nowrap;">Doctor's Name</th>
-                    <th style="padding:10px 12px; text-align:left; white-space:nowrap;">MSL</th>
-                    <th style="padding:10px 12px; text-align:left; white-space:nowrap;">Speciality</th>
-                    <th style="padding:10px 12px; text-align:left; white-space:nowrap;">Worked With</th>
-                    <th style="padding:10px 12px; text-align:left; white-space:nowrap;">Products Promoted</th>
-                    <th style="padding:10px 12px; text-align:left; white-space:nowrap;">Call Time</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for c in coverages %}
-                <tr style="{% cycle 'background:#fff;' 'background:#f7f9fc;' %}">
-                    <td style="padding:9px 12px; border-bottom:1px solid #eee;">{{ forloop.counter }}</td>
-                    <td style="padding:9px 12px; border-bottom:1px solid #eee;">{{ c.report_date }}</td>
-                    <td style="padding:9px 12px; border-bottom:1px solid #eee;">{{ c.actual_working_place.name }}</td>
-                    <td style="padding:9px 12px; border-bottom:1px solid #eee;">{{ c.doctor.name }}</td>
-                    <td style="padding:9px 12px; border-bottom:1px solid #eee;">{{ c.msl }}</td>
-                    <td style="padding:9px 12px; border-bottom:1px solid #eee;">{{ c.doctor.specialization|default:"-" }}</td>
-                    <td style="padding:9px 12px; border-bottom:1px solid #eee;">{{ c.worked_with|default:"Self" }}</td>
-                    <td style="padding:9px 12px; border-bottom:1px solid #eee;">{{ c.products|default:"-" }}</td>
-                    <td style="padding:9px 12px; border-bottom:1px solid #eee;">{{ c.call_time }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        {% else %}
-        <p style="padding:16px; color:#888;">No coverage records found for {{ report_date }}{% if is_staff %} for {{ employee.get_full_name|default:employee.username }}{% endif %}.</p>
-        {% endif %}
 
     </div>
     {% endif %}

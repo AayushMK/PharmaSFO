@@ -5,6 +5,48 @@ from doctors.models import Doctor
 from tour_plans.models import Area
 
 
+class ChemistCoverage(models.Model):
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="chemist_coverages",
+        null=True,
+        blank=True,
+    )
+    report_date = models.DateField()
+    name = models.CharField(max_length=255)
+    area = models.ForeignKey(Area, on_delete=models.PROTECT, related_name="chemist_coverage_places")
+    call_time = models.TimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-report_date", "-created_at"]
+
+    def __str__(self):
+        return f"{self.report_date} - {self.name}"
+
+
+class StockistCoverage(models.Model):
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="stockist_coverages",
+        null=True,
+        blank=True,
+    )
+    report_date = models.DateField()
+    name = models.CharField(max_length=255)
+    area = models.ForeignKey(Area, on_delete=models.PROTECT, related_name="stockist_coverage_places")
+    call_time = models.TimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-report_date", "-created_at"]
+
+    def __str__(self):
+        return f"{self.report_date} - {self.name}"
+
+
 class DailyCoverage(models.Model):
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,

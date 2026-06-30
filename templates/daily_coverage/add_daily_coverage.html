@@ -4,94 +4,280 @@
 
 {% block content %}
 <div class="container">
-    <div class="card">
-        <h2>Add Daily Coverage</h2>
-        <form method="post" id="daily-coverage-form">
-            {% csrf_token %}
-            {{ form.entries }}
-            <div id="entry-list" style="display:grid; gap:16px; margin-top:16px;"></div>
+<div class="card">
+    <h2>Add Daily Coverage</h2>
 
-            <div style="margin-top: 16px;">
-                <button type="button" id="add-entry-btn" class="btn">Add Another</button>
-                <button type="submit" class="btn">Save</button>
-                <button type="button" id="clear-btn" class="btn">Clear</button>
-                <a href="{% url 'daily_coverage_calendar' %}" class="btn">Cancel</a>
-            </div>
-        </form>
+    {% if form_error %}
+    <div style="margin:12px 0; padding:10px 14px; background:#fdecea; border:1px solid #f5c6cb; border-radius:4px; color:#c0392b;">
+        {{ form_error }}
     </div>
+    {% endif %}
+
+    <form method="post" id="daily-coverage-form">
+        {% csrf_token %}
+        {{ form.entries }}
+        {{ form.chemist_entries }}
+        {{ form.stockist_entries }}
+        {{ form.no_doctor_reason }}
+
+        <!-- Tabs -->
+        <div style="display:flex; gap:0; margin-top:18px; border-bottom:2px solid #4a90c4;">
+            <button type="button" class="tab-btn active" data-tab="doctor"
+                style="padding:8px 20px; border:none; border-radius:6px 6px 0 0; background:#4a90c4; color:#fff; cursor:pointer; font-weight:600; margin-right:4px;">
+                Doctor Coverage
+            </button>
+            <button type="button" class="tab-btn" data-tab="chemist"
+                style="padding:8px 20px; border:none; border-radius:6px 6px 0 0; background:#ccc; color:#333; cursor:pointer; font-weight:600; margin-right:4px;">
+                Chemist Coverage
+            </button>
+            <button type="button" class="tab-btn" data-tab="stockist"
+                style="padding:8px 20px; border:none; border-radius:6px 6px 0 0; background:#ccc; color:#333; cursor:pointer; font-weight:600;">
+                Stockist Coverage
+            </button>
+        </div>
+
+        <!-- Doctor Coverage Tab -->
+        <div id="tab-doctor" class="tab-panel" style="padding-top:16px;">
+            <div id="no-doctor-wrap" style="margin-bottom:12px;">
+                <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+                    <input type="checkbox" id="no-doctor-check"> <span style="color:#c0392b; font-weight:600;">No Doctor Coverage Available</span>
+                </label>
+                <div id="no-doctor-reason-wrap" style="display:none; margin-top:8px;">
+                    <label style="font-weight:600; display:block; margin-bottom:4px;">Reason <span style="color:#c0392b;">*</span></label>
+                    <textarea id="no-doctor-reason-input" rows="2"
+                        style="width:100%; max-width:520px; padding:6px 10px; border:1px solid #ccc; border-radius:4px;"
+                        placeholder="Briefly explain why no doctor was visited…"></textarea>
+                </div>
+            </div>
+
+            <div id="doctor-entry-list" style="display:grid; gap:14px;"></div>
+
+            <div style="margin-top:14px; display:flex; gap:10px; flex-wrap:wrap;">
+                <button type="button" id="add-doctor-btn" class="btn">Add Another Doctor</button>
+                <button type="button" id="clear-doctor-btn" class="btn">Clear</button>
+            </div>
+        </div>
+
+        <!-- Chemist Coverage Tab -->
+        <div id="tab-chemist" class="tab-panel" style="display:none; padding-top:16px;">
+            <p style="color:#666; font-size:0.88rem; margin-bottom:12px;">Optional — add chemist visits for the day.</p>
+            <div id="chemist-entry-list" style="display:grid; gap:14px;"></div>
+            <div style="margin-top:14px; display:flex; gap:10px;">
+                <button type="button" id="add-chemist-btn" class="btn">Add Chemist Entry</button>
+                <button type="button" id="clear-chemist-btn" class="btn">Clear</button>
+            </div>
+        </div>
+
+        <!-- Stockist Coverage Tab -->
+        <div id="tab-stockist" class="tab-panel" style="display:none; padding-top:16px;">
+            <p style="color:#666; font-size:0.88rem; margin-bottom:12px;">Optional — add stockist visits for the day.</p>
+            <div id="stockist-entry-list" style="display:grid; gap:14px;"></div>
+            <div style="margin-top:14px; display:flex; gap:10px;">
+                <button type="button" id="add-stockist-btn" class="btn">Add Stockist Entry</button>
+                <button type="button" id="clear-stockist-btn" class="btn">Clear</button>
+            </div>
+        </div>
+
+        <div style="margin-top:20px; border-top:1px solid #eee; padding-top:14px; display:flex; gap:10px;">
+            <button type="submit" class="btn">Save All</button>
+            <a href="{% url 'daily_coverage_calendar' %}" class="btn">Cancel</a>
+        </div>
+    </form>
+</div>
 </div>
 
 <script id="area-options" type="application/json">{{ area_options|safe }}</script>
 <script id="doctor-options" type="application/json">{{ doctor_options|safe }}</script>
 <script>
-const areaOptions = JSON.parse(document.getElementById('area-options').textContent);
+const areaOptions   = JSON.parse(document.getElementById('area-options').textContent);
 const doctorOptions = JSON.parse(document.getElementById('doctor-options').textContent);
-const entryList = document.getElementById('entry-list');
-const entriesInput = document.getElementById('id_entries');
-let entryIndex = 0;
 
-function renderEntry(index) {
-    const wrapper = document.createElement('div');
-    wrapper.className = 'entry-row';
-    wrapper.style.border = '1px solid #ddd';
-    wrapper.style.padding = '12px';
-    wrapper.style.borderRadius = '6px';
-    wrapper.style.position = 'relative';
-    wrapper.innerHTML = `
-        <button type="button" class="remove-entry-btn" style="position:absolute; top:8px; right:8px; border:none; background:none; color:#c00; cursor:pointer; font-size:18px;">×</button>
-        <div style="display:grid; gap:10px; max-width:480px;">
-            <div><label>Date</label><input type="date" name="entries[${index}][report_date]" required></div>
-            <div><label>Doctor</label><select name="entries[${index}][doctor]" required><option value="">Select doctor</option>${doctorOptions.map(option => `<option value="${option.value}">${option.label}</option>`).join('')}</select></div>
-            <div><label>Actual working place</label><select name="entries[${index}][actual_working_place]" required><option value="">Select place</option>${areaOptions.map(option => `<option value="${option.value}">${option.label}</option>`).join('')}</select></div>
-            <div><label>Call time</label><input type="time" name="entries[${index}][call_time]" required></div>
-            <div><label>Products</label><input type="text" name="entries[${index}][products]"></div>
-            <div><label>Worked with</label><input type="text" name="entries[${index}][worked_with]"></div>
-            <div><label>Remarks</label><textarea name="entries[${index}][remarks]" rows="3"></textarea></div>
-        </div>
-    `;
-    wrapper.querySelector('.remove-entry-btn').addEventListener('click', () => {
-        wrapper.remove();
-        syncEntries();
+// ── Tab switching ────────────────────────────────────────────────────────────
+document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => {
+            b.style.background = '#ccc'; b.style.color = '#333'; b.classList.remove('active');
+        });
+        document.querySelectorAll('.tab-panel').forEach(p => p.style.display = 'none');
+        btn.style.background = '#4a90c4'; btn.style.color = '#fff'; btn.classList.add('active');
+        document.getElementById('tab-' + btn.dataset.tab).style.display = '';
     });
-    entryList.appendChild(wrapper);
-    syncEntries();
-}
-
-function syncEntries() {
-    const rows = Array.from(entryList.querySelectorAll('.entry-row'));
-    const payload = rows.map((row) => ({
-        report_date: row.querySelector('input[name$="[report_date]"]')?.value || '',
-        doctor: row.querySelector('select[name$="[doctor]"]')?.value || '',
-        actual_working_place: row.querySelector('select[name$="[actual_working_place]"]')?.value || '',
-        call_time: row.querySelector('input[name$="[call_time]"]')?.value || '',
-        products: row.querySelector('input[name$="[products]"]')?.value || '',
-        worked_with: row.querySelector('input[name$="[worked_with]"]')?.value || '',
-        remarks: row.querySelector('textarea[name$="[remarks]"]')?.value || ''
-    }));
-    entriesInput.value = JSON.stringify(payload);
-}
-
-document.getElementById('add-entry-btn').addEventListener('click', () => {
-    renderEntry(entryIndex);
-    entryIndex += 1;
 });
 
-document.getElementById('clear-btn').addEventListener('click', () => {
-    entryList.innerHTML = '';
-    entriesInput.value = '[]';
-    entryIndex = 0;
+// ── No-doctor checkbox ───────────────────────────────────────────────────────
+const noDoctorCheck = document.getElementById('no-doctor-check');
+const noDoctorWrap  = document.getElementById('no-doctor-reason-wrap');
+const noDoctorInput = document.getElementById('no-doctor-reason-input');
+const noDoctorHidden = document.getElementById('id_no_doctor_reason');
+
+noDoctorCheck.addEventListener('change', () => {
+    noDoctorWrap.style.display = noDoctorCheck.checked ? '' : 'none';
+    const doctorList = document.getElementById('doctor-entry-list');
+    doctorList.querySelectorAll('select, input').forEach(el => {
+        el.disabled = noDoctorCheck.checked;
+    });
+    syncDoctorEntries();
 });
 
-entryList.addEventListener('input', syncEntries);
-entryList.addEventListener('change', syncEntries);
+noDoctorInput.addEventListener('input', () => {
+    noDoctorHidden.value = noDoctorInput.value;
+});
 
-renderEntry(entryIndex);
+// ── Generic entry builder ────────────────────────────────────────────────────
+function makeAreaSelect(name) {
+    return `<select name="${name}" style="width:100%; padding:6px; border:1px solid #ccc; border-radius:4px;"><option value="">Select area</option>${areaOptions.map(o => `<option value="${o.value}">${o.label}</option>`).join('')}</select>`;
+}
+
+function makeRow(fields, onRemove) {
+    const div = document.createElement('div');
+    div.style.cssText = 'border:1px solid #ddd; padding:12px; border-radius:6px; position:relative;';
+    div.innerHTML = `
+        <button type="button" style="position:absolute;top:8px;right:8px;border:none;background:none;color:#c00;cursor:pointer;font-size:18px;">×</button>
+        <div style="display:grid; gap:8px; max-width:480px;">${fields}</div>
+    `;
+    div.querySelector('button').addEventListener('click', () => { div.remove(); onRemove(); });
+    return div;
+}
+
+// ── Doctor entries ───────────────────────────────────────────────────────────
+const doctorList = document.getElementById('doctor-entry-list');
+const doctorHidden = document.getElementById('id_entries');
+let doctorIdx = 0;
+
+function renderDoctorEntry(initialDate) {
+    const idx = doctorIdx++;
+    const row = makeRow(`
+        <div><label style="font-weight:600;">Date</label>
+            <input type="date" name="d_date_${idx}" value="${initialDate || ''}"
+                style="width:100%; padding:6px; border:1px solid #ccc; border-radius:4px;"></div>
+        <div><label style="font-weight:600;">Doctor</label>
+            <select name="d_doc_${idx}" style="width:100%; padding:6px; border:1px solid #ccc; border-radius:4px;">
+                <option value="">Select doctor</option>
+                ${doctorOptions.map(o => `<option value="${o.value}">${o.label}</option>`).join('')}
+            </select></div>
+        <div><label style="font-weight:600;">Actual Working Place</label>${makeAreaSelect(`d_area_${idx}`)}</div>
+        <div><label style="font-weight:600;">Call Time</label>
+            <input type="time" name="d_time_${idx}"
+                style="width:100%; padding:6px; border:1px solid #ccc; border-radius:4px;"></div>
+        <div><label style="font-weight:600;">Products</label>
+            <input type="text" name="d_prod_${idx}"
+                style="width:100%; padding:6px; border:1px solid #ccc; border-radius:4px;"></div>
+        <div><label style="font-weight:600;">Worked With</label>
+            <input type="text" name="d_with_${idx}"
+                style="width:100%; padding:6px; border:1px solid #ccc; border-radius:4px;"></div>
+        <div><label style="font-weight:600;">Remarks</label>
+            <textarea name="d_rem_${idx}" rows="2"
+                style="width:100%; padding:6px; border:1px solid #ccc; border-radius:4px;"></textarea></div>
+    `, syncDoctorEntries);
+    row.addEventListener('input', syncDoctorEntries);
+    row.addEventListener('change', syncDoctorEntries);
+    doctorList.appendChild(row);
+    syncDoctorEntries();
+}
+
+function syncDoctorEntries() {
+    if (noDoctorCheck.checked) { doctorHidden.value = '[]'; return; }
+    const rows = doctorList.querySelectorAll(':scope > div');
+    doctorHidden.value = JSON.stringify([...rows].map(r => ({
+        report_date:          r.querySelector('input[type=date]')?.value  || '',
+        doctor:               r.querySelector('select[name^="d_doc"]')?.value || '',
+        actual_working_place: r.querySelector('select[name^="d_area"]')?.value || '',
+        call_time:            r.querySelector('input[type=time]')?.value  || '',
+        products:             r.querySelector('input[name^="d_prod"]')?.value  || '',
+        worked_with:          r.querySelector('input[name^="d_with"]')?.value  || '',
+        remarks:              r.querySelector('textarea')?.value          || '',
+    })));
+}
+
+document.getElementById('add-doctor-btn').addEventListener('click', () => renderDoctorEntry(''));
+document.getElementById('clear-doctor-btn').addEventListener('click', () => {
+    doctorList.innerHTML = ''; doctorHidden.value = '[]';
+});
+
+// ── Chemist entries ──────────────────────────────────────────────────────────
+const chemistList = document.getElementById('chemist-entry-list');
+const chemistHidden = document.getElementById('id_chemist_entries');
+let chemistIdx = 0;
+
+function renderChemistEntry(initialDate) {
+    const idx = chemistIdx++;
+    const row = makeRow(`
+        <div><label style="font-weight:600;">Date</label>
+            <input type="date" name="c_date_${idx}" value="${initialDate || ''}"
+                style="width:100%; padding:6px; border:1px solid #ccc; border-radius:4px;"></div>
+        <div><label style="font-weight:600;">Chemist Name</label>
+            <input type="text" name="c_name_${idx}"
+                style="width:100%; padding:6px; border:1px solid #ccc; border-radius:4px;"
+                placeholder="Chemist name"></div>
+        <div><label style="font-weight:600;">Area</label>${makeAreaSelect(`c_area_${idx}`)}</div>
+        <div><label style="font-weight:600;">Call Time</label>
+            <input type="time" name="c_time_${idx}"
+                style="width:100%; padding:6px; border:1px solid #ccc; border-radius:4px;"></div>
+    `, syncChemistEntries);
+    row.addEventListener('input', syncChemistEntries);
+    row.addEventListener('change', syncChemistEntries);
+    chemistList.appendChild(row);
+    syncChemistEntries();
+}
+
+function syncChemistEntries() {
+    const rows = chemistList.querySelectorAll(':scope > div');
+    chemistHidden.value = JSON.stringify([...rows].map(r => ({
+        report_date: r.querySelector('input[type=date]')?.value || '',
+        name:        r.querySelector('input[type=text]')?.value  || '',
+        area:        r.querySelector('select')?.value            || '',
+        call_time:   r.querySelector('input[type=time]')?.value || '',
+    })));
+}
+
+document.getElementById('add-chemist-btn').addEventListener('click', () => renderChemistEntry(''));
+document.getElementById('clear-chemist-btn').addEventListener('click', () => {
+    chemistList.innerHTML = ''; chemistHidden.value = '[]';
+});
+
+// ── Stockist entries ─────────────────────────────────────────────────────────
+const stockistList = document.getElementById('stockist-entry-list');
+const stockistHidden = document.getElementById('id_stockist_entries');
+let stockistIdx = 0;
+
+function renderStockistEntry(initialDate) {
+    const idx = stockistIdx++;
+    const row = makeRow(`
+        <div><label style="font-weight:600;">Date</label>
+            <input type="date" name="s_date_${idx}" value="${initialDate || ''}"
+                style="width:100%; padding:6px; border:1px solid #ccc; border-radius:4px;"></div>
+        <div><label style="font-weight:600;">Stockist Name</label>
+            <input type="text" name="s_name_${idx}"
+                style="width:100%; padding:6px; border:1px solid #ccc; border-radius:4px;"
+                placeholder="Stockist name"></div>
+        <div><label style="font-weight:600;">Area</label>${makeAreaSelect(`s_area_${idx}`)}</div>
+        <div><label style="font-weight:600;">Call Time</label>
+            <input type="time" name="s_time_${idx}"
+                style="width:100%; padding:6px; border:1px solid #ccc; border-radius:4px;"></div>
+    `, syncStockistEntries);
+    row.addEventListener('input', syncStockistEntries);
+    row.addEventListener('change', syncStockistEntries);
+    stockistList.appendChild(row);
+    syncStockistEntries();
+}
+
+function syncStockistEntries() {
+    const rows = stockistList.querySelectorAll(':scope > div');
+    stockistHidden.value = JSON.stringify([...rows].map(r => ({
+        report_date: r.querySelector('input[type=date]')?.value || '',
+        name:        r.querySelector('input[type=text]')?.value  || '',
+        area:        r.querySelector('select')?.value            || '',
+        call_time:   r.querySelector('input[type=time]')?.value || '',
+    })));
+}
+
+document.getElementById('add-stockist-btn').addEventListener('click', () => renderStockistEntry(''));
+document.getElementById('clear-stockist-btn').addEventListener('click', () => {
+    stockistList.innerHTML = ''; stockistHidden.value = '[]';
+});
+
+// ── Seed first doctor row with pre-selected date ─────────────────────────────
 const initialDate = "{{ initial_date }}";
-if (initialDate) {
-    const firstDateInput = entryList.querySelector('input[name$="[report_date]"]');
-    if (firstDateInput) firstDateInput.value = initialDate;
-    syncEntries();
-}
-entryIndex += 1;
+renderDoctorEntry(initialDate);
 </script>
 {% endblock %}

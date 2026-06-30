@@ -12,7 +12,7 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, render
 from django.views.decorators.cache import never_cache
 
-from daily_coverage.models import DailyCoverage
+from daily_coverage.models import ChemistCoverage, DailyCoverage, StockistCoverage
 from doctor_employee_relation.models import DoctorEmployeeRelation
 from tour_plans.models import TourPlan
 
@@ -115,6 +115,8 @@ def daily_activity_report(request):
     coverages = []
     planned_areas = []
     worked_areas = []
+    chemist_coverages = []
+    stockist_coverages = []
 
     if report_date:
         qs = (
@@ -143,6 +145,19 @@ def daily_activity_report(request):
         )
         worked_areas = list(dict.fromkeys(c.actual_working_place.name for c in coverages))
 
+        chemist_coverages = list(
+            ChemistCoverage.objects
+            .filter(created_by=employee, report_date=report_date)
+            .select_related("area")
+            .order_by("call_time")
+        )
+        stockist_coverages = list(
+            StockistCoverage.objects
+            .filter(created_by=employee, report_date=report_date)
+            .select_related("area")
+            .order_by("call_time")
+        )
+
     return render(request, "reports/daily_activity_report.html", {
         "date_str": date_str,
         "report_date": report_date,
@@ -152,6 +167,8 @@ def daily_activity_report(request):
         "coverages": coverages,
         "planned_areas": planned_areas,
         "worked_areas": worked_areas,
+        "chemist_coverages": chemist_coverages,
+        "stockist_coverages": stockist_coverages,
         "is_staff": is_staff,
     })
 
