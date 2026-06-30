@@ -20,9 +20,22 @@
                 {% for day in week %}
                     <div style="min-height: 70px; border: 1px solid #ddd; padding: 6px;">
                         {% if day %}
-                            <a href="{% url 'add_daily_coverage' %}?date={{ year }}-{{ month|stringformat:'02d' }}-{{ day|stringformat:'02d' }}" style="display:block; text-decoration:none; color:inherit;">
-                                <strong>{{ day }}</strong>
-                            </a>
+                            {% if day in days_with_entries %}
+                                <strong style="color:#888;">{{ day }}</strong>
+                                <a href="{% url 'daily_coverage_list' %}?date={{ year }}-{{ month|stringformat:'02d' }}-{{ day|stringformat:'02d' }}" style="display:inline-block; margin-top:4px; text-decoration:none;">
+                                    <span style="display:inline-block; padding:2px 7px; background:#2e7d32; color:#fff; border-radius:10px; font-size:0.7rem; font-weight:600;">Added</span>
+                                </a>
+                            {% elif day in days_approved %}
+                                <a href="{% url 'add_daily_coverage' %}?date={{ year }}-{{ month|stringformat:'02d' }}-{{ day|stringformat:'02d' }}" style="display:block; text-decoration:none; color:inherit;">
+                                    <strong>{{ day }}</strong>
+                                </a>
+                                <span style="display:inline-block; margin-top:4px; padding:2px 7px; background:#1565c0; color:#fff; border-radius:10px; font-size:0.7rem; font-weight:600;">Plan Approved</span>
+                            {% elif day in days_pending %}
+                                <strong style="color:#888;">{{ day }}</strong>
+                                <span style="display:inline-block; margin-top:4px; padding:2px 7px; background:#b8860b; color:#fff; border-radius:10px; font-size:0.7rem; font-weight:600;">Plan Pending</span>
+                            {% else %}
+                                <strong style="color:#bbb;">{{ day }}</strong>
+                            {% endif %}
                         {% endif %}
                     </div>
                 {% endfor %}

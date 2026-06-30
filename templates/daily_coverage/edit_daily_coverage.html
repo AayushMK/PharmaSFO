@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Daily Coverage - PharmaSFO{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="card">
+        <h2>Edit Daily Coverage</h2>
+        <form method="post" style="max-width:480px; margin-top:16px;">
+            {% csrf_token %}
+            <div style="display:grid; gap:12px;">
+                {% for field in form %}
+                    <div>
+                        <label for="{{ field.id_for_label }}" style="display:block; margin-bottom:4px; font-weight:600;">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.errors %}
+                            <p style="color:#c0392b; font-size:0.85rem; margin-top:4px;">{{ field.errors|join:", " }}</p>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+            <div style="margin-top:16px; display:flex; gap:8px;">
+                <button type="submit" class="btn">Save</button>
+                <a href="{% url 'daily_coverage_list' %}" class="btn">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

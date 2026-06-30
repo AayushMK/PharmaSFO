@@ -11,6 +11,6 @@ class AreaAdmin(admin.ModelAdmin):
 
 @admin.register(TourPlan)
 class TourPlanAdmin(admin.ModelAdmin):
-    list_display = ("plan_date", "area", "worked_with", "reporting_date", "created_by")
+    list_display = ("plan_date", "area", "worked_with", "reporting_date", "created_by", "status")
     search_fields = ("area__name", "remarks", "worked_with__username", "created_by__username")
-    list_filter = ("plan_date", "reporting_date")
+    list_filter = ("plan_date", "reporting_date", "status")

@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}My Daily Coverage - PharmaSFO{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="card">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+            <h2>My Daily Coverage{% if filter_date %} — {{ filter_date }}{% endif %}</h2>
+            <a href="{% url 'daily_coverage_calendar' %}" class="btn">Back to Calendar</a>
+        </div>
+
+        {% if records %}
+            <table style="width:100%; border-collapse:collapse;">
+                <thead>
+                    <tr>
+                        <th style="text-align:left; padding:8px; border-bottom:1px solid #ddd;">Date</th>
+                        <th style="text-align:left; padding:8px; border-bottom:1px solid #ddd;">Doctor</th>
+                        <th style="text-align:left; padding:8px; border-bottom:1px solid #ddd;">Area</th>
+                        <th style="text-align:left; padding:8px; border-bottom:1px solid #ddd;">Call Time</th>
+                        <th style="text-align:left; padding:8px; border-bottom:1px solid #ddd;">Products</th>
+                        <th style="text-align:left; padding:8px; border-bottom:1px solid #ddd;">Worked With</th>
+                        <th style="text-align:left; padding:8px; border-bottom:1px solid #ddd;">Remarks</th>
+                        <th style="text-align:left; padding:8px; border-bottom:1px solid #ddd;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for record in records %}
+                        <tr>
+                            <td style="padding:8px; border-bottom:1px solid #ddd;">{{ record.report_date }}</td>
+                            <td style="padding:8px; border-bottom:1px solid #ddd;">{{ record.doctor.name }}</td>
+                            <td style="padding:8px; border-bottom:1px solid #ddd;">{{ record.actual_working_place.name }}</td>
+                            <td style="padding:8px; border-bottom:1px solid #ddd;">{{ record.call_time }}</td>
+                            <td style="padding:8px; border-bottom:1px solid #ddd;">{{ record.products|default:"-" }}</td>
+                            <td style="padding:8px; border-bottom:1px solid #ddd;">{{ record.worked_with|default:"-" }}</td>
+                            <td style="padding:8px; border-bottom:1px solid #ddd;">{{ record.remarks|default:"-" }}</td>
+                            <td style="padding:8px; border-bottom:1px solid #ddd;">
+                                {% if record.editable %}
+                                    <a href="{% url 'edit_daily_coverage' record.pk %}" class="btn">Edit</a>
+                                    <form method="post" action="{% url 'delete_daily_coverage' record.pk %}" style="display:inline;" onsubmit="return confirm('Delete this record?');">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn" style="background-color:#c0392b;">Delete</button>
+                                    </form>
+                                {% else %}
+                                    <span style="color:#aaa; font-size:0.85rem;">Locked</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>No coverage records found{% if filter_date %} for {{ filter_date }}{% endif %}.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

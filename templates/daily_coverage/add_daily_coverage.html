@@ -86,6 +86,12 @@ entryList.addEventListener('input', syncEntries);
 entryList.addEventListener('change', syncEntries);
 
 renderEntry(entryIndex);
+const initialDate = "{{ initial_date }}";
+if (initialDate) {
+    const firstDateInput = entryList.querySelector('input[name$="[report_date]"]');
+    if (firstDateInput) firstDateInput.value = initialDate;
+    syncEntries();
+}
 entryIndex += 1;
 </script>
 {% endblock %}

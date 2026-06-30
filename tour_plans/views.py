@@ -3,14 +3,20 @@ from datetime import date
 
 import json
 
+from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import redirect, render
+from django.core.exceptions import PermissionDenied
+from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.cache import never_cache
 
 from users.models import User
 
 from .forms import TourPlanBulkForm
 from .models import Area, TourPlan
+
+
+def _is_hr_user(user):
+    return user.is_authenticated and user.is_staff and user.type == "HR"
 
 
 @login_required
@@ -89,4 +95,66 @@ def add_tour_plan(request):
             "area_options": json.dumps(area_options),
             "user_options": json.dumps(user_options),
         },
+    )
+
+
+@login_required
+@never_cache
+def hr_review_tour_plans(request):
+    if not _is_hr_user(request.user):
+        raise PermissionDenied
+
+    pending_plans = (
+        TourPlan.objects.filter(status=TourPlan.Status.PENDING)
+        .select_related("created_by")
+        .order_by("created_by__username", "plan_date")
+    )
+
+    employees_with_pending = []
+    seen = set()
+    for plan in pending_plans:
+        emp = plan.created_by
+        if emp and emp.pk not in seen:
+            seen.add(emp.pk)
+            employees_with_pending.append({
+                "employee": emp,
+                "count": pending_plans.filter(created_by=emp).count(),
+            })
+
+    return render(
+        request,
+        "tour_plans/hr_review_tour_plans.html",
+        {"employees_with_pending": employees_with_pending},
+    )
+
+
+@login_required
+@never_cache
+def hr_review_employee_tour_plans(request, employee_id):
+    if not _is_hr_user(request.user):
+        raise PermissionDenied
+
+    employee = get_object_or_404(get_user_model(), pk=employee_id)
+    pending_plans = (
+        TourPlan.objects.filter(created_by=employee, status=TourPlan.Status.PENDING)
+        .select_related("area", "worked_with")
+        .order_by("plan_date")
+    )
+
+    if request.method == "POST":
+        plan_id = request.POST.get("plan_id")
+        action = request.POST.get("action")
+        plan = get_object_or_404(TourPlan, pk=plan_id, created_by=employee)
+
+        if action == "approve":
+            plan.status = TourPlan.Status.APPROVED
+        else:
+            plan.status = TourPlan.Status.REJECTED
+        plan.save()
+        return redirect("hr_review_employee_tour_plans", employee_id=employee.id)
+
+    return render(
+        request,
+        "tour_plans/hr_review_employee_tour_plans.html",
+        {"employee": employee, "pending_plans": pending_plans},
     )

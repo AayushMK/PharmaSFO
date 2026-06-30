@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block title %}Review Tour Plans - PharmaSFO{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="card">
+        <h2>Pending Tour Plans for {{ employee.get_full_name|default:employee.username }}</h2>
+
+        {% if pending_plans %}
+            <table style="width: 100%; border-collapse: collapse; margin-top: 16px;">
+                <thead>
+                    <tr>
+                        <th style="text-align: left; padding: 8px; border-bottom: 1px solid #ddd;">Date</th>
+                        <th style="text-align: left; padding: 8px; border-bottom: 1px solid #ddd;">Area</th>
+                        <th style="text-align: left; padding: 8px; border-bottom: 1px solid #ddd;">Worked With</th>
+                        <th style="text-align: left; padding: 8px; border-bottom: 1px solid #ddd;">Remarks</th>
+                        <th style="text-align: left; padding: 8px; border-bottom: 1px solid #ddd;">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for plan in pending_plans %}
+                        <tr>
+                            <td style="padding: 8px; border-bottom: 1px solid #ddd;">{{ plan.plan_date }}</td>
+                            <td style="padding: 8px; border-bottom: 1px solid #ddd;">{{ plan.area }}</td>
+                            <td style="padding: 8px; border-bottom: 1px solid #ddd;">{{ plan.worked_with|default:"-" }}</td>
+                            <td style="padding: 8px; border-bottom: 1px solid #ddd;">{{ plan.remarks|default:"-" }}</td>
+                            <td style="padding: 8px; border-bottom: 1px solid #ddd;">
+                                <form method="post" style="display: inline;">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="plan_id" value="{{ plan.id }}">
+                                    <button type="submit" name="action" value="approve" class="btn">Approve</button>
+                                    <button type="submit" name="action" value="reject" class="btn" style="background-color: #c0392b;">Reject</button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>No pending tour plans for this employee.</p>
+        {% endif %}
+
+        <p style="margin-top: 16px;">
+            <a href="{% url 'hr_review_tour_plans' %}" class="btn">Back to list</a>
+        </p>
+    </div>
+</div>
+{% endblock %}

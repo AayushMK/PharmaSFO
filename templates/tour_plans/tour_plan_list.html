@@ -31,6 +31,7 @@
                             <th style="text-align: left; padding: 8px; border-bottom: 1px solid #ddd;">Area</th>
                             <th style="text-align: left; padding: 8px; border-bottom: 1px solid #ddd;">Worked With</th>
                             <th style="text-align: left; padding: 8px; border-bottom: 1px solid #ddd;">Remarks</th>
+                            <th style="text-align: left; padding: 8px; border-bottom: 1px solid #ddd;">Status</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -40,6 +41,15 @@
                                 <td style="padding: 8px; border-bottom: 1px solid #ddd;">{{ plan.area }}</td>
                                 <td style="padding: 8px; border-bottom: 1px solid #ddd;">{{ plan.worked_with|default:"-" }}</td>
                                 <td style="padding: 8px; border-bottom: 1px solid #ddd;">{{ plan.remarks|default:"-" }}</td>
+                                <td style="padding: 8px; border-bottom: 1px solid #ddd;">
+                                    {% if plan.status == "approved" %}
+                                        <span style="color: #2e7d32; font-weight: 600;">Approved</span>
+                                    {% elif plan.status == "rejected" %}
+                                        <span style="color: #c0392b; font-weight: 600;">Rejected</span>
+                                    {% else %}
+                                        <span style="color: #b8860b; font-weight: 600;">Pending</span>
+                                    {% endif %}
+                                </td>
                             </tr>
                         {% endfor %}
                     </tbody>

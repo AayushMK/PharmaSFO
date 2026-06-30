@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block title %}Daily Activity Report - PharmaSFO{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="card">
+        <h2>Daily Activity Report</h2>
+
+        <form method="get" style="margin-top:16px; display:flex; align-items:flex-end; gap:12px; flex-wrap:wrap;">
+            <div>
+                <label style="display:block; margin-bottom:4px; font-weight:600;">Choose date to view Report</label>
+                <input type="date" name="date" value="{{ date_str }}" style="padding:6px 10px; border:1px solid #ccc; border-radius:4px;">
+            </div>
+            {% if is_staff %}
+            <div>
+                <label style="display:block; margin-bottom:4px; font-weight:600;">Employee</label>
+                <select name="employee_id" style="padding:6px 10px; border:1px solid #ccc; border-radius:4px; min-width:180px;">
+                    <option value="">— Select employee —</option>
+                    {% for emp in all_employees %}
+                        <option value="{{ emp.pk }}" {% if emp.pk == selected_employee_id %}selected{% endif %}>
+                            {{ emp.get_full_name|default:emp.username }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+            <button type="submit" class="btn">Go</button>
+        </form>
+    </div>
+
+    {% if report_date %}
+    <div class="card" style="margin-top:16px; padding:0; overflow:hidden;">
+
+        <div style="background:#4a90c4; color:#fff; padding:10px 16px; font-weight:700; font-size:1rem;">
+            Doctor's Daily Activity Report
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; border-bottom:1px solid #ccc; background:#f0f4f8;">
+            <div style="padding:10px 16px; border-right:1px solid #ccc;">
+                <span style="font-weight:600;">Date: </span>{{ report_date }}
+            </div>
+            <div style="padding:10px 16px; border-right:1px solid #ccc;">
+                <span style="font-weight:600;">Work Planned: </span>
+                {% if planned_areas %}
+                    {{ planned_areas|join:" / " }}/
+                {% else %}
+                    <span style="color:#aaa;">None</span>
+                {% endif %}
+            </div>
+            <div style="padding:10px 16px;">
+                <span style="font-weight:600;">Worked Place: </span>
+                {% if worked_areas %}
+                    {{ worked_areas|join:" / " }}/
+                {% else %}
+                    <span style="color:#aaa;">None</span>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if coverages %}
+        <table style="width:100%; border-collapse:collapse;">
+            <thead>
+                <tr style="background:#4a90c4; color:#fff;">
+                    <th style="padding:10px 12px; text-align:left; white-space:nowrap;">SN</th>
+                    <th style="padding:10px 12px; text-align:left; white-space:nowrap;">Reported Date</th>
+                    <th style="padding:10px 12px; text-align:left; white-space:nowrap;">Area Covered</th>
+                    <th style="padding:10px 12px; text-align:left; white-space:nowrap;">Doctor's Name</th>
+                    <th style="padding:10px 12px; text-align:left; white-space:nowrap;">MSL</th>
+                    <th style="padding:10px 12px; text-align:left; white-space:nowrap;">Speciality</th>
+                    <th style="padding:10px 12px; text-align:left; white-space:nowrap;">Worked With</th>
+                    <th style="padding:10px 12px; text-align:left; white-space:nowrap;">Products Promoted</th>
+                    <th style="padding:10px 12px; text-align:left; white-space:nowrap;">Call Time</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in coverages %}
+                <tr style="{% cycle 'background:#fff;' 'background:#f7f9fc;' %}">
+                    <td style="padding:9px 12px; border-bottom:1px solid #eee;">{{ forloop.counter }}</td>
+                    <td style="padding:9px 12px; border-bottom:1px solid #eee;">{{ c.report_date }}</td>
+                    <td style="padding:9px 12px; border-bottom:1px solid #eee;">{{ c.actual_working_place.name }}</td>
+                    <td style="padding:9px 12px; border-bottom:1px solid #eee;">{{ c.doctor.name }}</td>
+                    <td style="padding:9px 12px; border-bottom:1px solid #eee;">{{ c.msl }}</td>
+                    <td style="padding:9px 12px; border-bottom:1px solid #eee;">{{ c.doctor.specialization|default:"-" }}</td>
+                    <td style="padding:9px 12px; border-bottom:1px solid #eee;">{{ c.worked_with|default:"Self" }}</td>
+                    <td style="padding:9px 12px; border-bottom:1px solid #eee;">{{ c.products|default:"-" }}</td>
+                    <td style="padding:9px 12px; border-bottom:1px solid #eee;">{{ c.call_time }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p style="padding:16px; color:#888;">No coverage records found for {{ report_date }}{% if is_staff %} for {{ employee.get_full_name|default:employee.username }}{% endif %}.</p>
+        {% endif %}
+
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
