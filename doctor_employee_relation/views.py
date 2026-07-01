@@ -3,6 +3,7 @@ from datetime import date
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
+from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404, redirect, render
 
 from doctors.models import Doctor
@@ -33,14 +34,17 @@ def doctor_employee_relation_list(request, employee_id=None):
     elif selected_status == DoctorEmployeeRelation.Status.PENDING:
         queryset = queryset.filter(status=DoctorEmployeeRelation.Status.PENDING)
 
-    doctor_employee_relations = queryset.order_by("doctor__name")
+    ordered_qs = queryset.order_by("msl_number", "doctor__name")
+    paginator = Paginator(ordered_qs, 25)
+    page_obj = paginator.get_page(request.GET.get("page", 1))
 
     return render(
         request,
         "doctor_employee_relation/doctor_employee_relation_list.html",
         {
             "employee": employee,
-            "doctor_employee_relations": doctor_employee_relations,
+            "page_obj": page_obj,
+            "total_count": paginator.count,
             "selected_status": selected_status,
         },
     )

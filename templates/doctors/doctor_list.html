@@ -5,7 +5,12 @@
 {% block content %}
 <div class="container">
     <div class="card">
-        <h2 style="margin-bottom: 16px;">Doctors List</h2>
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 16px;">
+            <h2 style="margin:0;">Doctors List</h2>
+            {% if can_add %}
+            <a href="{% url 'add_doctor' %}" class="btn">+ Add Doctor</a>
+            {% endif %}
+        </div>
 
         {% if doctors %}
         <table>

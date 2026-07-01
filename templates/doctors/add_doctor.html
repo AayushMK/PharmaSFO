@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}Add Doctor - PharmaSFO{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="card">
+        <h2 style="margin-bottom: 16px;">Add Doctor</h2>
+
+        {% if form.non_field_errors %}
+        <div class="empty-state" style="color:#b00020;">{{ form.non_field_errors }}</div>
+        {% endif %}
+
+        <form method="post">
+            {% csrf_token %}
+
+            <div class="form-group">
+                <label for="{{ form.name.id_for_label }}">Doctor Name</label>
+                {{ form.name }}
+                {% if form.name.errors %}<small style="color:#b00020;">{{ form.name.errors|striptags }}</small>{% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.nmc_number.id_for_label }}">NMC Number</label>
+                {{ form.nmc_number }}
+                {% if form.nmc_number.errors %}<small style="color:#b00020;">{{ form.nmc_number.errors|striptags }}</small>{% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.area.id_for_label }}">Area</label>
+                {{ form.area }}
+                {% if form.area.errors %}<small style="color:#b00020;">{{ form.area.errors|striptags }}</small>{% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.specialization.id_for_label }}">Specialization</label>
+                {{ form.specialization }}
+                {% if form.specialization.errors %}<small style="color:#b00020;">{{ form.specialization.errors|striptags }}</small>{% endif %}
+            </div>
+
+            <button type="submit" class="btn">Add Doctor</button>
+            <a href="{% url 'doctor_list' %}" class="btn" style="margin-left: 8px;">Cancel</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

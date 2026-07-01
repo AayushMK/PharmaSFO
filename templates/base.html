@@ -10,14 +10,14 @@
 <body>
     {% if user.is_authenticated %}
     <nav class="navbar">
-        <h1>
-    <a href="{% url 'dashboard' %}" class="logo">PharmaSFO</a>
-</h1>
-        <div>
-            <span>{{ user.username }} ({{ user.get_type_display }})</span>
-            <form method="post" action="{% url 'logout' %}" style="display:inline">
+        <h1><a href="{% url 'dashboard' %}" class="logo">PharmaSFO</a></h1>
+        <div class="navbar-right">
+            <span style="font-size:13px; opacity:0.9;">{{ user.username }} &middot; {{ user.get_type_display }}</span>
+            <form method="post" action="{% url 'logout' %}" style="display:inline; margin:0;">
                 {% csrf_token %}
-                <button type="submit" style="background:none;border:none;color:white;cursor:pointer;font-size:14px;margin-left:16px;">Logout</button>
+                <button type="submit" style="background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.4); color:white; cursor:pointer; font-size:13px; padding:4px 12px; border-radius:4px;">
+                    Logout
+                </button>
             </form>
         </div>
     </nav>

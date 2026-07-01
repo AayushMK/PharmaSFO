@@ -1,15 +1,20 @@
+/* ── Reset ─────────────────────────────────────────────────────────────── */
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
 }
 
+/* ── Base ──────────────────────────────────────────────────────────────── */
 body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     background: #f0f2f5;
     color: #333;
+    font-size: 15px;
+    line-height: 1.5;
 }
 
+/* ── Navbar ────────────────────────────────────────────────────────────── */
 .navbar {
     background: #1a73e8;
     color: white;
@@ -17,11 +22,13 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.2);
 }
 
-.navbar h1 {
-    font-size: 20px;
-}
+.navbar h1 { font-size: 20px; }
 
 .navbar a {
     color: white;
@@ -38,9 +45,17 @@ body {
     font-weight: bold;
 }
 
+.navbar-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+/* ── Layout ────────────────────────────────────────────────────────────── */
 .container {
-    max-width: 960px;
-    margin: 32px auto;
+    max-width: 1100px;
+    margin: 28px auto;
     padding: 0 16px;
 }
 
@@ -48,25 +63,226 @@ body {
     background: white;
     border-radius: 8px;
     padding: 24px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    margin-bottom: 0;
 }
 
+/* ── Page header row (title + action button side by side) ───────────────── */
+.page-hd {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 18px;
+}
+
+/* ── Section header bar (dark blue, used inside cards) ─────────────────── */
+.section-hd {
+    background: #1a4f7a;
+    color: #fff;
+    padding: 10px 16px;
+    font-weight: 700;
+    font-size: 0.95rem;
+}
+
+.section-hd-red {
+    background: #7b3a2e;
+    color: #fff;
+    padding: 10px 16px;
+    font-weight: 700;
+    font-size: 0.95rem;
+}
+
+/* ── Buttons ───────────────────────────────────────────────────────────── */
 .btn {
     display: inline-block;
-    padding: 10px 24px;
+    padding: 8px 20px;
     border: none;
     border-radius: 6px;
-    font-size: 15px;
+    font-size: 14px;
     cursor: pointer;
     text-decoration: none;
     color: white;
     background: #1a73e8;
+    white-space: nowrap;
 }
 
-.btn:hover {
-    background: #1557b0;
+.btn:hover { background: #1557b0; }
+
+.btn-sm {
+    padding: 4px 12px;
+    font-size: 0.82rem;
 }
 
+.btn-danger { background: #c0392b; }
+.btn-danger:hover { background: #a93226; }
+
+.btn-green { background: #217346; }
+.btn-green:hover { background: #1a5c38; }
+
+/* ── Filter row ────────────────────────────────────────────────────────── */
+.filter-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 18px;
+}
+
+.filter-row label {
+    display: block;
+    margin-bottom: 4px;
+    font-weight: 600;
+    font-size: 0.88rem;
+}
+
+.filter-row input,
+.filter-row select {
+    padding: 6px 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 0.9rem;
+}
+
+/* ── Data table ────────────────────────────────────────────────────────── */
+.table-wrap { overflow-x: auto; }
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+.data-table th {
+    padding: 10px 12px;
+    background: #1a4f7a;
+    color: #fff;
+    text-align: left;
+    white-space: nowrap;
+    font-weight: 600;
+}
+
+.data-table td {
+    padding: 9px 12px;
+    border-bottom: 1px solid #eee;
+    vertical-align: top;
+}
+
+.data-table tbody tr:nth-child(odd)  { background: #fff; }
+.data-table tbody tr:nth-child(even) { background: #f7f9fc; }
+.data-table tbody tr:hover           { background: #eef3fb; }
+
+/* Legacy table (Django admin + login page use these) */
+table { width: 100%; border-collapse: collapse; }
+table th, table td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
+table th { background: #f8f9fa; font-weight: 600; }
+table tr:hover { background: #f8f9fa; }
+
+/* ── Status text ───────────────────────────────────────────────────────── */
+.status-approved { color: #2e7d32; font-weight: 600; }
+.status-rejected { color: #c0392b; font-weight: 600; }
+.status-pending  { color: #b8860b; font-weight: 600; }
+
+/* ── Badges ────────────────────────────────────────────────────────────── */
+.badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.badge-green  { background: #2e7d32; color: #fff; }
+.badge-blue   { background: #1565c0; color: #fff; }
+.badge-amber  { background: #b8860b; color: #fff; }
+.badge-red    { background: #c0392b; color: #fff; }
+.badge-grey   { background: #888;    color: #fff; }
+
+/* ── Alert banners ─────────────────────────────────────────────────────── */
+.alert {
+    padding: 10px 14px;
+    border-radius: 4px;
+    margin-bottom: 14px;
+    font-size: 0.9rem;
+}
+
+.alert-error   { background: #fdecea; border: 1px solid #f5c6cb; color: #c0392b; }
+.alert-success { background: #e8f5e9; border: 1px solid #a5d6a7; color: #2e7d32; }
+.alert-info    { background: #e3f2fd; border: 1px solid #90caf9; color: #1565c0; }
+
+/* ── Pagination ────────────────────────────────────────────────────────── */
+.pagination {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    margin-top: 18px;
+    flex-wrap: wrap;
+}
+
+.pagination a,
+.pagination span {
+    padding: 5px 11px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    text-decoration: none;
+    color: #333;
+    font-size: 0.85rem;
+    background: #fff;
+}
+
+.pagination a:hover      { background: #eef3fb; border-color: #1a73e8; }
+.pagination .pg-current  { background: #1a4f7a; color: #fff; border-color: #1a4f7a; font-weight: 600; }
+.pagination .pg-disabled { color: #bbb; cursor: default; }
+
+/* ── Calendar ──────────────────────────────────────────────────────────── */
+.cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 6px;
+}
+
+.cal-day-name {
+    font-weight: 700;
+    text-align: center;
+    padding: 6px 0;
+    font-size: 0.82rem;
+    color: #555;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.cal-cell {
+    min-height: 80px;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    padding: 6px;
+    background: #fafafa;
+}
+
+.cal-cell-active { background: #fff; }
+
+.cal-day-num {
+    font-weight: 700;
+    font-size: 0.9rem;
+}
+
+.cal-day-num-muted  { color: #bbb; }
+.cal-day-num-grey   { color: #888; }
+
+.cal-nav {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.cal-nav strong {
+    font-size: 1.05rem;
+}
+
+/* ── Login page ────────────────────────────────────────────────────────── */
 .login-wrapper {
     display: flex;
     justify-content: center;
@@ -74,25 +290,13 @@ body {
     min-height: 100vh;
 }
 
-.login-card {
-    width: 100%;
-    max-width: 400px;
-}
+.login-card { width: 100%; max-width: 400px; }
 
-.login-card h2 {
-    margin-bottom: 20px;
-    text-align: center;
-}
+.login-card h2 { margin-bottom: 20px; text-align: center; }
 
-.form-group {
-    margin-bottom: 16px;
-}
+.form-group { margin-bottom: 16px; }
 
-.form-group label {
-    display: block;
-    margin-bottom: 6px;
-    font-weight: 500;
-}
+.form-group label { display: block; margin-bottom: 6px; font-weight: 500; }
 
 .form-group input {
     width: 100%;
@@ -102,9 +306,7 @@ body {
     font-size: 14px;
 }
 
-.btn-block {
-    width: 100%;
-}
+.btn-block { width: 100%; text-align: center; }
 
 .error-list {
     background: #fce4e4;
@@ -116,28 +318,45 @@ body {
     list-style: none;
 }
 
-table {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-table th, table td {
-    padding: 12px;
-    text-align: left;
-    border-bottom: 1px solid #eee;
-}
-
-table th {
-    background: #f8f9fa;
-    font-weight: 600;
-}
-
-table tr:hover {
-    background: #f8f9fa;
-}
-
 .empty-state {
     text-align: center;
     padding: 48px;
     color: #888;
+}
+
+/* ── Mobile ────────────────────────────────────────────────────────────── */
+@media (max-width: 700px) {
+    .navbar {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+        padding: 10px 16px;
+    }
+
+    .navbar-right {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .container {
+        margin: 14px auto;
+        padding: 0 10px;
+    }
+
+    .card { padding: 16px; border-radius: 6px; }
+
+    .page-hd { flex-direction: column; align-items: flex-start; }
+
+    .cal-cell { min-height: 54px; padding: 3px; }
+
+    .cal-day-num { font-size: 0.78rem; }
+
+    .badge { font-size: 0.65rem; padding: 1px 5px; }
+
+    .filter-row { flex-direction: column; align-items: stretch; }
+
+    .btn { font-size: 13px; padding: 8px 14px; }
+
+    .data-table { font-size: 0.82rem; }
+    .data-table th, .data-table td { padding: 7px 8px; }
 }

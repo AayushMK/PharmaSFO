@@ -18,7 +18,7 @@ from daily_coverage.views import (
     delete_daily_coverage,
     edit_daily_coverage,
 )
-from doctors.views import doctor_list
+from doctors.views import add_doctor, doctor_list
 from doctor_employee_relation.views import (
     add_doctor_employee_relation,
     doctor_employee_relation_list,
@@ -34,6 +34,7 @@ urlpatterns = [
     path("login/", auth_views.LoginView.as_view(), name="login"),
     path("logout/", auth_views.LogoutView.as_view(), name="logout"),
     path("doctors/", doctor_list, name="doctor_list"),
+    path("doctors/add/", add_doctor, name="add_doctor"),
     path(
         "doctor_employee_relation/",
         doctor_employee_relation_list,

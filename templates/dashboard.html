@@ -4,22 +4,60 @@
 
 {% block content %}
 <div class="container">
-    <div class="card">
-        <h2>Dashboard</h2>
-        <p style="margin: 16px 0;">Welcome, {{ user.get_full_name|default:user.username }}!</p>
-        <a href="{% url 'doctor_list' %}" class="btn">Doctors List</a>
-        <a href="{% url 'doctor_employee_relation' %}" class="btn">Doctor-Employee Relations</a>
-        <a href="{% url 'tour_plans' %}" class="btn">Tour Plans</a>
-        <a href="{% url 'daily_coverage_calendar' %}" class="btn">Daily Coverage</a>
-        <a href="{% url 'daily_coverage_list' %}" class="btn">My Coverage Records</a>
-        <a href="{% url 'daily_activity_report' %}" class="btn">Daily Activity Report</a>
-        <a href="{% url 'monthly_activity_report' %}" class="btn">Monthly Activity Report</a>
-        <a href="{% url 'monthly_target_report' %}" class="btn">Monthly Target Report</a>
-        <a href="{% url 'yearly_activity_report' %}" class="btn">Yearly Activity Report</a>
-        {% if user.is_authenticated and user.is_staff and user.type == 'HR' %}
-            <a href="{% url 'hr_review_requests' %}" class="btn">Review Doctor Requests</a>
-            <a href="{% url 'hr_review_tour_plans' %}" class="btn">Review Tour Plans</a>
-        {% endif %}
+
+    <div class="card" style="margin-bottom:24px;">
+        <h2 style="margin-bottom:4px;">Dashboard</h2>
+        <p style="color:#666;">Welcome back, <strong>{{ user.get_full_name|default:user.username }}</strong>
+            <span style="font-size:0.85rem; color:#999;">({{ user.get_type_display }})</span>
+        </p>
     </div>
+
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:20px;">
+
+        <!-- My Work -->
+        <div class="card" style="padding:0; overflow:hidden;">
+            <div style="background:#1a4f7a; color:#fff; padding:12px 18px; font-weight:700; font-size:0.95rem; letter-spacing:0.03em;">
+                My Work
+            </div>
+            <div style="padding:16px; display:flex; flex-direction:column; gap:10px;">
+                <a href="{% url 'daily_coverage_calendar' %}" class="btn" style="text-align:center;">Daily Coverage Calendar</a>
+                <a href="{% url 'daily_coverage_list' %}" class="btn" style="text-align:center;">My Coverage Records</a>
+                <a href="{% url 'tour_plans' %}" class="btn" style="text-align:center;">Tour Plans</a>
+                <a href="{% url 'doctor_employee_relation' %}" class="btn" style="text-align:center;">My Assigned Doctors</a>
+                <a href="{% url 'doctor_list' %}" class="btn" style="text-align:center;">Doctors List</a>
+            </div>
+        </div>
+
+        <!-- Reports -->
+        <div class="card" style="padding:0; overflow:hidden;">
+            <div style="background:#1a4f7a; color:#fff; padding:12px 18px; font-weight:700; font-size:0.95rem; letter-spacing:0.03em;">
+                Reports
+            </div>
+            <div style="padding:16px; display:flex; flex-direction:column; gap:10px;">
+                <a href="{% url 'daily_activity_report' %}" class="btn" style="text-align:center;">Daily Activity Report</a>
+                <a href="{% url 'monthly_activity_report' %}" class="btn" style="text-align:center;">Monthly Activity Report</a>
+                <a href="{% url 'monthly_target_report' %}" class="btn" style="text-align:center;">Monthly Target Report</a>
+                <a href="{% url 'yearly_activity_report' %}" class="btn" style="text-align:center;">Yearly Activity Report</a>
+            </div>
+        </div>
+
+        <!-- HR Actions (visible to HR staff and superusers) -->
+        {% if user.is_superuser or user.is_staff and user.type == 'HR' %}
+        <div class="card" style="padding:0; overflow:hidden;">
+            <div style="background:#7b3a2e; color:#fff; padding:12px 18px; font-weight:700; font-size:0.95rem; letter-spacing:0.03em;">
+                HR Actions
+            </div>
+            <div style="padding:16px; display:flex; flex-direction:column; gap:10px;">
+                <a href="{% url 'add_doctor' %}" class="btn" style="text-align:center;">Add Doctor</a>
+                {% if user.is_staff and user.type == 'HR' %}
+                <a href="{% url 'hr_review_requests' %}" class="btn" style="text-align:center;">Review Doctor Requests</a>
+                <a href="{% url 'hr_review_tour_plans' %}" class="btn" style="text-align:center;">Review Tour Plans</a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+    </div>
+
 </div>
 {% endblock %}

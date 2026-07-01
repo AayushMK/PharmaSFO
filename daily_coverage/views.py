@@ -2,8 +2,11 @@ import calendar
 import json
 from datetime import date, datetime, timedelta
 
+from django.core.paginator import Paginator
+
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
+from django.db.models import Count
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.cache import never_cache
@@ -43,11 +46,17 @@ def daily_coverage_calendar(request, year=None, month=None):
         except ValueError:
             selected_day = None
 
-    entries = DailyCoverage.objects.filter(report_date__year=year, report_date__month=month)
-    if request.user.is_authenticated:
-        entries = entries.filter(created_by=request.user)
+    entries = DailyCoverage.objects.filter(
+        created_by=request.user,
+        report_date__year=year,
+        report_date__month=month,
+    )
 
-    days_with_entries = set(entries.values_list("report_date__day", flat=True))
+    # {day_number: visit_count} — used by calendar template for the "Added (n)" badge
+    days_with_entries = {
+        row["report_date__day"]: row["n"]
+        for row in entries.values("report_date__day").annotate(n=Count("id"))
+    }
 
     tour_plans = TourPlan.objects.filter(
         created_by=request.user,
@@ -61,13 +70,24 @@ def daily_coverage_calendar(request, year=None, month=None):
         tour_plans.filter(status=TourPlan.Status.PENDING).values_list("plan_date__day", flat=True)
     )
 
+    # prev / next month for calendar navigation
+    if month == 1:
+        prev_year, prev_month = year - 1, 12
+    else:
+        prev_year, prev_month = year, month - 1
+
+    if month == 12:
+        next_year, next_month = year + 1, 1
+    else:
+        next_year, next_month = year, month + 1
+
     return render(
         request,
         "daily_coverage/calendar.html",
         {
             "year": year,
             "month": month,
-            "month_name": month_name,
+            "month_name": calendar.month_name[month],
             "calendar": month_calendar,
             "entries": entries,
             "days_with_entries": days_with_entries,
@@ -75,6 +95,10 @@ def daily_coverage_calendar(request, year=None, month=None):
             "days_pending": days_pending,
             "selected_day": selected_day,
             "day_names": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+            "prev_year": prev_year,
+            "prev_month": prev_month,
+            "next_year": next_year,
+            "next_month": next_month,
         },
     )
 
@@ -218,20 +242,24 @@ def daily_coverage_list(request):
         except ValueError:
             pass
 
-    records = DailyCoverage.objects.filter(created_by=request.user).select_related("doctor", "actual_working_place")
+    records_qs = DailyCoverage.objects.filter(created_by=request.user).select_related("doctor", "actual_working_place")
     if filter_date:
-        records = records.filter(report_date=filter_date)
+        records_qs = records_qs.filter(report_date=filter_date)
+
+    paginator = Paginator(records_qs, 25)
+    page_obj = paginator.get_page(request.GET.get("page", 1))
 
     cutoff = timezone.now() - timedelta(days=EDIT_WINDOW_DAYS)
-    for record in records:
+    for record in page_obj:
         record.editable = record.created_at >= cutoff
 
     return render(
         request,
         "daily_coverage/daily_coverage_list.html",
         {
-            "records": records,
+            "page_obj": page_obj,
             "filter_date": filter_date,
+            "total_count": paginator.count,
         },
     )
 

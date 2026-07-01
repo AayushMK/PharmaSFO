@@ -1,5 +1,7 @@
 # PharmaSFO - Pharma Sales Force Automation
 
+> See `documentation.md` for full architecture, per-app, and end-to-end flow documentation.
+
 ## Stack
 - **Backend:** Django 5.x + Django Ninja (REST API with JWT via django-ninja-jwt)
 - **Database:** PostgreSQL 16 (Dockerized)
@@ -33,7 +35,8 @@ PharmSFAO/
 ├── doctors/                # Doctors app
 │   ├── models.py           # Doctor(name, nmc_number, area, specialization)
 │   ├── admin.py            # DoctorAdmin with search/filter
-│   ├── views.py            # doctor_list view
+│   ├── forms.py            # DoctorForm (HR add-doctor form)
+│   ├── views.py            # doctor_list, add_doctor (HR-only) views
 ├── doctor_employee_relation/  # Doctor-MR assignment app
 │   ├── models.py           # DoctorEmployeeRelation (employee, doctor, msl_number, status)
 │   ├── views.py            # list, add, HR review views
@@ -42,9 +45,11 @@ PharmSFAO/
 │   ├── forms.py            # TourPlanBulkForm
 │   ├── views.py            # list, add, HR review/approve views
 ├── daily_coverage/         # Daily call reporting app
-│   ├── models.py           # DailyCoverage model
+│   ├── models.py           # DailyCoverage, ChemistCoverage, StockistCoverage
 │   ├── forms.py            # DailyCoverageBulkForm, DailyCoverageForm
-│   ├── views.py            # calendar, add (bulk), list, edit, delete views
+│   ├── views.py            # calendar, add (bulk doctor/chemist/stockist), list, edit, delete
+│   ├── templatetags/
+│   │   └── dc_tags.py      # get_item filter (dict lookup in templates)
 ├── reports/                # Reporting module (no models, no INSTALLED_APPS entry needed)
 │   ├── views.py            # daily_activity, monthly_activity, monthly_target, yearly_activity
 ├── api/                    # Django Ninja API
@@ -68,7 +73,7 @@ PharmSFAO/
 │   │   └── hr_review_employee_tour_plans.html  # HR: approve/reject per employee
 │   ├── daily_coverage/
 │   │   ├── calendar.html               # Monthly calendar; days gated by tour plan approval
-│   │   ├── add_daily_coverage.html     # Bulk add form
+│   │   ├── add_daily_coverage.html     # Tabbed bulk add: Doctor / Chemist / Stockist
 │   │   ├── daily_coverage_list.html    # List with edit/delete (2-day window)
 │   │   └── edit_daily_coverage.html
 │   └── reports/
@@ -81,6 +86,8 @@ PharmSFAO/
 ├── Dockerfile              # Python 3.12-slim + uv
 ├── pyproject.toml          # Dependencies (includes openpyxl)
 ├── .env                    # Environment variables (not committed)
+├── documentation.md        # Full architecture, per-app & end-to-end flow docs
+├── improvements.md         # Prioritised improvement / tech-debt checklist
 ```
 
 ## Models
@@ -95,7 +102,7 @@ PharmSFAO/
 - `nmc_number` — CharField(50), unique, "Nepal Medical Council Number"
 - `area` — CharField(255), free text (used as "City" in reports)
 - `specialization` — CharField(255), optional
-- Ordered by name; managed via Django admin only
+- Ordered by name; added via Django admin or the HR "Add Doctor" form (`/doctors/add/`)
 
 ### Area (tour_plans.Area)
 - `name` — CharField(255), unique
@@ -132,6 +139,17 @@ PharmSFAO/
 - `remarks` — TextField, optional
 - Edit/delete allowed within 2 days of `created_at`; enforced in view with `PermissionDenied`
 
+### ChemistCoverage / StockistCoverage (daily_coverage)
+- `created_by` — FK to User (nullable)
+- `report_date` — DateField
+- `name` — CharField(255) — chemist/stockist name (free text, no master table)
+- `area` — FK to Area (PROTECT)
+- `call_time` — TimeField
+- `created_at` — DateTimeField (no `updated_at` yet)
+- Structurally identical to each other; entered alongside doctors in the same bulk add form
+- Logging only chemist/stockist on a doctor-less day requires a "no doctor coverage" reason (gate only — the reason is validated but not persisted)
+- No edit/delete/list UI yet; surfaced only in the Daily Activity report
+
 ## Doctor Classification (MSL-based)
 Used across all reports and the daily coverage calendar:
 | Class | MSL range | Monthly visit target |
@@ -146,8 +164,9 @@ Defined in `reports/views.py` as `SUPER_CORE_MAX = 25`, `CORE_MAX = 75`, `VISIT_
 1. MR submits tour plan (status: pending)
 2. HR approves/rejects from `/tour_plans/review/`
 3. Calendar shows approved days as clickable ("Plan Approved" badge)
-4. MR adds daily coverage only for approved-plan days (enforced on POST)
-5. Coverage can be edited/deleted within 2 days; calendar shows "Added" badge linking to list
+4. MR adds daily coverage (doctor + optional chemist/stockist) only for approved-plan days (enforced on POST for every row)
+5. Logging only chemist/stockist on a doctor-less day requires a "no doctor coverage" reason
+6. Coverage can be edited/deleted within 2 days; calendar shows "Added (n)" badge (doctor rows only) linking to list
 
 ## API Endpoints (Django Ninja)
 - `POST /api/token/pair` — Get JWT access + refresh tokens
@@ -171,6 +190,7 @@ Defined in `reports/views.py` as `SUPER_CORE_MAX = 25`, `CORE_MAX = 75`, `VISIT_
 - http://localhost:8000/ — Dashboard
 - http://localhost:8000/login/ — Login page
 - http://localhost:8000/doctors/ — Doctor list
+- http://localhost:8000/doctors/add/ — HR: add a new doctor
 - http://localhost:8000/doctor_employee_relation/ — My assigned doctors
 - http://localhost:8000/doctor_employee_relation/add/ — Request a doctor assignment
 - http://localhost:8000/review_requests/ — HR: pending doctor requests
@@ -197,7 +217,8 @@ Defined in `reports/views.py` as `SUPER_CORE_MAX = 25`, `CORE_MAX = 75`, `VISIT_
 - Tour plan approval gates daily coverage entry for that date
 - Doctor classification (Super Core/Core/VIP) derived from MSL number at report time, not stored
 - Daily coverage edit window is 2 days from `created_at` (defined as `EDIT_WINDOW_DAYS = 2`)
-- Chemist/Stockist features are planned but not yet implemented
+- Chemist/Stockist coverage is implemented (models + bulk add form + Daily Activity report); edit/delete UI and inclusion in monthly/target/yearly reports are still pending
+- List views (`daily_coverage_list`, `doctor_employee_relation_list`) paginate at 25/page with date/status filters
 - Reports use Gregorian dates (Nepali BS calendar conversion deferred)
 - Excel export uses openpyxl, served as streaming `HttpResponse`
 - `reports/` is a plain Python module (no models), not a Django app — no INSTALLED_APPS entry
