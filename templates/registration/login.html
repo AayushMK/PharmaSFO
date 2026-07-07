@@ -5,32 +5,125 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - PharmaSFO</title>
-    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'lumo/tokens.css' %}">
+    <link rel="stylesheet" href="{% static 'lumo/components.css' %}">
+    <style>
+        .auth-screen {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            min-height: 100vh; padding: var(--space-6);
+            background: var(--surface-sunken);
+        }
+        .auth-brand {
+            display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-8);
+        }
+        .auth-brand .brand-mark { width: 40px; height: 40px; font-size: 20px; border-radius: var(--radius); }
+        .auth-brand .brand-name { font-size: var(--text-xl); }
+        .auth-card { width: 100%; max-width: 380px; }
+        .auth-card .card__body { padding: var(--space-8) var(--space-6); }
+        .auth-title { font-size: var(--text-lg); font-weight: var(--weight-semibold); text-align: center; }
+        .auth-sub { font-size: var(--text-sm); color: var(--text-secondary); text-align: center; margin-top: var(--space-1); margin-bottom: var(--space-6); }
+        .password-wrap { position: relative; display: flex; }
+        .password-wrap .input { padding-right: 40px; }
+        .password-toggle {
+            position: absolute; right: 3px; top: 3px; bottom: 3px;
+            width: 30px; display: flex; align-items: center; justify-content: center;
+            background: none; border: none; padding: 0; margin: 0; cursor: pointer;
+            color: var(--gray-400); border-radius: var(--radius-sm);
+            transition: color .14s ease, background-color .14s ease;
+        }
+        .password-toggle svg { width: 17px; height: 17px; display: block; }
+        .password-toggle:hover { color: var(--text-secondary); background: var(--gray-100); }
+        .password-toggle:active { color: var(--text); background: var(--gray-200); }
+        .password-toggle:focus-visible { outline: none; box-shadow: var(--ring); }
+        .password-toggle .ico-off { display: none; }
+        .password-toggle.is-visible .ico-on { display: none; }
+        .password-toggle.is-visible .ico-off { display: block; }
+        .btn--loading .btn-label-idle { display: none; }
+        .btn--loading .btn-label-busy { display: inline-flex; }
+        .btn--loading { pointer-events: none; }
+        .btn-label-busy { display: none; align-items: center; gap: var(--space-2); }
+        .spinner {
+            width: 14px; height: 14px; border-radius: 50%;
+            border: 2px solid rgba(255,255,255,.4); border-top-color: #fff;
+            animation: spin .7s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
 </head>
 <body>
-    <div class="login-wrapper">
-        <div class="card login-card">
-            <h2>PharmaSFO Login</h2>
+    <div class="auth-screen">
+        <div class="auth-brand">
+            <span class="brand-mark">P</span>
+            <span class="brand-name">Pharma <span>SFO</span></span>
+        </div>
 
-            {% if form.errors %}
-            <ul class="error-list">
-                <li>Invalid username or password.</li>
-            </ul>
-            {% endif %}
+        <div class="card auth-card">
+            <div class="card__body">
+                <div class="auth-title">Welcome back</div>
+                <p class="auth-sub">Sign in to log your coverage and tour plans.</p>
 
-            <form method="post">
-                {% csrf_token %}
-                <div class="form-group">
-                    <label for="id_username">Username</label>
-                    <input type="text" name="username" id="id_username" autofocus required>
+                {% if form.errors %}
+                <div class="alert alert--danger" style="margin-bottom:var(--space-5)">
+                    <svg class="alert__icon ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6M9 9l6 6"/></svg>
+                    <div class="alert__body">
+                        <div class="alert__title">Invalid username or password</div>
+                        <div class="alert__text">Double-check your credentials and try again.</div>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label for="id_password">Password</label>
-                    <input type="password" name="password" id="id_password" required>
-                </div>
-                <button type="submit" class="btn btn-block">Login</button>
-            </form>
+                {% endif %}
+
+                <form method="post" id="login-form" class="stack">
+                    {% csrf_token %}
+                    <div class="field">
+                        <label class="label" for="id_username">Username</label>
+                        <input type="text" class="input" name="username" id="id_username"
+                               autocomplete="username" autocapitalize="none" spellcheck="false"
+                               autofocus required>
+                    </div>
+                    <div class="field">
+                        <label class="label" for="id_password">Password</label>
+                        <div class="password-wrap">
+                            <input type="password" class="input" name="password" id="id_password"
+                                   autocomplete="current-password" required>
+                            <button type="button" class="password-toggle" id="password-toggle" aria-label="Show password">
+                                <svg class="ico-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/>
+                                    <circle cx="12" cy="12" r="3"/>
+                                </svg>
+                                <svg class="ico-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49"/>
+                                    <path d="M14.084 14.158a3 3 0 0 1-4.242-4.242"/>
+                                    <path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143"/>
+                                    <path d="m2 2 20 20"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn--primary btn--block" id="login-submit">
+                        <span class="btn-label-idle">Log in</span>
+                        <span class="btn-label-busy"><span class="spinner"></span> Signing in…</span>
+                    </button>
+                </form>
+            </div>
         </div>
     </div>
+
+    <script>
+        const pwInput = document.getElementById('id_password');
+        const pwToggle = document.getElementById('password-toggle');
+        pwToggle.addEventListener('click', () => {
+            const showing = pwInput.type === 'text';
+            pwInput.type = showing ? 'password' : 'text';
+            pwToggle.classList.toggle('is-visible', !showing);
+            pwToggle.setAttribute('aria-label', showing ? 'Show password' : 'Hide password');
+        });
+
+        document.getElementById('login-form').addEventListener('submit', (e) => {
+            const btn = document.getElementById('login-submit');
+            if (btn.classList.contains('btn--loading')) { e.preventDefault(); return; }
+            btn.classList.add('btn--loading');
+            btn.setAttribute('aria-disabled', 'true');
+        });
+    </script>
 </body>
 </html>

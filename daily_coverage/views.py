@@ -1,6 +1,6 @@
 import calendar
 import json
-from datetime import date, datetime, timedelta
+from datetime import datetime, timedelta
 
 from django.core.paginator import Paginator
 
@@ -28,47 +28,67 @@ def _can_edit(record):
 @login_required
 @never_cache
 def daily_coverage_calendar(request, year=None, month=None):
-    today = date.today()
+    today = timezone.localdate()
     if year is None or month is None:
         year = today.year
         month = today.month
 
     year = int(year)
     month = int(month)
-    month_calendar = calendar.Calendar(firstweekday=0).monthdayscalendar(year, month)
-    month_name = calendar.month_name[month]
 
-    selected_date = request.GET.get("date")
-    selected_day = None
-    if selected_date:
-        try:
-            selected_day = datetime.strptime(selected_date, "%Y-%m-%d").date()
-        except ValueError:
-            selected_day = None
-
-    entries = DailyCoverage.objects.filter(
-        created_by=request.user,
-        report_date__year=year,
-        report_date__month=month,
-    )
-
-    # {day_number: visit_count} — used by calendar template for the "Added (n)" badge
-    days_with_entries = {
-        row["report_date__day"]: row["n"]
-        for row in entries.values("report_date__day").annotate(n=Count("id"))
+    # {date: visit_count} — drives the "Added (n)" tag per calendar cell
+    counts_by_date = {
+        row["report_date"]: row["n"]
+        for row in DailyCoverage.objects.filter(
+            created_by=request.user,
+            report_date__year=year,
+            report_date__month=month,
+        ).values("report_date").annotate(n=Count("id"))
     }
 
-    tour_plans = TourPlan.objects.filter(
-        created_by=request.user,
-        plan_date__year=year,
-        plan_date__month=month,
-    )
-    days_approved = set(
-        tour_plans.filter(status=TourPlan.Status.APPROVED).values_list("plan_date__day", flat=True)
-    )
-    days_pending = set(
-        tour_plans.filter(status=TourPlan.Status.PENDING).values_list("plan_date__day", flat=True)
-    )
+    approved_areas = {}  # {date: area name} — approved wins if several plans share a date
+    pending_dates = set()
+    for plan in (
+        TourPlan.objects.filter(
+            created_by=request.user,
+            plan_date__year=year,
+            plan_date__month=month,
+        )
+        .exclude(status=TourPlan.Status.REJECTED)
+        .select_related("area")
+        .order_by("plan_date")
+    ):
+        if plan.status == TourPlan.Status.APPROVED:
+            approved_areas.setdefault(plan.plan_date, plan.area.name)
+        else:
+            pending_dates.add(plan.plan_date)
+
+    # Full weeks of real dates (adjacent-month days render muted)
+    weeks = []
+    for week in calendar.Calendar(firstweekday=0).monthdatescalendar(year, month):
+        cells = []
+        for day in week:
+            in_month = day.month == month
+            count = counts_by_date.get(day, 0) if in_month else 0
+            if not in_month:
+                state = ""
+            elif count:
+                state = "added"
+            elif day in approved_areas:
+                state = "approved"
+            elif day in pending_dates:
+                state = "pending"
+            else:
+                state = ""
+            cells.append({
+                "date": day,
+                "in_month": in_month,
+                "count": count,
+                "state": state,
+                "is_today": day == today,
+                "area": approved_areas.get(day, ""),
+            })
+        weeks.append(cells)
 
     # prev / next month for calendar navigation
     if month == 1:
@@ -81,6 +101,20 @@ def daily_coverage_calendar(request, year=None, month=None):
     else:
         next_year, next_month = year, month + 1
 
+    # Month summary stats
+    visits_month = sum(counts_by_date.values())
+    prev_visits = DailyCoverage.objects.filter(
+        created_by=request.user,
+        report_date__year=prev_year,
+        report_date__month=prev_month,
+    ).count()
+    if prev_visits:
+        delta = round((visits_month - prev_visits) * 100 / prev_visits)
+        visits_trend = "up" if delta > 0 else ("down" if delta < 0 else "flat")
+        visits_delta = abs(delta)
+    else:
+        visits_trend = visits_delta = None
+
     return render(
         request,
         "daily_coverage/calendar.html",
@@ -88,17 +122,20 @@ def daily_coverage_calendar(request, year=None, month=None):
             "year": year,
             "month": month,
             "month_name": calendar.month_name[month],
-            "calendar": month_calendar,
-            "entries": entries,
-            "days_with_entries": days_with_entries,
-            "days_approved": days_approved,
-            "days_pending": days_pending,
-            "selected_day": selected_day,
+            "weeks": weeks,
             "day_names": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
             "prev_year": prev_year,
             "prev_month": prev_month,
             "next_year": next_year,
             "next_month": next_month,
+            "days_covered": len(counts_by_date),
+            "approved_days": len(approved_areas),
+            "approved_not_logged": len(set(approved_areas) - set(counts_by_date)),
+            "visits_month": visits_month,
+            "visits_trend": visits_trend,
+            "visits_delta": visits_delta,
+            "prev_month_name": calendar.month_name[prev_month],
+            "pending_count": len(pending_dates),
         },
     )
 

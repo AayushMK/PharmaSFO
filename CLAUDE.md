@@ -7,7 +7,7 @@
 - **Database:** PostgreSQL 16 (Dockerized)
 - **Package manager:** uv
 - **Containerization:** Docker Compose
-- **Frontend:** Django templates (plan to migrate to React later)
+- **Frontend:** Django templates styled with the Lumo SFA design system (`static/lumo/`); plan to migrate to React later
 - **Auth:** Session-based for templates, JWT for API (ready for SPA/mobile)
 - **Excel export:** openpyxl
 
@@ -29,9 +29,10 @@ PharmSFAO/
 │   ├── urls.py             # Root URL routing
 │   ├── wsgi.py / asgi.py
 ├── users/                  # Custom User app
-│   ├── models.py           # User(AbstractUser) with type field (HR, SGM, GM, AGM, MR)
+│   ├── models.py           # User(AbstractUser) with hierarchical type field (MSO … Admin) + TYPE_RANK
 │   ├── admin.py            # UserAdmin with type in fieldsets
-│   ├── views.py            # dashboard view
+│   ├── context_processors.py  # nav_counts — pending-approval counts for HR sidebar badges
+│   ├── views.py            # dashboard view (live stats, today's coverage, targets)
 ├── doctors/                # Doctors app
 │   ├── models.py           # Doctor(name, nmc_number, area, specialization)
 │   ├── admin.py            # DoctorAdmin with search/filter
@@ -55,8 +56,8 @@ PharmSFAO/
 ├── api/                    # Django Ninja API
 │   ├── api.py              # NinjaAPI + JWT controller + /doctors endpoint
 ├── templates/
-│   ├── base.html           # Base layout with navbar (shows user type, POST logout)
-│   ├── dashboard.html      # Dashboard with links to all features
+│   ├── base.html           # Lumo app shell: sidebar nav + topbar (POST logout); `legacy_css` block
+│   ├── dashboard.html      # Lumo rep dashboard (stats, today's coverage, targets, upcoming plans)
 │   ├── registration/
 │   │   └── login.html
 │   ├── doctors/
@@ -72,7 +73,7 @@ PharmSFAO/
 │   │   ├── hr_review_tour_plans.html    # HR: employees with pending plans
 │   │   └── hr_review_employee_tour_plans.html  # HR: approve/reject per employee
 │   ├── daily_coverage/
-│   │   ├── calendar.html               # Monthly calendar; days gated by tour plan approval
+│   │   ├── calendar.html               # Lumo monthly calendar; days gated by tour plan approval
 │   │   ├── add_daily_coverage.html     # Tabbed bulk add: Doctor / Chemist / Stockist
 │   │   ├── daily_coverage_list.html    # List with edit/delete (2-day window)
 │   │   └── edit_daily_coverage.html
@@ -81,7 +82,10 @@ PharmSFAO/
 │       ├── monthly_activity_report.html  # Chart.js frequency diagram + list of data tabs
 │       ├── monthly_target_report.html    # Traffic-light dots per doctor
 │       └── yearly_activity_report.html  # Doctor × month visit-date grid + Excel export
-├── static/css/style.css    # App styling
+├── static/
+│   ├── css/style.css       # Legacy styling (pre-Lumo pages only; loaded via base's `legacy_css` block)
+│   └── lumo/               # Lumo design system: tokens.css, components.css, lumo.js — verbatim copies, do not hand-edit
+├── lumo/design_handoff_lumo_sfa/  # Design handoff bundle (README.md there is the design source of truth)
 ├── docker-compose.yml      # web + db services
 ├── Dockerfile              # Python 3.12-slim + uv
 ├── pyproject.toml          # Dependencies (includes openpyxl)
@@ -94,7 +98,9 @@ PharmSFAO/
 
 ### User (users.User)
 - Extends `AbstractUser` (has username, password, email, etc.)
-- Added `type` field: HR, SGM (Senior General Manager), GM (General Manager), AGM (Assistant General Manager), MR (Medical Representative)
+- `type` field — position, in **increasing hierarchy order**: MSO, Sr. MSO, DASM, ASM, Sr. ASM, DRSM, RSM, Sr. RSM, DSM, SM, Sr. SM, AGM, GM, Sr. GM, HR, Admin (default: MSO)
+- `TYPE_RANK` (position → rank), `hierarchy_level` property, and `viewable_report_users()` — self plus everyone at a strictly lower position (superusers see all)
+- Legacy types migrated in `users.0003`: MR → MSO, SGM → SR_GM
 - `AUTH_USER_MODEL = "users.User"` in settings
 
 ### Doctor (doctors.Doctor)
@@ -126,7 +132,7 @@ PharmSFAO/
 - `relation_date` — DateField, optional
 - `status` — choices: pending / approved / rejected (default: pending)
 - Unique constraint on (employee, doctor)
-- MRs request assignments; HR users (is_staff + type=="HR") approve/reject
+- Field reps (MSOs) request assignments; HR users (is_staff + type=="HR") approve/reject
 
 ### DailyCoverage (daily_coverage.DailyCoverage)
 - `created_by` — FK to User (nullable)
@@ -180,7 +186,7 @@ Defined in `reports/views.py` as `SUPER_CORE_MAX = 25`, `CORE_MAX = 75`, `VISIT_
 - Logout uses POST (Django 5+ requirement)
 - `@never_cache` on all authenticated views to prevent back-button access after logout
 - HR-only views check `user.is_staff and user.type == "HR"` and raise `PermissionDenied`
-- Staff views (reports with employee dropdown) check `user.is_staff`
+- **Reports:** hierarchy-based visibility via `_get_employee` (reports/views.py) — a user sees their own reports plus those of strictly lower positions; requesting anyone else 404s; template flag `can_view_others` shows the employee dropdown
 
 ## Credentials (dev only)
 - **Admin login:** `admin` / `admin123` (type: GM, superuser)
@@ -213,6 +219,9 @@ Defined in `reports/views.py` as `SUPER_CORE_MAX = 25`, `CORE_MAX = 75`, `VISIT_
 - http://localhost:8000/api/docs — API documentation (Swagger)
 
 ## Design Decisions
+- **UI:** Lumo SFA design system — `static/lumo/` files are verbatim copies from `lumo/design_handoff_lumo_sfa/` (never re-derive colors/spacing; extend by composing `components.css` classes). `base.html` renders the app shell for all authenticated pages. The `.scrim` div must stay the **last** child of `.app` — as first child it occupies the grid's first cell and breaks the desktop layout.
+- Lumo-ported pages (dashboard, daily-coverage calendar) empty the `{% block legacy_css %}`; legacy pages load `css/style.css` **before** the Lumo files so Lumo wins collisions (legacy variants were bumped to compound selectors, e.g. `.btn.btn-danger`, to survive)
+- Report visibility follows the position hierarchy (see User model); "subordinate" currently means *any lower position* — direct-report chains would need a `manager` FK
 - HR users (is_staff=True, type="HR") approve doctor assignments and tour plans
 - Tour plan approval gates daily coverage entry for that date
 - Doctor classification (Super Core/Core/VIP) derived from MSL number at report time, not stored

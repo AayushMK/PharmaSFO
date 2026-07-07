@@ -9,6 +9,9 @@ SECRET_KEY = os.environ.get(
 )
 DEBUG = os.environ.get("DJANGO_DEBUG", "True").lower() in ("true", "1")
 ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
+CSRF_TRUSTED_ORIGINS = [
+    o for o in os.environ.get("DJANGO_CSRF_TRUSTED_ORIGINS", "").split(",") if o
+]
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -51,6 +54,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "users.context_processors.nav_counts",
             ],
         },
     },

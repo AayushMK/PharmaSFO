@@ -1,71 +1,100 @@
 {% extends "base.html" %}
-{% load dc_tags %}
 
 {% block title %}Daily Coverage - PharmaSFO{% endblock %}
+{% block legacy_css %}{% endblock %}
+
+{% block breadcrumb %}<span>My Work</span><span class="sep">/</span><span class="current">Calendar</span>{% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="card">
-        <div class="page-hd">
-            <h2>Daily Coverage</h2>
-            <a href="{% url 'daily_coverage_list' %}" class="btn">My Records</a>
-        </div>
+<div class="page-header">
+  <div>
+    <div class="t-eyebrow">Daily coverage</div>
+    <h1 class="page-title" style="margin-top:var(--space-2)">Coverage calendar</h1>
+    <p class="page-sub">Log visits only on days with an HR-approved tour plan. Approved days are clickable.</p>
+  </div>
+  <div class="page-actions">
+    <a class="btn btn--secondary" href="{% url 'add_tour_plan' %}">Add tour plan</a>
+    <a class="btn btn--primary" href="{% url 'add_daily_coverage' %}">
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+      Log visit
+    </a>
+  </div>
+</div>
 
-        <div class="cal-nav">
-            <a href="{% url 'daily_coverage_calendar_month' year=prev_year month=prev_month %}"
-               class="btn btn-sm">&#8249; Prev</a>
-            <strong>{{ month_name }} {{ year }}</strong>
-            <a href="{% url 'daily_coverage_calendar_month' year=next_year month=next_month %}"
-               class="btn btn-sm">Next &#8250;</a>
-        </div>
+<!-- Month summary strip -->
+<div class="grid grid--stats" style="margin-bottom:var(--space-8)">
+  <div class="card"><div class="stat">
+    <div class="stat__label">Days covered</div>
+    <div class="stat__value">{{ days_covered }}</div>
+    {% if approved_days %}<div class="stat__meta t-secondary">of {{ approved_days }} approved day{{ approved_days|pluralize }}</div>
+    {% else %}<div class="stat__meta t-secondary">no approved days yet</div>{% endif %}
+  </div></div>
+  <div class="card"><div class="stat">
+    <div class="stat__label">Visits logged</div>
+    <div class="stat__value">{{ visits_month }}</div>
+    {% if visits_trend == "up" %}<div class="stat__meta stat__meta--up">▲ {{ visits_delta }}% vs. {{ prev_month_name }}</div>
+    {% elif visits_trend == "down" %}<div class="stat__meta stat__meta--down">▼ {{ visits_delta }}% vs. {{ prev_month_name }}</div>
+    {% elif visits_trend == "flat" %}<div class="stat__meta t-secondary">level with {{ prev_month_name }}</div>
+    {% else %}<div class="stat__meta t-secondary">no visits in {{ prev_month_name }}</div>{% endif %}
+  </div></div>
+  <div class="card"><div class="stat">
+    <div class="stat__label">Approved, not logged</div>
+    <div class="stat__value">{{ approved_not_logged }}</div>
+    {% if approved_not_logged %}<div class="stat__meta t-secondary">action needed</div>
+    {% else %}<div class="stat__meta t-secondary">all caught up</div>{% endif %}
+  </div></div>
+  <div class="card"><div class="stat">
+    <div class="stat__label">Plans pending HR</div>
+    <div class="stat__value">{{ pending_count }}</div>
+    {% if pending_count %}<div class="stat__meta stat__meta--down">▼ awaiting review</div>
+    {% else %}<div class="stat__meta t-secondary">none pending</div>{% endif %}
+  </div></div>
+</div>
 
-        <!-- Legend -->
-        <div style="display:flex; gap:14px; flex-wrap:wrap; margin-bottom:14px; font-size:0.8rem; color:#555;">
-            <span><span class="badge badge-green">Added</span> &nbsp;Coverage recorded</span>
-            <span><span class="badge badge-blue">Approved</span> &nbsp;Plan approved — click to add</span>
-            <span><span class="badge badge-amber">Pending</span> &nbsp;Awaiting HR approval</span>
-        </div>
-
-        <div class="cal-grid">
-            {% for day_name in day_names %}
-                <div class="cal-day-name">{{ day_name }}</div>
-            {% endfor %}
-
-            {% for week in calendar %}
-                {% for day in week %}
-                    <div class="cal-cell {% if day %}cal-cell-active{% endif %}">
-                        {% if day %}
-                            {% with count=days_with_entries|get_item:day %}
-                            {% if count %}
-                                <span class="cal-day-num cal-day-num-grey">{{ day }}</span>
-                                <div style="margin-top:4px;">
-                                    <a href="{% url 'daily_coverage_list' %}?date={{ year }}-{{ month|stringformat:'02d' }}-{{ day|stringformat:'02d' }}"
-                                       style="text-decoration:none;">
-                                        <span class="badge badge-green">Added ({{ count }})</span>
-                                    </a>
-                                </div>
-                            {% elif day in days_approved %}
-                                <a href="{% url 'add_daily_coverage' %}?date={{ year }}-{{ month|stringformat:'02d' }}-{{ day|stringformat:'02d' }}"
-                                   style="text-decoration:none; color:inherit; display:block;">
-                                    <span class="cal-day-num">{{ day }}</span>
-                                </a>
-                                <div style="margin-top:4px;">
-                                    <span class="badge badge-blue">Plan Approved</span>
-                                </div>
-                            {% elif day in days_pending %}
-                                <span class="cal-day-num cal-day-num-grey">{{ day }}</span>
-                                <div style="margin-top:4px;">
-                                    <span class="badge badge-amber">Plan Pending</span>
-                                </div>
-                            {% else %}
-                                <span class="cal-day-num cal-day-num-muted">{{ day }}</span>
-                            {% endif %}
-                            {% endwith %}
-                        {% endif %}
-                    </div>
-                {% endfor %}
-            {% endfor %}
-        </div>
+<!-- Calendar -->
+<div class="cal">
+  <div class="cal__bar">
+    <a class="btn btn--secondary btn--icon btn--sm" href="{% url 'daily_coverage_calendar_month' year=prev_year month=prev_month %}" aria-label="Previous month"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></a>
+    <div class="cal__month">{{ month_name }} {{ year }}</div>
+    <div class="cal__nav">
+      <a class="btn btn--secondary btn--sm" href="{% url 'daily_coverage_calendar' %}">Today</a>
+      <a class="btn btn--secondary btn--icon btn--sm" href="{% url 'daily_coverage_calendar_month' year=next_year month=next_month %}" aria-label="Next month"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></a>
     </div>
+    <div class="cal__legend">
+      <span class="lg"><span class="sw sw--added"></span>Coverage logged</span>
+      <span class="lg"><span class="sw sw--approved"></span>Plan approved</span>
+      <span class="lg"><span class="sw sw--pending"></span>Plan pending</span>
+    </div>
+  </div>
+
+  <div class="cal-scroll">
+  <div class="cal__grid">
+    {% for day_name in day_names %}<div class="cal__dow">{{ day_name }}</div>{% endfor %}
+
+    {% for week in weeks %}{% for cell in week %}
+    {% if not cell.in_month %}
+    <div class="cal__cell cal__cell--muted"><span class="cal__date">{{ cell.date.day }}</span></div>
+    {% elif cell.state == "added" %}
+    <div class="cal__cell cal__cell--added cal__cell--approved{% if cell.is_today %} cal__cell--today{% endif %}">
+      <span class="cal__date">{{ cell.date.day }}</span>
+      <a class="cal-tag cal-tag--added" href="{% url 'daily_coverage_list' %}?date={{ cell.date|date:'Y-m-d' }}" style="text-decoration:none"><span class="dot"></span>Added ({{ cell.count }})</a>
+    </div>
+    {% elif cell.state == "approved" %}
+    <a class="cal__cell cal__cell--approved{% if cell.is_today %} cal__cell--today{% endif %}" href="{% url 'add_daily_coverage' %}?date={{ cell.date|date:'Y-m-d' }}" style="text-decoration:none">
+      <span class="cal__date">{{ cell.date.day }}</span>
+      <span class="cal-tag cal-tag--approved"><span class="dot"></span>Approved</span>
+      {% if cell.is_today %}<span class="cal-note">{{ cell.area }} · tap to log</span>{% endif %}
+    </a>
+    {% elif cell.state == "pending" %}
+    <div class="cal__cell{% if cell.is_today %} cal__cell--today{% endif %}">
+      <span class="cal__date">{{ cell.date.day }}</span>
+      <span class="cal-tag cal-tag--pending"><span class="dot"></span>Pending</span>
+    </div>
+    {% else %}
+    <div class="cal__cell{% if cell.is_today %} cal__cell--today{% endif %}"><span class="cal__date">{{ cell.date.day }}</span></div>
+    {% endif %}
+    {% endfor %}{% endfor %}
+  </div>
+  </div>
 </div>
 {% endblock %}

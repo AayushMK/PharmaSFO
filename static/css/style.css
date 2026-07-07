@@ -110,16 +110,17 @@ body {
 
 .btn:hover { background: #1557b0; }
 
-.btn-sm {
+/* Compound selectors: must out-rank Lumo's `.btn` base (components.css loads later) */
+.btn.btn-sm {
     padding: 4px 12px;
     font-size: 0.82rem;
 }
 
-.btn-danger { background: #c0392b; }
-.btn-danger:hover { background: #a93226; }
+.btn.btn-danger { background: #c0392b; color: #fff; border-color: #c0392b; }
+.btn.btn-danger:hover { background: #a93226; }
 
-.btn-green { background: #217346; }
-.btn-green:hover { background: #1a5c38; }
+.btn.btn-green { background: #217346; color: #fff; border-color: #217346; }
+.btn.btn-green:hover { background: #1a5c38; }
 
 /* ── Filter row ────────────────────────────────────────────────────────── */
 .filter-row {
@@ -208,9 +209,10 @@ table tr:hover { background: #f8f9fa; }
     font-size: 0.9rem;
 }
 
-.alert-error   { background: #fdecea; border: 1px solid #f5c6cb; color: #c0392b; }
-.alert-success { background: #e8f5e9; border: 1px solid #a5d6a7; color: #2e7d32; }
-.alert-info    { background: #e3f2fd; border: 1px solid #90caf9; color: #1565c0; }
+/* Compound selectors: must out-rank Lumo's `.alert` base (components.css loads later) */
+.alert.alert-error   { background: #fdecea; border: 1px solid #f5c6cb; color: #c0392b; }
+.alert.alert-success { background: #e8f5e9; border: 1px solid #a5d6a7; color: #2e7d32; }
+.alert.alert-info    { background: #e3f2fd; border: 1px solid #90caf9; color: #1565c0; }
 
 /* ── Pagination ────────────────────────────────────────────────────────── */
 .pagination {

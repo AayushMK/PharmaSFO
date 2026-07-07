@@ -6,7 +6,6 @@ from datetime import datetime
 import openpyxl
 from openpyxl.styles import Alignment, Font, PatternFill
 
-from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, render
@@ -15,8 +14,6 @@ from django.views.decorators.cache import never_cache
 from daily_coverage.models import ChemistCoverage, DailyCoverage, StockistCoverage
 from doctor_employee_relation.models import DoctorEmployeeRelation
 from tour_plans.models import TourPlan
-
-User = get_user_model()
 
 SUPER_CORE_MAX = 25
 CORE_MAX = 75
@@ -29,16 +26,22 @@ MONTH_ABBR = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
 
 
 def _get_employee(request):
-    is_staff = request.user.is_staff
-    employee_id = request.GET.get("employee_id")
-    if is_staff and employee_id:
-        employee = get_object_or_404(User, pk=employee_id)
-    else:
-        employee = request.user
-    all_employees = (
-        User.objects.order_by("first_name", "last_name", "username") if is_staff else []
-    )
-    return employee, all_employees, (int(employee_id) if employee_id else None), is_staff
+    """Resolve which employee's report to show.
+
+    Visibility follows the position hierarchy (users.User.TYPE_RANK): a user
+    sees their own reports plus those of anyone at a strictly lower position;
+    superusers see everyone. Requesting anyone outside that set 404s.
+    """
+    viewer = request.user
+    viewable = viewer.viewable_report_users()
+    try:
+        employee_id = int(request.GET.get("employee_id") or "")
+    except ValueError:
+        employee_id = None
+    employee = get_object_or_404(viewable, pk=employee_id) if employee_id else viewer
+    can_view_others = viewable.exclude(pk=viewer.pk).exists()
+    all_employees = viewable if can_view_others else []
+    return employee, all_employees, employee_id, can_view_others
 
 
 def _doctor_category(msl):
@@ -102,7 +105,7 @@ def _build_yearly_rows(employee, year):
 @login_required
 @never_cache
 def daily_activity_report(request):
-    employee, all_employees, selected_employee_id, is_staff = _get_employee(request)
+    employee, all_employees, selected_employee_id, can_view_others = _get_employee(request)
     date_str = request.GET.get("date", "")
 
     report_date = None
@@ -169,7 +172,7 @@ def daily_activity_report(request):
         "worked_areas": worked_areas,
         "chemist_coverages": chemist_coverages,
         "stockist_coverages": stockist_coverages,
-        "is_staff": is_staff,
+        "can_view_others": can_view_others,
     })
 
 
@@ -178,7 +181,7 @@ def daily_activity_report(request):
 @login_required
 @never_cache
 def monthly_activity_report(request):
-    employee, all_employees, selected_employee_id, is_staff = _get_employee(request)
+    employee, all_employees, selected_employee_id, can_view_others = _get_employee(request)
     month_str = request.GET.get("month", "")
 
     year = month = None
@@ -263,7 +266,7 @@ def monthly_activity_report(request):
         "employee":            employee,
         "all_employees":       all_employees,
         "selected_employee_id": selected_employee_id,
-        "is_staff":            is_staff,
+        "can_view_others":     can_view_others,
         "chart_data":          chart_data,
         "total_super_core":    total_super_core,
         "total_core":          total_core,
@@ -283,7 +286,7 @@ def _year_choices():
 @login_required
 @never_cache
 def yearly_activity_report(request):
-    employee, all_employees, selected_employee_id, is_staff = _get_employee(request)
+    employee, all_employees, selected_employee_id, can_view_others = _get_employee(request)
     year_str = request.GET.get("year", str(datetime.today().year))
     try:
         year = int(year_str)
@@ -298,7 +301,7 @@ def yearly_activity_report(request):
         "employee":            employee,
         "all_employees":       all_employees,
         "selected_employee_id": selected_employee_id,
-        "is_staff":            is_staff,
+        "can_view_others":     can_view_others,
         "rows":                rows,
         "month_abbr":          MONTH_ABBR,
     })
@@ -373,7 +376,7 @@ def yearly_activity_report_excel(request):
 @login_required
 @never_cache
 def monthly_target_report(request):
-    employee, all_employees, selected_employee_id, is_staff = _get_employee(request)
+    employee, all_employees, selected_employee_id, can_view_others = _get_employee(request)
     month_str = request.GET.get("month", "")
 
     year = month = None
@@ -436,6 +439,6 @@ def monthly_target_report(request):
         "employee":            employee,
         "all_employees":       all_employees,
         "selected_employee_id": selected_employee_id,
-        "is_staff":            is_staff,
+        "can_view_others":     can_view_others,
         "rows":                rows,
     })

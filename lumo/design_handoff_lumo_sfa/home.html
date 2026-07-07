@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lumo SFA — Home</title>
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="components.css">
+</head>
+<body>
+
+<div class="app" id="app">
+  <div class="scrim"></div>
+
+  <!-- ==================== SIDEBAR ==================== -->
+  <aside class="sidebar">
+    <div class="sidebar__brand">
+      <span class="brand-mark">L</span>
+      <span class="brand-name">Lumo <span>SFA</span></span>
+    </div>
+
+    <nav class="sidebar__nav">
+      <!-- My Work -->
+      <div class="nav-group" data-collapsible>
+        <button class="nav-group__header" data-toggle="collapse" aria-expanded="true">My Work
+          <svg class="nav-group__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="nav-group__items"><div>
+          <a class="nav-item is-active" href="#">
+            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="1.5"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>
+            <span class="nav-item__label">Calendar</span>
+          </a>
+          <a class="nav-item" href="#">
+            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+            <span class="nav-item__label">Coverage records</span>
+          </a>
+          <a class="nav-item" href="#">
+            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+            <span class="nav-item__label">Tour plans</span>
+          </a>
+        </div></div>
+      </div>
+
+      <!-- Directory -->
+      <div class="nav-group" data-collapsible>
+        <button class="nav-group__header" data-toggle="collapse" aria-expanded="true">Directory
+          <svg class="nav-group__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="nav-group__items"><div>
+          <a class="nav-item" href="#">
+            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <span class="nav-item__label">Doctors</span>
+          </a>
+          <a class="nav-item" href="#">
+            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M2 7h20M2 17h20"/></svg>
+            <span class="nav-item__label">My assignments</span>
+          </a>
+        </div></div>
+      </div>
+
+      <!-- Reports -->
+      <div class="nav-group" data-collapsible>
+        <button class="nav-group__header" data-toggle="collapse" aria-expanded="true">Reports
+          <svg class="nav-group__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="nav-group__items"><div>
+          <a class="nav-item" href="#">
+            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/></svg>
+            <span class="nav-item__label">Monthly activity</span>
+          </a>
+          <a class="nav-item" href="#">
+            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+            <span class="nav-item__label">Monthly target</span>
+          </a>
+          <a class="nav-item" href="#">
+            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg>
+            <span class="nav-item__label">Yearly activity</span>
+          </a>
+        </div></div>
+      </div>
+
+      <!-- HR Actions (collapsed by default) -->
+      <div class="nav-group is-collapsed" data-collapsible>
+        <button class="nav-group__header" data-toggle="collapse" aria-expanded="false">HR Actions
+          <svg class="nav-group__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="nav-group__items"><div>
+          <a class="nav-item" href="#">
+            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+            <span class="nav-item__label">Review requests</span>
+            <span class="badge badge--danger badge--count">6</span>
+          </a>
+          <a class="nav-item" href="#">
+            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="1.5"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>
+            <span class="nav-item__label">Review tour plans</span>
+            <span class="badge badge--warning badge--count">3</span>
+          </a>
+        </div></div>
+      </div>
+    </nav>
+
+    <div class="sidebar__footer">
+      <div class="user-chip">
+        <span class="avatar">RG</span>
+        <div class="user-chip__meta">
+          <div class="user-chip__name">Rajan Gurung</div>
+          <div class="user-chip__role">Medical Representative</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ==================== MAIN ==================== -->
+  <div class="main">
+    <header class="topbar">
+      <button class="btn btn--ghost btn--icon topbar__menu" data-nav-toggle aria-label="Menu">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+      <div class="breadcrumb"><span>Home</span><span class="sep">/</span><span class="current">Today</span></div>
+      <div class="topbar__spacer"></div>
+      <label class="topbar__search">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>
+        <input placeholder="Search doctors, areas…">
+      </label>
+      <a class="btn btn--ghost btn--sm" href="index.html">Design system</a>
+      <button class="btn btn--ghost btn--icon" aria-label="Notifications">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+      </button>
+    </header>
+
+    <main class="page">
+      <div class="page__inner">
+
+        <div class="page-header">
+          <div>
+            <div class="t-eyebrow">Thursday · 2 July 2026 · Lalitpur</div>
+            <h1 class="page-title" style="margin-top:var(--space-2)">Good morning, Rajan</h1>
+            <p class="page-sub">Your tour plan for today is approved — you're clear to log coverage.</p>
+          </div>
+          <div class="page-actions">
+            <button class="btn btn--secondary">View calendar</button>
+            <button class="btn btn--primary" data-open-modal="#logModal">
+              <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+              Log visit
+            </button>
+          </div>
+        </div>
+
+        <!-- Alert -->
+        <div class="alert alert--success" style="margin-bottom:var(--space-8)">
+          <svg class="alert__icon ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.5 2.5 4.5-5"/></svg>
+          <div class="alert__body"><div class="alert__title">Tour plan approved for today</div><div class="alert__text">Working area: Lalitpur · Companion: R. Gurung. Coverage you log will count toward your monthly targets.</div></div>
+        </div>
+
+        <!-- Stats -->
+        <div class="grid grid--stats" style="margin-bottom:var(--space-8)">
+          <div class="card"><div class="stat"><div class="stat__label">Visits this month</div><div class="stat__value">128</div><div class="stat__meta stat__meta--up">▲ 14% vs. June</div></div></div>
+          <div class="card"><div class="stat"><div class="stat__label">Super Core covered</div><div class="stat__value">18/22</div><div class="stat__meta t-secondary">4 doctors remaining</div></div></div>
+          <div class="card"><div class="stat"><div class="stat__label">Target attainment</div><div class="stat__value">82%</div><div class="stat__meta stat__meta--up">▲ on track</div></div></div>
+          <div class="card"><div class="stat"><div class="stat__label">Pending approvals</div><div class="stat__value">6</div><div class="stat__meta stat__meta--down">▼ awaiting HR</div></div></div>
+        </div>
+
+        <div class="grid grid--2" style="align-items:start">
+          <!-- Today's coverage table -->
+          <div class="card">
+            <div class="card__header">
+              <span class="card__title">Today's coverage</span>
+              <button class="btn btn--ghost btn--sm">View all</button>
+            </div>
+            <div class="table-wrap" style="border:none;border-radius:0">
+              <table class="table">
+                <thead><tr><th>Doctor</th><th>Time</th><th class="col-actions">Status</th></tr></thead>
+                <tbody>
+                  <tr><td><div class="cell-strong">Dr. Anjali Sharma</div><div class="cell-sub">Cardiology · Super Core</div></td><td class="t-mono t-secondary">09:40</td><td class="col-actions"><span class="badge badge--success"><span class="dot"></span>Logged</span></td></tr>
+                  <tr><td><div class="cell-strong">Dr. Bimal Thapa</div><div class="cell-sub">Orthopedics · Core</div></td><td class="t-mono t-secondary">10:15</td><td class="col-actions"><span class="badge badge--success"><span class="dot"></span>Logged</span></td></tr>
+                  <tr><td><div class="cell-strong">Dr. Chanda Rai</div><div class="cell-sub">Pediatrics · VIP</div></td><td class="t-mono t-secondary">—</td><td class="col-actions"><span class="badge badge--warning"><span class="dot"></span>Planned</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="card__footer"><button class="btn btn--primary btn--sm" data-open-modal="#logModal">Add another visit</button></div>
+          </div>
+
+          <!-- Right column -->
+          <div class="stack">
+            <div class="card">
+              <div class="card__header"><span class="card__title">Monthly target</span><span class="badge badge--primary">July</span></div>
+              <div class="card__body">
+                <div class="stack stack--sm">
+                  <div class="row row--between"><span class="row"><span class="badge badge--primary">Super Core</span></span><strong>18 / 22</strong></div>
+                  <hr class="divider">
+                  <div class="row row--between"><span class="row"><span class="badge badge--neutral">Core</span></span><strong>41 / 48</strong></div>
+                  <hr class="divider">
+                  <div class="row row--between"><span class="row"><span class="badge badge--neutral">VIP</span></span><strong>12 / 15</strong></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card__body">
+                <div class="empty" style="padding:var(--space-6) var(--space-4)">
+                  <div class="empty__glyph"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>
+                  <div class="empty__title">No tour plans for next week</div>
+                  <div class="empty__text">Submit a plan so HR can approve your working days ahead of time.</div>
+                  <div class="empty__actions"><button class="btn btn--secondary btn--sm">Add tour plan</button></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- Log visit modal -->
+<div class="modal-overlay" id="logModal" hidden>
+  <div class="modal modal--wide" role="dialog" aria-modal="true" aria-labelledby="lmTitle">
+    <div class="modal__header">
+      <div><div class="modal__title" id="lmTitle">Log doctor visit</div><div class="modal__subtitle">Lalitpur · 2 July 2026</div></div>
+      <button class="btn btn--ghost btn--icon btn--sm" data-close-modal aria-label="Close">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+    <div class="modal__body">
+      <div class="spec__grid grid--2" style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4)">
+        <div class="field" style="grid-column:1/-1">
+          <label class="label" for="lm1">Doctor <span class="req">*</span></label>
+          <select class="select" id="lm1"><option>Dr. Chanda Rai — Pediatrics</option><option>Dr. Anjali Sharma — Cardiology</option></select>
+        </div>
+        <div class="field">
+          <label class="label" for="lm2">Call time <span class="req">*</span></label>
+          <input class="input" id="lm2" type="time" value="11:30">
+        </div>
+        <div class="field">
+          <label class="label" for="lm3">Working place <span class="req">*</span></label>
+          <select class="select" id="lm3"><option>Lalitpur</option></select>
+        </div>
+        <div class="field" style="grid-column:1/-1">
+          <label class="label" for="lm4">Products discussed</label>
+          <input class="input" id="lm4" placeholder="e.g. Amoxicillin 500, samples left">
+        </div>
+        <div class="field" style="grid-column:1/-1">
+          <label class="label" for="lm5">Remarks</label>
+          <textarea class="textarea" id="lm5" placeholder="Follow-up notes…"></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn--secondary" data-close-modal>Cancel</button>
+      <button class="btn btn--primary" data-close-modal data-toast="success" data-toast-title="Visit logged" data-toast-text="Dr. Chanda Rai added to today's coverage.">Save visit</button>
+    </div>
+  </div>
+</div>
+
+<script src="lumo.js" defer></script>
+</body>
+</html>

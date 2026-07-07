@@ -1,0 +1,126 @@
+/* ==========================================================================
+   Lumo SFA — Design Tokens
+   Single source of truth. Drop into a Django template head:
+     <link rel="stylesheet" href="{% static 'lumo/tokens.css' %}">
+   All values are CSS custom properties. Change here → propagates everywhere.
+   ========================================================================== */
+
+:root {
+  /* ----------------------------------------------------------------------
+     PALETTE
+     One neutral gray scale (6 steps). One primary (actions/links only).
+     One success / warning / danger. No color used decoratively.
+     Colors authored in a clinical, low-chroma register (trustworthy, not loud).
+     ---------------------------------------------------------------------- */
+
+  /* Neutral gray scale — the workhorse. Structure comes from these. */
+  --gray-50:  #f7f8fa;   /* app background, zebra rows, disabled fills      */
+  --gray-100: #eef0f3;   /* subtle fills, hover on ghost, header bands      */
+  --gray-200: #dee2e8;   /* hairlines, borders, dividers, input outlines    */
+  --gray-400: #9aa2ae;   /* placeholders, disabled text, decorative icons   */
+  --gray-600: #58616e;   /* secondary text, labels, captions                */
+  --gray-900: #1b2027;   /* primary text, headings                          */
+
+  /* Primary — used sparingly: primary actions, links, active nav, focus */
+  --primary:        #1e64d6;
+  --primary-hover:  #1a55b8;
+  --primary-active: #14468f;
+  --primary-tint:   #eaf2fd;   /* selected rows, active-nav wash            */
+  --primary-border: #cfe0fa;   /* border for tinted primary surfaces        */
+
+  /* Success */
+  --success:        #1a875a;
+  --success-tint:   #e7f4ee;
+  --success-border: #bfe3d1;
+
+  /* Warning (amber) */
+  --warning:        #b3730c;
+  --warning-tint:   #fbf1e0;
+  --warning-border: #f0d9ac;
+
+  /* Danger */
+  --danger:         #c23934;
+  --danger-hover:   #a72e2a;
+  --danger-tint:    #fbeceb;
+  --danger-border:  #f2c9c7;
+
+  /* Surfaces */
+  --surface:        #ffffff;   /* cards, inputs, sheets                     */
+  --surface-sunken: var(--gray-50);
+  --border:         var(--gray-200);
+  --border-strong:  #c9cfd8;   /* emphasised dividers, table outer frame    */
+
+  /* Text roles (semantic aliases over the gray scale) */
+  --text:           var(--gray-900);
+  --text-secondary: var(--gray-600);
+  --text-muted:     var(--gray-400);
+  --text-on-primary:#ffffff;
+  --link:           var(--primary);
+
+  /* ----------------------------------------------------------------------
+     SPACING — 4px base scale. Use the ramp, don't invent in-between values.
+     ---------------------------------------------------------------------- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+
+  /* ----------------------------------------------------------------------
+     RADIUS — small and consistent. Never pill-shaped.
+     ---------------------------------------------------------------------- */
+  --radius: 4px;
+  --radius-sm: 3px;   /* nested chips inside a 4px container                */
+
+  /* ----------------------------------------------------------------------
+     TYPOGRAPHY
+     One clean sans (system stack — zero dependencies, renders crisp on any
+     platform). Hierarchy from size + weight, never from color.
+     ---------------------------------------------------------------------- */
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue",
+               Arial, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Roboto Mono", Menlo, Consolas, monospace;
+
+  /* Type scale (14px base — right density for data-dense enterprise UI) */
+  --text-xs:   11px;   /* micro-labels, table sublabels, badge text         */
+  --text-sm:   12px;   /* captions, helper text, metadata                   */
+  --text-base: 14px;   /* body, inputs, table cells, buttons                */
+  --text-md:   15px;   /* emphasised body, card titles                      */
+  --text-lg:   18px;   /* section headings                                  */
+  --text-xl:   22px;   /* page titles                                       */
+  --text-2xl:  28px;   /* screen titles                                     */
+  --text-3xl:  34px;   /* display / hero                                    */
+
+  --weight-regular: 400;
+  --weight-medium:  500;
+  --weight-semibold:600;
+  --weight-bold:    700;
+
+  --leading-tight:  1.25;   /* headings                                     */
+  --leading-normal: 1.5;    /* body — generous line-height                  */
+  --leading-relaxed:1.65;   /* long-form paragraphs                         */
+
+  --tracking-label: 0.04em; /* uppercase micro-labels                       */
+
+  /* ----------------------------------------------------------------------
+     ELEVATION
+     Flat by default. Exactly one subtle shadow for elevated cards.
+     Modals float over a scrim, so they get a deeper cast of the same shadow.
+     Nothing else casts a shadow.
+     ---------------------------------------------------------------------- */
+  --shadow-card:  0 1px 2px rgba(20, 26, 35, 0.06), 0 1px 3px rgba(20, 26, 35, 0.04);
+  --shadow-modal: 0 12px 32px rgba(20, 26, 35, 0.18);
+
+  /* Focus ring — always the primary, never removed */
+  --ring: 0 0 0 3px rgba(30, 100, 214, 0.28);
+  --ring-danger: 0 0 0 3px rgba(194, 57, 52, 0.24);
+
+  /* Layout constants */
+  --sidebar-width: 244px;
+  --topbar-height: 56px;
+  --control-height: 36px;      /* buttons, inputs — comfortable tap on mobile */
+  --control-height-sm: 30px;
+  --content-max: 1180px;
+}

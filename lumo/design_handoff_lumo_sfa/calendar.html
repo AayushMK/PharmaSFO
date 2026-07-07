@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lumo SFA — Coverage Calendar</title>
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="components.css">
+</head>
+<body>
+
+<div class="app" id="app">
+  <div class="scrim"></div>
+
+  <!-- ==================== SIDEBAR ==================== -->
+  <aside class="sidebar">
+    <div class="sidebar__brand">
+      <span class="brand-mark">L</span>
+      <span class="brand-name">Lumo <span>SFA</span></span>
+    </div>
+    <nav class="sidebar__nav">
+      <div class="nav-group" data-collapsible>
+        <button class="nav-group__header" data-toggle="collapse" aria-expanded="true">My Work
+          <svg class="nav-group__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="nav-group__items"><div>
+          <a class="nav-item is-active" href="calendar.html"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="1.5"/><path d="M3 9h18M8 2v4M16 2v4"/></svg><span class="nav-item__label">Calendar</span></a>
+          <a class="nav-item" href="#"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg><span class="nav-item__label">Coverage records</span></a>
+          <a class="nav-item" href="#"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><span class="nav-item__label">Tour plans</span></a>
+        </div></div>
+      </div>
+      <div class="nav-group" data-collapsible>
+        <button class="nav-group__header" data-toggle="collapse" aria-expanded="true">Directory
+          <svg class="nav-group__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="nav-group__items"><div>
+          <a class="nav-item" href="#"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span class="nav-item__label">Doctors</span></a>
+          <a class="nav-item" href="#"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M2 7h20M2 17h20"/></svg><span class="nav-item__label">My assignments</span></a>
+        </div></div>
+      </div>
+      <div class="nav-group" data-collapsible>
+        <button class="nav-group__header" data-toggle="collapse" aria-expanded="true">Reports
+          <svg class="nav-group__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="nav-group__items"><div>
+          <a class="nav-item" href="#"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/></svg><span class="nav-item__label">Monthly activity</span></a>
+          <a class="nav-item" href="#"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span class="nav-item__label">Monthly target</span></a>
+          <a class="nav-item" href="#"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg><span class="nav-item__label">Yearly activity</span></a>
+        </div></div>
+      </div>
+      <div class="nav-group is-collapsed" data-collapsible>
+        <button class="nav-group__header" data-toggle="collapse" aria-expanded="false">HR Actions
+          <svg class="nav-group__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="nav-group__items"><div>
+          <a class="nav-item" href="#"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><span class="nav-item__label">Review requests</span><span class="badge badge--danger badge--count">6</span></a>
+          <a class="nav-item" href="#"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="1.5"/><path d="M3 9h18M8 2v4M16 2v4"/></svg><span class="nav-item__label">Review tour plans</span><span class="badge badge--warning badge--count">3</span></a>
+        </div></div>
+      </div>
+    </nav>
+    <div class="sidebar__footer">
+      <div class="user-chip">
+        <span class="avatar">RG</span>
+        <div class="user-chip__meta"><div class="user-chip__name">Rajan Gurung</div><div class="user-chip__role">Medical Representative</div></div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ==================== MAIN ==================== -->
+  <div class="main">
+    <header class="topbar">
+      <button class="btn btn--ghost btn--icon topbar__menu" data-nav-toggle aria-label="Menu"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+      <div class="breadcrumb"><span>My Work</span><span class="sep">/</span><span class="current">Calendar</span></div>
+      <div class="topbar__spacer"></div>
+      <label class="topbar__search"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg><input placeholder="Search doctors, areas…"></label>
+      <a class="btn btn--ghost btn--sm" href="index.html">Design system</a>
+    </header>
+
+    <main class="page">
+      <div class="page__inner">
+
+        <div class="page-header">
+          <div>
+            <div class="t-eyebrow">Daily coverage</div>
+            <h1 class="page-title" style="margin-top:var(--space-2)">Coverage calendar</h1>
+            <p class="page-sub">Log visits only on days with an HR-approved tour plan. Approved days are clickable.</p>
+          </div>
+          <div class="page-actions">
+            <button class="btn btn--secondary">Add tour plan</button>
+            <button class="btn btn--primary" data-open-modal="#logModal"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Log visit</button>
+          </div>
+        </div>
+
+        <!-- Month summary strip -->
+        <div class="grid grid--stats" style="margin-bottom:var(--space-8)">
+          <div class="card"><div class="stat"><div class="stat__label">Days covered</div><div class="stat__value">9</div><div class="stat__meta t-secondary">of 22 working days</div></div></div>
+          <div class="card"><div class="stat"><div class="stat__label">Visits logged</div><div class="stat__value">128</div><div class="stat__meta stat__meta--up">▲ 14% vs. June</div></div></div>
+          <div class="card"><div class="stat"><div class="stat__label">Approved, not logged</div><div class="stat__value">4</div><div class="stat__meta t-secondary">action needed</div></div></div>
+          <div class="card"><div class="stat"><div class="stat__label">Plans pending HR</div><div class="stat__value">3</div><div class="stat__meta stat__meta--down">▼ awaiting review</div></div></div>
+        </div>
+
+        <!-- Calendar -->
+        <div class="cal">
+          <div class="cal__bar">
+            <button class="btn btn--secondary btn--icon btn--sm" aria-label="Previous month"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button>
+            <div class="cal__month">July 2026</div>
+            <div class="cal__nav">
+              <button class="btn btn--secondary btn--sm">Today</button>
+              <button class="btn btn--secondary btn--icon btn--sm" aria-label="Next month"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
+            </div>
+            <div class="cal__legend">
+              <span class="lg"><span class="sw sw--added"></span>Coverage logged</span>
+              <span class="lg"><span class="sw sw--approved"></span>Plan approved</span>
+              <span class="lg"><span class="sw sw--pending"></span>Plan pending</span>
+            </div>
+          </div>
+
+          <div class="cal-scroll">
+          <div class="cal__grid">
+            <div class="cal__dow">Mon</div><div class="cal__dow">Tue</div><div class="cal__dow">Wed</div><div class="cal__dow">Thu</div><div class="cal__dow">Fri</div><div class="cal__dow">Sat</div><div class="cal__dow">Sun</div>
+
+            <!-- Week 1 -->
+            <div class="cal__cell cal__cell--muted"><span class="cal__date">29</span></div>
+            <div class="cal__cell cal__cell--muted"><span class="cal__date">30</span></div>
+            <div class="cal__cell cal__cell--added cal__cell--approved"><span class="cal__date">1</span><span class="cal-tag cal-tag--added"><span class="dot"></span>Added (4)</span></div>
+            <div class="cal__cell cal__cell--today cal__cell--approved"><span class="cal__date">2</span><span class="cal-tag cal-tag--approved"><span class="dot"></span>Approved</span><span class="cal-note">Lalitpur · tap to log</span></div>
+            <div class="cal__cell cal__cell--approved"><span class="cal__date">3</span><span class="cal-tag cal-tag--approved"><span class="dot"></span>Approved</span></div>
+            <div class="cal__cell"><span class="cal__date">4</span></div>
+            <div class="cal__cell"><span class="cal__date">5</span></div>
+
+            <!-- Week 2 -->
+            <div class="cal__cell cal__cell--added cal__cell--approved"><span class="cal__date">6</span><span class="cal-tag cal-tag--added"><span class="dot"></span>Added (3)</span></div>
+            <div class="cal__cell cal__cell--added cal__cell--approved"><span class="cal__date">7</span><span class="cal-tag cal-tag--added"><span class="dot"></span>Added (2)</span></div>
+            <div class="cal__cell cal__cell--approved"><span class="cal__date">8</span><span class="cal-tag cal-tag--approved"><span class="dot"></span>Approved</span></div>
+            <div class="cal__cell cal__cell--approved"><span class="cal__date">9</span><span class="cal-tag cal-tag--approved"><span class="dot"></span>Approved</span></div>
+            <div class="cal__cell"><span class="cal__date">10</span><span class="cal-tag cal-tag--pending"><span class="dot"></span>Pending</span></div>
+            <div class="cal__cell"><span class="cal__date">11</span></div>
+            <div class="cal__cell"><span class="cal__date">12</span></div>
+
+            <!-- Week 3 -->
+            <div class="cal__cell cal__cell--added cal__cell--approved"><span class="cal__date">13</span><span class="cal-tag cal-tag--added"><span class="dot"></span>Added (4)</span></div>
+            <div class="cal__cell cal__cell--added cal__cell--approved"><span class="cal__date">14</span><span class="cal-tag cal-tag--added"><span class="dot"></span>Added (5)</span></div>
+            <div class="cal__cell cal__cell--added cal__cell--approved"><span class="cal__date">15</span><span class="cal-tag cal-tag--added"><span class="dot"></span>Added (1)</span></div>
+            <div class="cal__cell cal__cell--approved"><span class="cal__date">16</span><span class="cal-tag cal-tag--approved"><span class="dot"></span>Approved</span></div>
+            <div class="cal__cell"><span class="cal__date">17</span><span class="cal-tag cal-tag--pending"><span class="dot"></span>Pending</span></div>
+            <div class="cal__cell"><span class="cal__date">18</span></div>
+            <div class="cal__cell"><span class="cal__date">19</span></div>
+
+            <!-- Week 4 -->
+            <div class="cal__cell cal__cell--added cal__cell--approved"><span class="cal__date">20</span><span class="cal-tag cal-tag--added"><span class="dot"></span>Added (3)</span></div>
+            <div class="cal__cell cal__cell--approved"><span class="cal__date">21</span><span class="cal-tag cal-tag--approved"><span class="dot"></span>Approved</span></div>
+            <div class="cal__cell cal__cell--approved"><span class="cal__date">22</span><span class="cal-tag cal-tag--approved"><span class="dot"></span>Approved</span></div>
+            <div class="cal__cell"><span class="cal__date">23</span><span class="cal-tag cal-tag--pending"><span class="dot"></span>Pending</span></div>
+            <div class="cal__cell"><span class="cal__date">24</span></div>
+            <div class="cal__cell"><span class="cal__date">25</span></div>
+            <div class="cal__cell"><span class="cal__date">26</span></div>
+
+            <!-- Week 5 -->
+            <div class="cal__cell"><span class="cal__date">27</span></div>
+            <div class="cal__cell"><span class="cal__date">28</span></div>
+            <div class="cal__cell"><span class="cal__date">29</span></div>
+            <div class="cal__cell"><span class="cal__date">30</span></div>
+            <div class="cal__cell"><span class="cal__date">31</span></div>
+            <div class="cal__cell cal__cell--muted"><span class="cal__date">1</span></div>
+            <div class="cal__cell cal__cell--muted"><span class="cal__date">2</span></div>
+          </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- Log visit modal -->
+<div class="modal-overlay" id="logModal" hidden>
+  <div class="modal modal--wide" role="dialog" aria-modal="true" aria-labelledby="lmTitle">
+    <div class="modal__header">
+      <div><div class="modal__title" id="lmTitle">Log doctor visit</div><div class="modal__subtitle">Lalitpur · 2 July 2026</div></div>
+      <button class="btn btn--ghost btn--icon btn--sm" data-close-modal aria-label="Close"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+    <div class="modal__body">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4)">
+        <div class="field" style="grid-column:1/-1"><label class="label" for="lm1">Doctor <span class="req">*</span></label><select class="select" id="lm1"><option>Dr. Chanda Rai — Pediatrics</option><option>Dr. Anjali Sharma — Cardiology</option></select></div>
+        <div class="field"><label class="label" for="lm2">Call time <span class="req">*</span></label><input class="input" id="lm2" type="time" value="11:30"></div>
+        <div class="field"><label class="label" for="lm3">Working place <span class="req">*</span></label><select class="select" id="lm3"><option>Lalitpur</option></select></div>
+        <div class="field" style="grid-column:1/-1"><label class="label" for="lm4">Products discussed</label><input class="input" id="lm4" placeholder="e.g. Amoxicillin 500, samples left"></div>
+        <div class="field" style="grid-column:1/-1"><label class="label" for="lm5">Remarks</label><textarea class="textarea" id="lm5" placeholder="Follow-up notes…"></textarea></div>
+      </div>
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn--secondary" data-close-modal>Cancel</button>
+      <button class="btn btn--primary" data-close-modal data-toast="success" data-toast-title="Visit logged" data-toast-text="Dr. Chanda Rai added to 2 July coverage.">Save visit</button>
+    </div>
+  </div>
+</div>
+
+<script src="lumo.js" defer></script>
+</body>
+</html>

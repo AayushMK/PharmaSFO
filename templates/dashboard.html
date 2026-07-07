@@ -1,63 +1,184 @@
 {% extends "base.html" %}
 
 {% block title %}Dashboard - PharmaSFO{% endblock %}
+{% block legacy_css %}{% endblock %}
+
+{% block breadcrumb %}<span>Home</span><span class="sep">/</span><span class="current">Dashboard</span>{% endblock %}
 
 {% block content %}
-<div class="container">
+<div class="page-header">
+  <div>
+    <div class="t-eyebrow">{{ today|date:"l" }} · {{ today|date:"j F Y" }}{% if today_plan %} · {{ today_plan.area.name }}{% endif %}</div>
+    <h1 class="page-title" style="margin-top:var(--space-2)">{{ greeting }}, {{ user.first_name|default:user.username }}</h1>
+    <p class="page-sub">
+      {% if today_approved %}Your tour plan for today is approved — you're clear to log coverage.
+      {% elif today_plan and today_plan.status == "pending" %}Your tour plan for today is awaiting HR approval.
+      {% elif today_plan %}Your tour plan for today was rejected.
+      {% else %}No tour plan for today — submit one so HR can approve your working days.{% endif %}
+    </p>
+  </div>
+  <div class="page-actions">
+    <a class="btn btn--secondary" href="{% url 'daily_coverage_calendar' %}">View calendar</a>
+    <a class="btn btn--primary" href="{% url 'add_daily_coverage' %}{% if today_approved %}?date={{ today|date:'Y-m-d' }}{% endif %}">
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+      Log visit
+    </a>
+  </div>
+</div>
 
-    <div class="card" style="margin-bottom:24px;">
-        <h2 style="margin-bottom:4px;">Dashboard</h2>
-        <p style="color:#666;">Welcome back, <strong>{{ user.get_full_name|default:user.username }}</strong>
-            <span style="font-size:0.85rem; color:#999;">({{ user.get_type_display }})</span>
-        </p>
+<!-- Tour-plan status alert -->
+{% if today_approved %}
+<div class="alert alert--success" style="margin-bottom:var(--space-8)">
+  <svg class="alert__icon ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.5 2.5 4.5-5"/></svg>
+  <div class="alert__body">
+    <div class="alert__title">Tour plan approved for today</div>
+    <div class="alert__text">Working area: {{ today_plan.area.name }}{% if today_plan.worked_with %} · Companion: {{ today_plan.worked_with.get_full_name|default:today_plan.worked_with.username }}{% endif %}. Coverage you log will count toward your monthly targets.</div>
+  </div>
+</div>
+{% elif today_plan and today_plan.status == "pending" %}
+<div class="alert alert--warning" style="margin-bottom:var(--space-8)">
+  <svg class="alert__icon ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 16H3z"/><path d="M12 10v4M12 17h.01"/></svg>
+  <div class="alert__body">
+    <div class="alert__title">Tour plan pending HR approval</div>
+    <div class="alert__text">Your plan for {{ today_plan.area.name }} today is awaiting review — logging opens once it's approved.</div>
+  </div>
+</div>
+{% elif today_plan %}
+<div class="alert alert--danger" style="margin-bottom:var(--space-8)">
+  <svg class="alert__icon ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6M9 9l6 6"/></svg>
+  <div class="alert__body">
+    <div class="alert__title">Tour plan rejected for today</div>
+    <div class="alert__text">Your plan for {{ today_plan.area.name }} today was rejected — contact HR or submit a new plan.</div>
+  </div>
+</div>
+{% endif %}
+
+<!-- Stats -->
+<div class="grid grid--stats" style="margin-bottom:var(--space-8)">
+  <div class="card"><div class="stat">
+    <div class="stat__label">Visits this month</div>
+    <div class="stat__value">{{ visits_month }}</div>
+    {% if visits_trend == "up" %}<div class="stat__meta stat__meta--up">▲ {{ visits_delta }}% vs. {{ prev_month_name }}</div>
+    {% elif visits_trend == "down" %}<div class="stat__meta stat__meta--down">▼ {{ visits_delta }}% vs. {{ prev_month_name }}</div>
+    {% elif visits_trend == "flat" %}<div class="stat__meta t-secondary">level with {{ prev_month_name }}</div>
+    {% else %}<div class="stat__meta t-secondary">no visits in {{ prev_month_name }}</div>{% endif %}
+  </div></div>
+  <div class="card"><div class="stat">
+    <div class="stat__label">Super Core covered</div>
+    <div class="stat__value">{{ sc_covered }}/{{ sc_total }}</div>
+    {% if not sc_total %}<div class="stat__meta t-secondary">none assigned</div>
+    {% elif sc_remaining %}<div class="stat__meta t-secondary">{{ sc_remaining }} doctor{{ sc_remaining|pluralize }} remaining</div>
+    {% else %}<div class="stat__meta stat__meta--up">▲ all covered</div>{% endif %}
+  </div></div>
+  <div class="card"><div class="stat">
+    <div class="stat__label">Target attainment</div>
+    <div class="stat__value">{% if attainment is not None %}{{ attainment }}%{% else %}—{% endif %}</div>
+    {% if attainment is None %}<div class="stat__meta t-secondary">no assigned doctors</div>
+    {% elif on_track %}<div class="stat__meta stat__meta--up">▲ on track</div>
+    {% else %}<div class="stat__meta stat__meta--down">▼ behind pace</div>{% endif %}
+  </div></div>
+  <div class="card"><div class="stat">
+    <div class="stat__label">Pending approvals</div>
+    <div class="stat__value">{{ pending_approvals }}</div>
+    {% if pending_approvals %}<div class="stat__meta t-secondary">awaiting HR review</div>
+    {% else %}<div class="stat__meta stat__meta--up">▲ all clear</div>{% endif %}
+  </div></div>
+</div>
+
+<div class="grid grid--2" style="align-items:start">
+  <!-- Today's coverage table -->
+  <div class="card">
+    <div class="card__header">
+      <span class="card__title">Today's coverage</span>
+      <a class="btn btn--ghost btn--sm" href="{% url 'daily_coverage_list' %}">View all</a>
     </div>
-
-    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:20px;">
-
-        <!-- My Work -->
-        <div class="card" style="padding:0; overflow:hidden;">
-            <div style="background:#1a4f7a; color:#fff; padding:12px 18px; font-weight:700; font-size:0.95rem; letter-spacing:0.03em;">
-                My Work
-            </div>
-            <div style="padding:16px; display:flex; flex-direction:column; gap:10px;">
-                <a href="{% url 'daily_coverage_calendar' %}" class="btn" style="text-align:center;">Daily Coverage Calendar</a>
-                <a href="{% url 'daily_coverage_list' %}" class="btn" style="text-align:center;">My Coverage Records</a>
-                <a href="{% url 'tour_plans' %}" class="btn" style="text-align:center;">Tour Plans</a>
-                <a href="{% url 'doctor_employee_relation' %}" class="btn" style="text-align:center;">My Assigned Doctors</a>
-                <a href="{% url 'doctor_list' %}" class="btn" style="text-align:center;">Doctors List</a>
-            </div>
-        </div>
-
-        <!-- Reports -->
-        <div class="card" style="padding:0; overflow:hidden;">
-            <div style="background:#1a4f7a; color:#fff; padding:12px 18px; font-weight:700; font-size:0.95rem; letter-spacing:0.03em;">
-                Reports
-            </div>
-            <div style="padding:16px; display:flex; flex-direction:column; gap:10px;">
-                <a href="{% url 'daily_activity_report' %}" class="btn" style="text-align:center;">Daily Activity Report</a>
-                <a href="{% url 'monthly_activity_report' %}" class="btn" style="text-align:center;">Monthly Activity Report</a>
-                <a href="{% url 'monthly_target_report' %}" class="btn" style="text-align:center;">Monthly Target Report</a>
-                <a href="{% url 'yearly_activity_report' %}" class="btn" style="text-align:center;">Yearly Activity Report</a>
-            </div>
-        </div>
-
-        <!-- HR Actions (visible to HR staff and superusers) -->
-        {% if user.is_superuser or user.is_staff and user.type == 'HR' %}
-        <div class="card" style="padding:0; overflow:hidden;">
-            <div style="background:#7b3a2e; color:#fff; padding:12px 18px; font-weight:700; font-size:0.95rem; letter-spacing:0.03em;">
-                HR Actions
-            </div>
-            <div style="padding:16px; display:flex; flex-direction:column; gap:10px;">
-                <a href="{% url 'add_doctor' %}" class="btn" style="text-align:center;">Add Doctor</a>
-                {% if user.is_staff and user.type == 'HR' %}
-                <a href="{% url 'hr_review_requests' %}" class="btn" style="text-align:center;">Review Doctor Requests</a>
-                <a href="{% url 'hr_review_tour_plans' %}" class="btn" style="text-align:center;">Review Tour Plans</a>
-                {% endif %}
-            </div>
-        </div>
+    {% if todays_coverage %}
+    <div class="table-wrap" style="border:none;border-radius:0">
+      <table class="table">
+        <thead><tr><th>Doctor</th><th>Time</th><th class="col-actions">Status</th></tr></thead>
+        <tbody>
+          {% for cov in todays_coverage %}
+          <tr>
+            <td>
+              <div class="cell-strong">{{ cov.doctor.name }}</div>
+              <div class="cell-sub">{% if cov.doctor.specialization %}{{ cov.doctor.specialization }} · {% endif %}{{ cov.category_label }}</div>
+            </td>
+            <td class="t-mono t-secondary">{{ cov.call_time|time:"H:i" }}</td>
+            <td class="col-actions"><span class="badge badge--success"><span class="dot"></span>Logged</span></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% if today_approved %}
+    <div class="card__footer"><a class="btn btn--primary btn--sm" href="{% url 'add_daily_coverage' %}?date={{ today|date:'Y-m-d' }}">Add another visit</a></div>
+    {% endif %}
+    {% else %}
+    <div class="card__body">
+      <div class="empty" style="padding:var(--space-6) var(--space-4)">
+        <div class="empty__glyph"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="1.5"/><path d="M3 9h18M8 2v4M16 2v4"/></svg></div>
+        <div class="empty__title">No coverage logged today</div>
+        {% if today_approved %}
+        <div class="empty__text">Your plan is approved — log your first visit for {{ today_plan.area.name }}.</div>
+        <div class="empty__actions"><a class="btn btn--primary btn--sm" href="{% url 'add_daily_coverage' %}?date={{ today|date:'Y-m-d' }}">Log first visit</a></div>
+        {% elif today_plan %}
+        <div class="empty__text">Logging opens once HR approves your tour plan for today.</div>
+        {% else %}
+        <div class="empty__text">There's no approved tour plan for today, so no coverage can be logged.</div>
+        <div class="empty__actions"><a class="btn btn--secondary btn--sm" href="{% url 'add_tour_plan' %}">Add tour plan</a></div>
         {% endif %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
 
+  <!-- Right column -->
+  <div class="stack">
+    <div class="card">
+      <div class="card__header"><span class="card__title">Monthly target</span><span class="badge badge--primary">{{ today|date:"F" }}</span></div>
+      <div class="card__body">
+        {% if has_assignments %}
+        <div class="stack stack--sm">
+          {% for row in target_rows %}
+          <div class="row row--between"><span class="row"><span class="badge {{ row.badge }}">{{ row.label }}</span></span><strong>{{ row.covered }} / {{ row.total }}</strong></div>
+          {% if not forloop.last %}<hr class="divider">{% endif %}
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="t-caption">No approved doctor assignments yet — request them under “My assignments”.</p>
+        {% endif %}
+      </div>
     </div>
 
+    {% if upcoming_plans %}
+    <div class="card">
+      <div class="card__header"><span class="card__title">Upcoming tour plans</span><span class="badge badge--neutral">next 7 days</span></div>
+      <div class="card__body">
+        <div class="stack stack--sm">
+          {% for plan in upcoming_plans %}
+          <div class="row row--between">
+            <div><strong>{{ plan.plan_date|date:"D, j M" }}</strong><div class="t-caption">{{ plan.area.name }}</div></div>
+            {% if plan.status == "approved" %}<span class="badge badge--success"><span class="dot"></span>Approved</span>
+            {% elif plan.status == "pending" %}<span class="badge badge--warning"><span class="dot"></span>Pending</span>
+            {% else %}<span class="badge badge--danger"><span class="dot"></span>Rejected</span>{% endif %}
+          </div>
+          {% if not forloop.last %}<hr class="divider">{% endif %}
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    {% else %}
+    <div class="card">
+      <div class="card__body">
+        <div class="empty" style="padding:var(--space-6) var(--space-4)">
+          <div class="empty__glyph"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>
+          <div class="empty__title">No tour plans for next week</div>
+          <div class="empty__text">Submit a plan so HR can approve your working days ahead of time.</div>
+          <div class="empty__actions"><a class="btn btn--secondary btn--sm" href="{% url 'add_tour_plan' %}">Add tour plan</a></div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
 </div>
 {% endblock %}
