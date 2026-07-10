@@ -3,6 +3,7 @@ from datetime import date
 
 import json
 
+from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
@@ -61,6 +62,7 @@ def add_tour_plan(request):
         form = TourPlanBulkForm(request.POST)
         if form.is_valid():
             entries = form.cleaned_data.get("entries") or []
+            created = 0
             for entry in entries:
                 plan_date = entry.get("plan_date")
                 area_id = entry.get("area")
@@ -75,6 +77,14 @@ def add_tour_plan(request):
                     worked_with_id=worked_with_id,
                     remarks=remarks,
                 )
+                created += 1
+            skipped = len(entries) - created
+            if created:
+                messages.success(request, f"{created} day{'s' if created != 1 else ''} submitted for HR approval.")
+            if skipped:
+                messages.warning(request, f"{skipped} entr{'ies' if skipped != 1 else 'y'} skipped — date or area was missing.")
+            if not entries:
+                messages.error(request, "No days were submitted — add at least one day.")
             return redirect("tour_plans")
     else:
         form = TourPlanBulkForm()
@@ -148,8 +158,10 @@ def hr_review_employee_tour_plans(request, employee_id):
 
         if action == "approve":
             plan.status = TourPlan.Status.APPROVED
+            messages.success(request, f"Approved {plan.plan_date:%-d %b} in {plan.area.name} — coverage logging is now open.")
         else:
             plan.status = TourPlan.Status.REJECTED
+            messages.warning(request, f"Rejected the plan for {plan.plan_date:%-d %b} in {plan.area.name}.")
         plan.save()
         return redirect("hr_review_employee_tour_plans", employee_id=employee.id)
 

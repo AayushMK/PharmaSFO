@@ -1,0 +1,71 @@
+/* ==========================================================================
+   PharmaSFO — app-level styles on top of the Lumo design system.
+   Lumo files (static/lumo/) are verbatim copies and must not be edited;
+   anything project-specific lives here. Loaded AFTER tokens/components.css.
+   ========================================================================== */
+
+/* ---- Skip link — visible only when focused (keyboard users) -------------- */
+.skip-link {
+  position: absolute; left: var(--space-4); top: -48px; z-index: 100;
+  padding: var(--space-2) var(--space-4);
+  background: var(--surface); color: var(--text);
+  border: 1px solid var(--border-strong); border-radius: var(--radius);
+  box-shadow: var(--shadow-card); transition: top .12s ease;
+}
+.skip-link:focus { top: var(--space-4); }
+
+/* ==========================================================================
+   STACKED TABLES — `.table.table--stack` collapses each row into a labeled
+   card on small screens. Every <td> needs data-label="Column name";
+   add .stack-hide to cells that are noise on a phone (e.g. serial numbers).
+   Desktop rendering is untouched.
+   ========================================================================== */
+@media (max-width: 860px) {
+  /* Hide the header row but keep it for screen readers */
+  .table--stack thead {
+    position: absolute; width: 1px; height: 1px; overflow: hidden;
+    clip: rect(0 0 0 0); clip-path: inset(50%);
+  }
+
+  .table--stack,
+  .table--stack tbody,
+  .table--stack tr,
+  .table--stack td { display: block; width: 100%; }
+
+  /* Each row becomes a card section inside the existing .table-wrap frame */
+  .table--stack tr {
+    padding: var(--space-3) 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .table--stack tr:last-child { border-bottom: none; }
+  .table--stack tbody tr:hover { background: none; }
+
+  /* Label / value grid per cell */
+  .table--stack td {
+    display: grid;
+    grid-template-columns: 110px 1fr;
+    align-items: start;
+    justify-items: start;   /* badges/buttons keep their natural width */
+    gap: var(--space-1) var(--space-3);
+    padding: var(--space-1) var(--space-4);
+    border-bottom: none;
+    text-align: left;
+    white-space: normal;
+  }
+  /* Keep every child in the value column (labels own column 1) — otherwise a
+     second element (e.g. .cell-sub) would wrap into the label column */
+  .table--stack td > * { grid-column: 2; min-width: 0; }
+  .table--stack td::before {
+    content: attr(data-label);
+    padding-top: 2px;
+    font-size: var(--text-xs);
+    font-weight: var(--weight-semibold);
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  /* Numeric right-alignment and action right-alignment don't apply stacked */
+  .table--stack td.num { font-family: inherit; }
+  .table--stack .stack-hide { display: none; }
+}

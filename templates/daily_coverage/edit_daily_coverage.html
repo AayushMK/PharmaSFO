@@ -1,30 +1,43 @@
 {% extends "base.html" %}
 
-{% block title %}Edit Daily Coverage - PharmaSFO{% endblock %}
+{% block title %}Edit Coverage - PharmaSFO{% endblock %}
+{% block legacy_css %}{% endblock %}
 {% block breadcrumb %}<span>My Work</span><span class="sep">/</span><span>Coverage records</span><span class="sep">/</span><span class="current">Edit</span>{% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="card">
-        <h2>Edit Daily Coverage</h2>
-        <form method="post" style="max-width:480px; margin-top:16px;">
-            {% csrf_token %}
-            <div style="display:grid; gap:12px;">
-                {% for field in form %}
-                    <div>
-                        <label for="{{ field.id_for_label }}" style="display:block; margin-bottom:4px; font-weight:600;">{{ field.label }}</label>
-                        {{ field }}
-                        {% if field.errors %}
-                            <p style="color:#c0392b; font-size:0.85rem; margin-top:4px;">{{ field.errors|join:", " }}</p>
-                        {% endif %}
-                    </div>
-                {% endfor %}
-            </div>
-            <div style="margin-top:16px; display:flex; gap:8px;">
-                <button type="submit" class="btn">Save</button>
-                <a href="{% url 'daily_coverage_list' %}" class="btn">Cancel</a>
-            </div>
-        </form>
-    </div>
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Edit Coverage Record</h1>
+    <p class="page-sub">Records can only be changed within 2 days of being logged.</p>
+  </div>
+</div>
+
+{% if form.non_field_errors %}
+<div class="alert alert--danger" style="margin-bottom:var(--space-6)">
+  <svg class="alert__icon ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6M9 9l6 6"/></svg>
+  <div class="alert__body"><div class="alert__text">{{ form.non_field_errors|striptags }}</div></div>
+</div>
+{% endif %}
+
+<div class="card" style="max-width:720px">
+  <div class="card__body">
+    <form method="post" id="edit-coverage-form">
+      {% csrf_token %}
+      <div class="grid grid--2">
+        {% for field in form %}
+        <div class="field{% if field.errors %} is-error{% endif %}"{% if field.name == 'remarks' %} style="grid-column: 1 / -1;"{% endif %}>
+          <label class="label" for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %} <span class="req">*</span>{% else %} <span class="optional">(optional)</span>{% endif %}</label>
+          {{ field }}
+          {% if field.errors %}<span class="help">{{ field.errors|striptags }}</span>{% endif %}
+        </div>
+        {% endfor %}
+      </div>
+    </form>
+  </div>
+  <div class="card__footer">
+    <a href="{% url 'daily_coverage_list' %}" class="btn btn--ghost">Cancel</a>
+    <div class="spacer"></div>
+    <button type="submit" form="edit-coverage-form" class="btn btn--primary">Save changes</button>
+  </div>
 </div>
 {% endblock %}

@@ -32,7 +32,8 @@ PharmSFAO/
 │   ├── models.py           # User(AbstractUser) with hierarchical type field (MSO … Admin) + TYPE_RANK
 │   ├── admin.py            # UserAdmin with type in fieldsets
 │   ├── context_processors.py  # nav_counts — pending-approval counts for HR sidebar badges
-│   ├── views.py            # dashboard view (live stats, today's coverage, targets)
+│   ├── forms.py            # UserCreateForm — HR onboarding form (Admin type excluded; HR type ⇒ is_staff)
+│   ├── views.py            # dashboard view (live stats, today's coverage, targets) + add_user (HR-only)
 ├── doctors/                # Doctors app
 │   ├── models.py           # Doctor(name, nmc_number, area, specialization)
 │   ├── admin.py            # DoctorAdmin with search/filter
@@ -56,7 +57,10 @@ PharmSFAO/
 ├── api/                    # Django Ninja API
 │   ├── api.py              # NinjaAPI + JWT controller + /doctors endpoint
 ├── templates/
-│   ├── base.html           # Lumo app shell: sidebar nav + topbar (POST logout); `legacy_css` block
+│   ├── base.html           # Lumo app shell: sidebar nav + topbar (POST logout); `legacy_css` block; messages→toast bridge
+│   ├── 403.html / 404.html # Styled error pages (Django picks them up automatically)
+│   ├── users/
+│   │   └── add_user.html   # HR: onboard employee (UserCreateForm)
 │   ├── dashboard.html      # Lumo rep dashboard (stats, today's coverage, targets, upcoming plans)
 │   ├── registration/
 │   │   └── login.html
@@ -83,7 +87,8 @@ PharmSFAO/
 │       ├── monthly_target_report.html    # Traffic-light dots per doctor
 │       └── yearly_activity_report.html  # Doctor × month visit-date grid + Excel export
 ├── static/
-│   ├── css/style.css       # Legacy styling (pre-Lumo pages only; loaded via base's `legacy_css` block)
+│   ├── css/app.css         # App-level styles on top of Lumo (skip link, .table--stack mobile card rows)
+│   ├── css/style.css       # Legacy styling — no longer loaded (all pages ported to Lumo); safe to delete
 │   └── lumo/               # Lumo design system: tokens.css, components.css, lumo.js — verbatim copies, do not hand-edit
 ├── lumo/design_handoff_lumo_sfa/  # Design handoff bundle (README.md there is the design source of truth)
 ├── docker-compose.yml      # web + db services
@@ -106,9 +111,23 @@ PharmSFAO/
 ### Doctor (doctors.Doctor)
 - `name` — CharField(255)
 - `nmc_number` — CharField(50), unique, "Nepal Medical Council Number"
+- `hospital` — FK to Hospital (PROTECT), **required** (existing rows backfilled in `doctors.0005` with a per-area "General Hospital")
 - `area` — CharField(255), free text (used as "City" in reports)
 - `specialization` — CharField(255), optional
+- `phone` — CharField(20), optional
+- `email` — EmailField, optional
 - Ordered by name; added via Django admin or the HR "Add Doctor" form (`/doctors/add/`)
+- Phone/email surface in the doctor list ("Contact" column + client-side search), the add form, admin, and `GET /api/doctors/`
+
+### Hospital (doctors.Hospital)
+- `name` — CharField(255); `area` — FK to Area (PROTECT); `phone` — optional
+- Unique on (name, area); managed via Django admin
+- Surfaces in the Add Doctor form (required select), doctor list column, `GET /api/doctors/` (`hospital_id` + `hospital_name`), and the Yearly Activity report's "Hospital" column (previously derived from worked areas)
+
+### Chemist / Stockist masters (daily_coverage.Chemist / .Stockist)
+- `name` — CharField(255); `area` — FK to Area (PROTECT); `phone` — optional; unique on (name, area)
+- Added by HR at `/chemists/add/` and `/stockists/add/` (shared `add_partner.html` template) or via Django admin
+- The daily-coverage bulk form picks chemists/stockists from these directories (select pre-fills the entry's area); coverage rows still store the name as text
 
 ### Area (tour_plans.Area)
 - `name` — CharField(255), unique
@@ -140,21 +159,21 @@ PharmSFAO/
 - `doctor` — FK to Doctor (PROTECT)
 - `actual_working_place` — FK to Area (PROTECT)
 - `call_time` — TimeField
-- `products` — CharField(255), optional
-- `worked_with` — CharField(255), optional (free text)
+- `products` — CharField(255), blank at model level but **required by the add form** (client gate + server-side skip)
+- `worked_with` — CharField(255), stored as text; add/edit forms offer a select of "Self" + colleagues, **required on add** (defaults to "Self")
 - `remarks` — TextField, optional
 - Edit/delete allowed within 2 days of `created_at`; enforced in view with `PermissionDenied`
 
 ### ChemistCoverage / StockistCoverage (daily_coverage)
 - `created_by` — FK to User (nullable)
 - `report_date` — DateField
-- `name` — CharField(255) — chemist/stockist name (free text, no master table)
+- `name` — CharField(255) — chemist/stockist name (picked from the Chemist/Stockist master directories in the bulk form; stored as text)
 - `area` — FK to Area (PROTECT)
 - `call_time` — TimeField
 - `created_at` — DateTimeField (no `updated_at` yet)
 - Structurally identical to each other; entered alongside doctors in the same bulk add form
 - Logging only chemist/stockist on a doctor-less day requires a "no doctor coverage" reason (gate only — the reason is validated but not persisted)
-- No edit/delete/list UI yet; surfaced only in the Daily Activity report
+- Listed in Coverage records via `?type=chemist|stockist` with edit/delete in the same 2-day window (`edit_chemist_coverage` etc.); also surfaced in the Daily Activity report
 
 ## Doctor Classification (MSL-based)
 Used across all reports and the daily coverage calendar:
@@ -171,8 +190,9 @@ Defined in `reports/views.py` as `SUPER_CORE_MAX = 25`, `CORE_MAX = 75`, `VISIT_
 2. HR approves/rejects from `/tour_plans/review/`
 3. Calendar shows approved days as clickable ("Plan Approved" badge)
 4. MR adds daily coverage (doctor + optional chemist/stockist) only for approved-plan days (enforced on POST for every row)
-5. Logging only chemist/stockist on a doctor-less day requires a "no doctor coverage" reason
-6. Coverage can be edited/deleted within 2 days; calendar shows "Added (n)" badge (doctor rows only) linking to list
+5. Logging only chemist/stockist on a doctor-less day requires a "no doctor coverage" reason; the form's Chemist/Stockist tabs stay locked until a doctor entry exists or that reason is given (client-side gate + server-side validation)
+6. All coverage (doctor/chemist/stockist) can be edited/deleted within 2 days from Coverage records; calendar shows "Added (n)" badge (doctor rows only) linking to list — the badge swaps its dot for a lock icon (+ tooltip and legend entry) once every entry on that day is past the edit window
+7. The add form walks Doctor → Chemist → Stockist with a footer Next button; Next and Save All stay disabled until every added row's required fields are complete (client-side; server re-validates)
 
 ## API Endpoints (Django Ninja)
 - `POST /api/token/pair` — Get JWT access + refresh tokens
@@ -197,6 +217,9 @@ Defined in `reports/views.py` as `SUPER_CORE_MAX = 25`, `CORE_MAX = 75`, `VISIT_
 - http://localhost:8000/login/ — Login page
 - http://localhost:8000/doctors/ — Doctor list
 - http://localhost:8000/doctors/add/ — HR: add a new doctor
+- http://localhost:8000/chemists/add/ — HR: add a chemist to the directory
+- http://localhost:8000/stockists/add/ — HR: add a stockist to the directory
+- http://localhost:8000/users/add/ — HR: onboard a new employee (Admin position excluded; picking HR sets is_staff)
 - http://localhost:8000/doctor_employee_relation/ — My assigned doctors
 - http://localhost:8000/doctor_employee_relation/add/ — Request a doctor assignment
 - http://localhost:8000/review_requests/ — HR: pending doctor requests
@@ -207,12 +230,14 @@ Defined in `reports/views.py` as `SUPER_CORE_MAX = 25`, `CORE_MAX = 75`, `VISIT_
 - http://localhost:8000/tour_plans/review/<id>/ — HR: approve/reject per employee
 - http://localhost:8000/daily_coverage/ — Monthly calendar
 - http://localhost:8000/daily_coverage/add/ — Add daily coverage (bulk)
-- http://localhost:8000/daily_coverage/records/ — My coverage list (edit/delete)
+- http://localhost:8000/daily_coverage/records/ — My coverage list (edit/delete; `?type=doctor|chemist|stockist`)
 - http://localhost:8000/daily_coverage/<pk>/edit/ — Edit a record (within 2 days)
 - http://localhost:8000/daily_coverage/<pk>/delete/ — Delete a record (within 2 days)
 - http://localhost:8000/reports/daily-activity/ — Daily Activity Report
 - http://localhost:8000/reports/monthly-activity/ — Monthly Activity Report (chart + table)
+- http://localhost:8000/reports/monthly-activity/export/ — Excel export of monthly report (Daily Calls + MSL Frequency sheets)
 - http://localhost:8000/reports/monthly-target/ — Monthly Target Report (traffic-light dots)
+- http://localhost:8000/reports/monthly-target/export/ — Excel export of target report (status-tinted rows + summary)
 - http://localhost:8000/reports/yearly-activity/ — Yearly Activity Report
 - http://localhost:8000/reports/yearly-activity/export/ — Excel export of yearly report
 - http://localhost:8000/admin/ — Django admin (add doctors, areas, users here)
@@ -220,13 +245,16 @@ Defined in `reports/views.py` as `SUPER_CORE_MAX = 25`, `CORE_MAX = 75`, `VISIT_
 
 ## Design Decisions
 - **UI:** Lumo SFA design system — `static/lumo/` files are verbatim copies from `lumo/design_handoff_lumo_sfa/` (never re-derive colors/spacing; extend by composing `components.css` classes). `base.html` renders the app shell for all authenticated pages. The `.scrim` div must stay the **last** child of `.app` — as first child it occupies the grid's first cell and breaks the desktop layout.
-- Lumo-ported pages (dashboard, daily-coverage calendar) empty the `{% block legacy_css %}`; legacy pages load `css/style.css` **before** the Lumo files so Lumo wins collisions (legacy variants were bumped to compound selectors, e.g. `.btn.btn-danger`, to survive)
+- **Action feedback:** views use `django.contrib.messages` (success/warning/error) for every create/edit/delete/approve/reject, including saved-vs-skipped counts on bulk forms; `base.html` renders them as Lumo toasts via `window.lumoToast` (defined in `lumo/lumo.js`). Add a message in the view and it just works.
+- **A11y:** skip-to-content link in `base.html`, `aria-current="page"` set on the active nav item, autofocus on the primary field of add forms; inline SVG favicon (data URI) in `base.html` + `login.html`
+- **Mobile tables:** wide list tables use `.table.table--stack` (defined in `static/css/app.css`) — under 860px each row collapses into a labeled card; every `<td>` needs `data-label`, `.stack-hide` hides noise cells (e.g. SN). Grid-like report tables (monthly list, yearly) intentionally keep horizontal scroll.
+- **All pages are Lumo-ported** and empty the `{% block legacy_css %}` — `css/style.css` is no longer loaded anywhere (kept only for reference; safe to delete). The base template's `legacy_css` default remains as a safety net for any future non-ported template. Shared page patterns: `page-header` (title + sub + `page-actions`), `table-toolbar` for filters, `.table-wrap > .table` with `badge--success/warning/danger` status pills, `.empty` states, `card__footer` with ghost Cancel + primary submit for forms; report charts read colors from Lumo CSS variables via `getComputedStyle`
 - Report visibility follows the position hierarchy (see User model); "subordinate" currently means *any lower position* — direct-report chains would need a `manager` FK
 - HR users (is_staff=True, type="HR") approve doctor assignments and tour plans
 - Tour plan approval gates daily coverage entry for that date
 - Doctor classification (Super Core/Core/VIP) derived from MSL number at report time, not stored
 - Daily coverage edit window is 2 days from `created_at` (defined as `EDIT_WINDOW_DAYS = 2`)
-- Chemist/Stockist coverage is implemented (models + bulk add form + Daily Activity report); edit/delete UI and inclusion in monthly/target/yearly reports are still pending
+- Chemist/Stockist coverage is implemented (models + bulk add form + list/edit/delete + Daily Activity report); inclusion in monthly/target/yearly reports is still pending
 - List views (`daily_coverage_list`, `doctor_employee_relation_list`) paginate at 25/page with date/status filters
 - Reports use Gregorian dates (Nepali BS calendar conversion deferred)
 - Excel export uses openpyxl, served as streaming `HttpResponse`

@@ -48,10 +48,10 @@ Items are grouped by priority. Tick off each item as it is completed.
   `DailyCoverage` has `updated_at = models.DateTimeField(auto_now=True)` but the two newer models do not. Inconsistent. Requires a migration.
   _File: `daily_coverage/models.py`_
 
-- [ ] **Bulk form failures are silent**
+- [x] **Bulk form failures are silent**
   When entries are skipped (missing fields, unapproved date) the user is redirected with no indication that anything was dropped.
   Use Django messages to report how many entries were saved and how many were skipped.
-  _File: `daily_coverage/views.py`_
+  _File: `daily_coverage/views.py`_ — Done: saved/skipped counts reported via Django messages, rendered as Lumo toasts (see base.html bridge). Tour plan bulk add reports counts too.
 
 - [ ] **`msl_number` not validated as integer on input**
   `request.POST.get("msl_number")` is passed straight to the model. A non-integer string causes an unhandled DB error at the model layer.

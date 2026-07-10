@@ -1,5 +1,6 @@
 from datetime import date
 
+from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
@@ -65,7 +66,7 @@ def add_doctor_employee_relation(request, employee_id=None):
 
         if doctor_id:
             doctor = get_object_or_404(Doctor, pk=doctor_id)
-            DoctorEmployeeRelation.objects.get_or_create(
+            _, created = DoctorEmployeeRelation.objects.get_or_create(
                 employee=employee,
                 doctor=doctor,
                 defaults={
@@ -74,6 +75,12 @@ def add_doctor_employee_relation(request, employee_id=None):
                     "status": DoctorEmployeeRelation.Status.PENDING,
                 },
             )
+            if created:
+                messages.success(request, f"Assignment request for Dr. {doctor.name} sent to HR for review.")
+            else:
+                messages.info(request, f"Dr. {doctor.name} is already requested or assigned.")
+        else:
+            messages.error(request, "Select a doctor before submitting the request.")
 
         return redirect("doctor_employee_relation")
 
@@ -142,10 +149,13 @@ def hr_review_employee_requests(request, employee_id):
 
         if action == "approve":
             relation.status = DoctorEmployeeRelation.Status.APPROVED
-        elif action == "reject":
-            relation.status = DoctorEmployeeRelation.Status.REJECTED
+            messages.success(
+                request,
+                f"Approved — Dr. {relation.doctor.name} assigned to {employee.get_full_name() or employee.username}.",
+            )
         else:
             relation.status = DoctorEmployeeRelation.Status.REJECTED
+            messages.warning(request, f"Rejected the request for Dr. {relation.doctor.name}.")
 
         relation.save()
         return redirect("hr_review_employee_requests", employee_id=employee.id)

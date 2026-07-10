@@ -1,3 +1,4 @@
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.shortcuts import redirect, render
@@ -16,7 +17,7 @@ def _can_add_doctor(user):
 @login_required
 @never_cache
 def doctor_list(request):
-    doctors = Doctor.objects.all()
+    doctors = Doctor.objects.select_related("hospital")
     return render(
         request,
         "doctors/doctor_list.html",
@@ -33,7 +34,8 @@ def add_doctor(request):
     if request.method == "POST":
         form = DoctorForm(request.POST)
         if form.is_valid():
-            form.save()
+            doctor = form.save()
+            messages.success(request, f"Dr. {doctor.name} added to the directory.")
             return redirect("doctor_list")
     else:
         form = DoctorForm()

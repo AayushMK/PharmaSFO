@@ -6,17 +6,25 @@ from api.api import api
 from reports.views import (
     daily_activity_report,
     monthly_activity_report,
+    monthly_activity_report_excel,
     monthly_target_report,
+    monthly_target_report_excel,
     yearly_activity_report,
     yearly_activity_report_excel,
 )
-from users.views import dashboard
+from users.views import add_user, dashboard
 from daily_coverage.views import (
+    add_chemist,
     add_daily_coverage,
+    add_stockist,
     daily_coverage_calendar,
     daily_coverage_list,
+    delete_chemist_coverage,
     delete_daily_coverage,
+    delete_stockist_coverage,
+    edit_chemist_coverage,
     edit_daily_coverage,
+    edit_stockist_coverage,
 )
 from doctors.views import add_doctor, doctor_list
 from doctor_employee_relation.views import (
@@ -35,6 +43,9 @@ urlpatterns = [
     path("logout/", auth_views.LogoutView.as_view(), name="logout"),
     path("doctors/", doctor_list, name="doctor_list"),
     path("doctors/add/", add_doctor, name="add_doctor"),
+    path("chemists/add/", add_chemist, name="add_chemist"),
+    path("stockists/add/", add_stockist, name="add_stockist"),
+    path("users/add/", add_user, name="add_user"),
     path(
         "doctor_employee_relation/",
         doctor_employee_relation_list,
@@ -72,9 +83,15 @@ urlpatterns = [
     path("daily_coverage/records/", daily_coverage_list, name="daily_coverage_list"),
     path("reports/daily-activity/", daily_activity_report, name="daily_activity_report"),
     path("reports/monthly-activity/", monthly_activity_report, name="monthly_activity_report"),
+    path("reports/monthly-activity/export/", monthly_activity_report_excel, name="monthly_activity_report_excel"),
     path("reports/monthly-target/", monthly_target_report, name="monthly_target_report"),
+    path("reports/monthly-target/export/", monthly_target_report_excel, name="monthly_target_report_excel"),
     path("reports/yearly-activity/", yearly_activity_report, name="yearly_activity_report"),
     path("reports/yearly-activity/export/", yearly_activity_report_excel, name="yearly_activity_report_excel"),
     path("daily_coverage/<int:pk>/edit/", edit_daily_coverage, name="edit_daily_coverage"),
     path("daily_coverage/<int:pk>/delete/", delete_daily_coverage, name="delete_daily_coverage"),
+    path("daily_coverage/chemist/<int:pk>/edit/", edit_chemist_coverage, name="edit_chemist_coverage"),
+    path("daily_coverage/chemist/<int:pk>/delete/", delete_chemist_coverage, name="delete_chemist_coverage"),
+    path("daily_coverage/stockist/<int:pk>/edit/", edit_stockist_coverage, name="edit_stockist_coverage"),
+    path("daily_coverage/stockist/<int:pk>/delete/", delete_stockist_coverage, name="delete_stockist_coverage"),
 ]

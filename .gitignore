@@ -28,3 +28,10 @@ staticfiles/
 # OS
 .DS_Store
 Thumbs.db
+
+# Cloudflare tunnel runtime artifacts
+.cloudflared_tunnel.log
+TUNNEL_URL.txt
+tunnel_watchdog.log
+tunnel_watchdog.stderr.log
+tunnel_watchdog.stdout.log

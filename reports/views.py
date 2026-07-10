@@ -62,14 +62,13 @@ def _build_yearly_rows(employee, year):
     relations = (
         DoctorEmployeeRelation.objects
         .filter(employee=employee, status=DoctorEmployeeRelation.Status.APPROVED)
-        .select_related("doctor")
+        .select_related("doctor", "doctor__hospital")
         .order_by("msl_number", "doctor__name")
     )
 
     all_covs = list(
         DailyCoverage.objects
         .filter(created_by=employee, report_date__year=year)
-        .select_related("actual_working_place")
         .order_by("report_date")
     )
 
@@ -87,12 +86,10 @@ def _build_yearly_rows(employee, year):
             days = sorted({c.report_date.day for c in covs if c.report_date.month == m})
             month_visits.append(days)
 
-        hospitals = list(dict.fromkeys(c.actual_working_place.name for c in covs))
-
         rows.append({
             "msl":         rel.msl_number or "-",
             "doctor":      doc,
-            "hospitals":   hospitals,
+            "hospitals":   [doc.hospital.name],
             "month_visits": month_visits,
             "total_calls": len(covs),
         })
@@ -178,25 +175,20 @@ def daily_activity_report(request):
 
 # ── Monthly Activity Report ──────────────────────────────────────────────────
 
-@login_required
-@never_cache
-def monthly_activity_report(request):
-    employee, all_employees, selected_employee_id, can_view_others = _get_employee(request)
-    month_str = request.GET.get("month", "")
-
-    year = month = None
+def _parse_month(month_str):
+    """Return (year, month, normalized "YYYY-MM"); defaults to the current month."""
     if month_str:
         try:
             dt = datetime.strptime(month_str, "%Y-%m")
-            year, month = dt.year, dt.month
+            return dt.year, dt.month, month_str
         except ValueError:
             pass
+    today = datetime.today()
+    return today.year, today.month, f"{today.year}-{today.month:02d}"
 
-    if not year:
-        today = datetime.today()
-        year, month = today.year, today.month
-        month_str = f"{year}-{month:02d}"
 
+def _build_monthly_data(employee, year, month):
+    """Data shared by the Monthly Activity report page and its Excel export."""
     num_days = cal_module.monthrange(year, month)[1]
 
     msl_map = {
@@ -219,16 +211,6 @@ def monthly_activity_report(request):
         freq[c.report_date.day][c.category] += 1
 
     days = list(range(1, num_days + 1))
-    chart_data = json.dumps({
-        "labels":     days,
-        "super_core": [freq[d]["super_core"] for d in days],
-        "core":       [freq[d]["core"]       for d in days],
-        "vip":        [freq[d]["vip"]        for d in days],
-    })
-
-    total_super_core = sum(freq[d]["super_core"] for d in days)
-    total_core       = sum(freq[d]["core"]       for d in days)
-    total_vip        = sum(freq[d]["vip"]        for d in days)
 
     all_specs = sorted({c.doctor.specialization for c in coverages if c.doctor.specialization})
 
@@ -258,6 +240,32 @@ def monthly_activity_report(request):
             "total_drs":   len(day_covs),
         })
 
+    return {
+        "days":             days,
+        "freq":             freq,
+        "all_specs":        all_specs,
+        "rows":             rows,
+        "total_super_core": sum(freq[d]["super_core"] for d in days),
+        "total_core":       sum(freq[d]["core"]       for d in days),
+        "total_vip":        sum(freq[d]["vip"]        for d in days),
+    }
+
+
+@login_required
+@never_cache
+def monthly_activity_report(request):
+    employee, all_employees, selected_employee_id, can_view_others = _get_employee(request)
+    year, month, month_str = _parse_month(request.GET.get("month", ""))
+
+    data = _build_monthly_data(employee, year, month)
+
+    chart_data = json.dumps({
+        "labels":     data["days"],
+        "super_core": [data["freq"][d]["super_core"] for d in data["days"]],
+        "core":       [data["freq"][d]["core"]       for d in data["days"]],
+        "vip":        [data["freq"][d]["vip"]        for d in data["days"]],
+    })
+
     return render(request, "reports/monthly_activity_report.html", {
         "month_str":           month_str,
         "year":                year,
@@ -268,12 +276,89 @@ def monthly_activity_report(request):
         "selected_employee_id": selected_employee_id,
         "can_view_others":     can_view_others,
         "chart_data":          chart_data,
-        "total_super_core":    total_super_core,
-        "total_core":          total_core,
-        "total_vip":           total_vip,
-        "rows":                rows,
-        "all_specs":           all_specs,
+        "total_super_core":    data["total_super_core"],
+        "total_core":          data["total_core"],
+        "total_vip":           data["total_vip"],
+        "rows":                data["rows"],
+        "all_specs":           data["all_specs"],
     })
+
+
+@login_required
+def monthly_activity_report_excel(request):
+    employee, _, _, _ = _get_employee(request)
+    year, month, _ = _parse_month(request.GET.get("month", ""))
+    data = _build_monthly_data(employee, year, month)
+
+    wb = openpyxl.Workbook()
+
+    header_fill = PatternFill("solid", fgColor="4A90C4")
+    header_font = Font(bold=True, color="FFFFFF")
+    center = Alignment(horizontal="center", vertical="center", wrap_text=True)
+
+    def _style_header(sheet):
+        for cell in sheet[1]:
+            cell.fill = header_fill
+            cell.font = header_font
+            cell.alignment = center
+
+    # Sheet 1 — the "List of data" table
+    ws = wb.active
+    ws.title = "Daily Calls"
+    ws.append(
+        ["SN", "Date", "Tour Plan", "Actual Work Plan"]
+        + data["all_specs"]
+        + ["Total DRS Calls"]
+    )
+    _style_header(ws)
+    for i, row in enumerate(data["rows"], start=1):
+        ws.append([
+            i,
+            row["date"].strftime("%d %b %Y"),
+            " / ".join(row["tour_areas"]) or "-",
+            " / ".join(row["actual_areas"]) or "-",
+            *row["spec_values"],
+            row["total_drs"],
+        ])
+    col_widths = [6, 14, 22, 22] + [14] * len(data["all_specs"]) + [14]
+    for col_idx, width in enumerate(col_widths, start=1):
+        ws.column_dimensions[openpyxl.utils.get_column_letter(col_idx)].width = width
+
+    # Sheet 2 — MSL frequency per day (the chart's data)
+    ws2 = wb.create_sheet("MSL Frequency")
+    ws2.append(["Day", "Super Core", "Core", "VIP", "Total"])
+    _style_header(ws2)
+    for d in data["days"]:
+        day_freq = data["freq"][d]
+        ws2.append([
+            d,
+            day_freq["super_core"],
+            day_freq["core"],
+            day_freq["vip"],
+            day_freq["super_core"] + day_freq["core"] + day_freq["vip"],
+        ])
+    total_row = [
+        "Total",
+        data["total_super_core"],
+        data["total_core"],
+        data["total_vip"],
+        data["total_super_core"] + data["total_core"] + data["total_vip"],
+    ]
+    ws2.append(total_row)
+    for cell in ws2[ws2.max_row]:
+        cell.font = Font(bold=True)
+    for col_idx, width in enumerate([10, 12, 10, 10, 10], start=1):
+        ws2.column_dimensions[openpyxl.utils.get_column_letter(col_idx)].width = width
+
+    response = HttpResponse(
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    emp_name = employee.get_full_name() or employee.username
+    response["Content-Disposition"] = (
+        f'attachment; filename="monthly_report_{emp_name}_{year}-{month:02d}.xlsx"'
+    )
+    wb.save(response)
+    return response
 
 
 # ── Yearly Activity Report ───────────────────────────────────────────────────
@@ -373,26 +458,8 @@ def yearly_activity_report_excel(request):
 
 # ── Monthly Target Report ────────────────────────────────────────────────────
 
-@login_required
-@never_cache
-def monthly_target_report(request):
-    employee, all_employees, selected_employee_id, can_view_others = _get_employee(request)
-    month_str = request.GET.get("month", "")
-
-    year = month = None
-    if month_str:
-        try:
-            dt = datetime.strptime(month_str, "%Y-%m")
-            year, month = dt.year, dt.month
-        except ValueError:
-            pass
-
-    if not year:
-        today = datetime.today()
-        year, month = today.year, today.month
-        month_str = f"{year}-{month:02d}"
-
-    # All approved doctor relations ordered by MSL
+def _build_target_rows(employee, year, month):
+    """Rows shared by the Monthly Target report page and its Excel export."""
     relations = (
         DoctorEmployeeRelation.objects
         .filter(employee=employee, status=DoctorEmployeeRelation.Status.APPROVED)
@@ -400,7 +467,6 @@ def monthly_target_report(request):
         .order_by("msl_number", "doctor__name")
     )
 
-    # Count visits per doctor for the month
     visit_counts = defaultdict(int)
     for cov in DailyCoverage.objects.filter(
         created_by=employee,
@@ -431,6 +497,17 @@ def monthly_target_report(request):
             "category":    CATEGORY_LABELS[category],
         })
 
+    return rows
+
+
+@login_required
+@never_cache
+def monthly_target_report(request):
+    employee, all_employees, selected_employee_id, can_view_others = _get_employee(request)
+    year, month, month_str = _parse_month(request.GET.get("month", ""))
+
+    rows = _build_target_rows(employee, year, month)
+
     return render(request, "reports/monthly_target_report.html", {
         "month_str":           month_str,
         "year":                year,
@@ -442,3 +519,61 @@ def monthly_target_report(request):
         "can_view_others":     can_view_others,
         "rows":                rows,
     })
+
+
+STATE_LABELS = {"green": "Met", "orange": "Partial", "red": "Not visited"}
+STATE_FILLS = {"green": "C6EFCE", "orange": "FFEB9C", "red": "FFC7CE"}
+
+
+@login_required
+def monthly_target_report_excel(request):
+    employee, _, _, _ = _get_employee(request)
+    year, month, _ = _parse_month(request.GET.get("month", ""))
+    rows = _build_target_rows(employee, year, month)
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Monthly Target"
+
+    header_fill = PatternFill("solid", fgColor="4A90C4")
+    header_font = Font(bold=True, color="FFFFFF")
+    center = Alignment(horizontal="center", vertical="center", wrap_text=True)
+
+    ws.append(["Status", "Doctor's Name", "MSL No.", "Visits", "Target", "Class"])
+    for cell in ws[1]:
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = center
+
+    for i, row in enumerate(rows, start=2):
+        ws.append([
+            STATE_LABELS[row["state"]],
+            row["doctor_name"],
+            row["msl"],
+            row["visits"],
+            row["target"],
+            row["category"],
+        ])
+        ws.cell(row=i, column=1).fill = PatternFill("solid", fgColor=STATE_FILLS[row["state"]])
+
+    # Summary block
+    ws.append([])
+    counts = {state: sum(1 for r in rows if r["state"] == state) for state in STATE_LABELS}
+    for state, label in STATE_LABELS.items():
+        ws.append([label, counts[state]])
+        ws.cell(row=ws.max_row, column=1).font = Font(bold=True)
+    ws.append(["Total doctors", len(rows)])
+    ws.cell(row=ws.max_row, column=1).font = Font(bold=True)
+
+    for col_idx, width in enumerate([14, 26, 10, 8, 8, 12], start=1):
+        ws.column_dimensions[openpyxl.utils.get_column_letter(col_idx)].width = width
+
+    response = HttpResponse(
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    emp_name = employee.get_full_name() or employee.username
+    response["Content-Disposition"] = (
+        f'attachment; filename="target_report_{emp_name}_{year}-{month:02d}.xlsx"'
+    )
+    wb.save(response)
+    return response

@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}Add User - PharmaSFO{% endblock %}
+{% block legacy_css %}{% endblock %}
+{% block breadcrumb %}<span>HR Actions</span><span class="sep">/</span><span class="current">Add user</span>{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Add User</h1>
+    <p class="page-sub">Onboard an employee. Their position sets whose reports they can view in the hierarchy.</p>
+  </div>
+</div>
+
+{% if form.non_field_errors %}
+<div class="alert alert--danger" style="margin-bottom:var(--space-6)">
+  <svg class="alert__icon ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6M9 9l6 6"/></svg>
+  <div class="alert__body"><div class="alert__text">{{ form.non_field_errors|striptags }}</div></div>
+</div>
+{% endif %}
+
+<div class="card" style="max-width:720px">
+  <div class="card__body">
+    <form method="post" id="add-user-form">
+      {% csrf_token %}
+      <div class="grid grid--2">
+        <div class="field{% if form.first_name.errors %} is-error{% endif %}">
+          <label class="label" for="{{ form.first_name.id_for_label }}">First name <span class="req">*</span></label>
+          {{ form.first_name }}
+          {% if form.first_name.errors %}<span class="help">{{ form.first_name.errors|striptags }}</span>{% endif %}
+        </div>
+        <div class="field{% if form.last_name.errors %} is-error{% endif %}">
+          <label class="label" for="{{ form.last_name.id_for_label }}">Last name <span class="req">*</span></label>
+          {{ form.last_name }}
+          {% if form.last_name.errors %}<span class="help">{{ form.last_name.errors|striptags }}</span>{% endif %}
+        </div>
+        <div class="field{% if form.username.errors %} is-error{% endif %}">
+          <label class="label" for="{{ form.username.id_for_label }}">Username <span class="req">*</span></label>
+          {{ form.username }}
+          {% if form.username.errors %}<span class="help">{{ form.username.errors|striptags }}</span>
+          {% else %}<span class="help">They'll use this to sign in.</span>{% endif %}
+        </div>
+        <div class="field{% if form.email.errors %} is-error{% endif %}">
+          <label class="label" for="{{ form.email.id_for_label }}">Email <span class="optional">(optional)</span></label>
+          {{ form.email }}
+          {% if form.email.errors %}<span class="help">{{ form.email.errors|striptags }}</span>{% endif %}
+        </div>
+        <div class="field{% if form.type.errors %} is-error{% endif %}" style="grid-column: 1 / -1;">
+          <label class="label" for="{{ form.type.id_for_label }}">Position <span class="req">*</span></label>
+          {{ form.type }}
+          {% if form.type.errors %}<span class="help">{{ form.type.errors|striptags }}</span>
+          {% else %}<span class="help">Hierarchy: MSO is the field position; higher positions can view subordinates' reports.</span>{% endif %}
+        </div>
+        <div class="field{% if form.password1.errors %} is-error{% endif %}">
+          <label class="label" for="{{ form.password1.id_for_label }}">Password <span class="req">*</span></label>
+          {{ form.password1 }}
+          {% if form.password1.errors %}<span class="help">{{ form.password1.errors|striptags }}</span>
+          {% else %}<span class="help">At least 8 characters; not all-numeric or too common.</span>{% endif %}
+        </div>
+        <div class="field{% if form.password2.errors %} is-error{% endif %}">
+          <label class="label" for="{{ form.password2.id_for_label }}">Confirm password <span class="req">*</span></label>
+          {{ form.password2 }}
+          {% if form.password2.errors %}<span class="help">{{ form.password2.errors|striptags }}</span>{% endif %}
+        </div>
+      </div>
+    </form>
+  </div>
+  <div class="card__footer">
+    <a href="{% url 'dashboard' %}" class="btn btn--ghost">Cancel</a>
+    <div class="spacer"></div>
+    <button type="submit" form="add-user-form" class="btn btn--primary">Create user</button>
+  </div>
+</div>
+{% endblock %}

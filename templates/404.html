@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block title %}Page Not Found - PharmaSFO{% endblock %}
+{% block legacy_css %}{% endblock %}
+{% block breadcrumb %}<span class="current">Not found</span>{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width:520px; margin:10vh auto 0">
+  <div class="card__body">
+    <div class="empty">
+      <div class="empty__glyph"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></div>
+      <div class="empty__title">Page not found</div>
+      <div class="empty__text">The page you're looking for doesn't exist or may have moved.</div>
+      <div class="empty__actions"><a href="{% url 'dashboard' %}" class="btn btn--primary btn--sm">Back to dashboard</a></div>
+    </div>
+  </div>
+</div>
+{% endblock %}

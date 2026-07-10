@@ -1,94 +1,101 @@
 {% extends "base.html" %}
 
 {% block title %}My Assigned Doctors - PharmaSFO{% endblock %}
+{% block legacy_css %}{% endblock %}
 {% block breadcrumb %}<span>Directory</span><span class="sep">/</span><span class="current">My assignments</span>{% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="card">
-        <div class="page-hd">
-            <h2>My Assigned Doctors
-                <span style="font-size:0.82rem; font-weight:400; color:#888; margin-left:8px;">{{ total_count }} doctor{{ total_count|pluralize }}</span>
-            </h2>
-            <a href="{% url 'add_doctor_employee_relation' %}" class="btn">+ Add Doctor</a>
-        </div>
-
-        <form method="get" class="filter-row">
-            <div>
-                <label>Filter by status</label>
-                <select name="status" onchange="this.form.submit()">
-                    <option value="all"      {% if selected_status == 'all'      %}selected{% endif %}>All</option>
-                    <option value="approved" {% if selected_status == 'approved' %}selected{% endif %}>Approved</option>
-                    <option value="pending"  {% if selected_status == 'pending'  %}selected{% endif %}>Pending</option>
-                    <option value="rejected" {% if selected_status == 'rejected' %}selected{% endif %}>Rejected</option>
-                </select>
-            </div>
-        </form>
-
-        {% if page_obj.object_list %}
-        <div class="table-wrap">
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th>MSL No.</th>
-                        <th>Doctor</th>
-                        <th>Specialization</th>
-                        <th>NMC Number</th>
-                        <th>City</th>
-                        <th>Relation Date</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for relation in page_obj %}
-                    <tr>
-                        <td>{{ relation.msl_number|default:"-" }}</td>
-                        <td>{{ relation.doctor.name }}</td>
-                        <td>{{ relation.doctor.specialization|default:"-" }}</td>
-                        <td>{{ relation.doctor.nmc_number }}</td>
-                        <td>{{ relation.doctor.area|default:"-" }}</td>
-                        <td>{{ relation.relation_date|default:"-" }}</td>
-                        <td>
-                            {% if relation.status == 'approved' %}
-                                <span class="status-approved">Approved</span>
-                            {% elif relation.status == 'rejected' %}
-                                <span class="status-rejected">Rejected</span>
-                            {% else %}
-                                <span class="status-pending">Pending</span>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-
-        <!-- Pagination -->
-        {% if page_obj.paginator.num_pages > 1 %}
-        <div class="pagination">
-            {% if page_obj.has_previous %}
-                <a href="?status={{ selected_status }}&page=1">&laquo; First</a>
-                <a href="?status={{ selected_status }}&page={{ page_obj.previous_page_number }}">Prev</a>
-            {% else %}
-                <span class="pg-disabled">&laquo; First</span>
-                <span class="pg-disabled">Prev</span>
-            {% endif %}
-
-            <span class="pg-current">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
-
-            {% if page_obj.has_next %}
-                <a href="?status={{ selected_status }}&page={{ page_obj.next_page_number }}">Next</a>
-                <a href="?status={{ selected_status }}&page={{ page_obj.paginator.num_pages }}">Last &raquo;</a>
-            {% else %}
-                <span class="pg-disabled">Next</span>
-                <span class="pg-disabled">Last &raquo;</span>
-            {% endif %}
-        </div>
-        {% endif %}
-
-        {% else %}
-        <p class="empty-state">No doctors found{% if selected_status != 'all' %} with status "{{ selected_status }}"{% endif %}.</p>
-        {% endif %}
-    </div>
+<div class="page-header">
+  <div>
+    <h1 class="page-title">My Assigned Doctors</h1>
+    <p class="page-sub">Doctors assigned to you, with their MSL rank. New requests need HR approval.</p>
+  </div>
+  <div class="page-actions">
+    <a href="{% url 'add_doctor_employee_relation' %}" class="btn btn--primary">
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+      Request assignment
+    </a>
+  </div>
 </div>
+
+<div class="table-toolbar">
+  <form method="get" class="table-toolbar__filters">
+    <label class="label" for="status-filter" style="margin-right:var(--space-1)">Status</label>
+    <select name="status" id="status-filter" class="select" style="width:160px" onchange="this.form.submit()">
+      <option value="all"      {% if selected_status == 'all'      %}selected{% endif %}>All</option>
+      <option value="approved" {% if selected_status == 'approved' %}selected{% endif %}>Approved</option>
+      <option value="pending"  {% if selected_status == 'pending'  %}selected{% endif %}>Pending</option>
+      <option value="rejected" {% if selected_status == 'rejected' %}selected{% endif %}>Rejected</option>
+    </select>
+  </form>
+  <span class="t-caption">{{ total_count }} doctor{{ total_count|pluralize }}</span>
+</div>
+
+{% if page_obj.object_list %}
+<div class="table-wrap">
+  <table class="table table--stack">
+    <thead>
+      <tr>
+        <th>MSL no.</th>
+        <th>Doctor</th>
+        <th>NMC number</th>
+        <th>City</th>
+        <th>Relation date</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for relation in page_obj %}
+      <tr>
+        <td data-label="MSL no." class="t-mono">{{ relation.msl_number|default:"—" }}</td>
+        <td data-label="Doctor">
+          <div class="cell-strong">{{ relation.doctor.name }}</div>
+          {% if relation.doctor.specialization %}<div class="cell-sub">{{ relation.doctor.specialization }}</div>{% endif %}
+        </td>
+        <td data-label="NMC number" class="t-mono t-secondary">{{ relation.doctor.nmc_number }}</td>
+        <td data-label="City">{{ relation.doctor.area|default:"—" }}</td>
+        <td data-label="Relation date" class="t-secondary">{{ relation.relation_date|date:"j M Y"|default:"—" }}</td>
+        <td data-label="Status">
+          {% if relation.status == 'approved' %}<span class="badge badge--success"><span class="dot"></span>Approved</span>
+          {% elif relation.status == 'rejected' %}<span class="badge badge--danger"><span class="dot"></span>Rejected</span>
+          {% else %}<span class="badge badge--warning"><span class="dot"></span>Pending</span>{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% if page_obj.paginator.num_pages > 1 %}
+<div class="row row--between" style="margin-top:var(--space-4)">
+  <span class="t-caption">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+  <div class="row" style="gap:var(--space-2)">
+    {% if page_obj.has_previous %}
+      <a class="btn btn--sm" href="?status={{ selected_status }}&page={{ page_obj.previous_page_number }}">Previous</a>
+    {% else %}
+      <span class="btn btn--sm" aria-disabled="true">Previous</span>
+    {% endif %}
+    {% if page_obj.has_next %}
+      <a class="btn btn--sm" href="?status={{ selected_status }}&page={{ page_obj.next_page_number }}">Next</a>
+    {% else %}
+      <span class="btn btn--sm" aria-disabled="true">Next</span>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+
+{% else %}
+<div class="card">
+  <div class="card__body">
+    <div class="empty">
+      <div class="empty__glyph"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+      <div class="empty__title">No doctors found</div>
+      <div class="empty__text">{% if selected_status != 'all' %}No assignments with status “{{ selected_status }}”. Try a different filter.{% else %}Request your first doctor assignment — HR will review it.{% endif %}</div>
+      {% if selected_status == 'all' %}
+      <div class="empty__actions"><a href="{% url 'add_doctor_employee_relation' %}" class="btn btn--primary btn--sm">Request assignment</a></div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endif %}
 {% endblock %}

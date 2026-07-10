@@ -1,166 +1,167 @@
 {% extends "base.html" %}
 
 {% block title %}Daily Activity Report - PharmaSFO{% endblock %}
+{% block legacy_css %}{% endblock %}
 {% block breadcrumb %}<span>Reports</span><span class="sep">/</span><span class="current">Daily activity</span>{% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="card">
-        <h2>Daily Activity Report</h2>
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Daily Activity Report</h1>
+    <p class="page-sub">Doctor, chemist, and stockist calls logged for a single day.</p>
+  </div>
+</div>
 
-        <form method="get" style="margin-top:16px; display:flex; align-items:flex-end; gap:12px; flex-wrap:wrap;">
-            <div>
-                <label style="display:block; margin-bottom:4px; font-weight:600;">Choose date to view Report</label>
-                <input type="date" name="date" value="{{ date_str }}" style="padding:6px 10px; border:1px solid #ccc; border-radius:4px;">
-            </div>
-            {% if can_view_others %}
-            <div>
-                <label style="display:block; margin-bottom:4px; font-weight:600;">Employee</label>
-                <select name="employee_id" style="padding:6px 10px; border:1px solid #ccc; border-radius:4px; min-width:180px;">
-                    <option value="">— Select employee —</option>
-                    {% for emp in all_employees %}
-                        <option value="{{ emp.pk }}" {% if emp.pk == selected_employee_id %}selected{% endif %}>
-                            {{ emp.get_full_name|default:emp.username }} ({{ emp.get_type_display }})
-                        </option>
-                    {% endfor %}
-                </select>
-            </div>
-            {% endif %}
-            <button type="submit" class="btn">Go</button>
-        </form>
+<form method="get" class="table-toolbar">
+  <div class="table-toolbar__filters" style="align-items:flex-end">
+    <div class="field">
+      <label class="label" for="report-date">Date</label>
+      <input type="date" name="date" id="report-date" class="input" style="width:180px" value="{{ date_str }}">
     </div>
-
-    {% if report_date %}
-    <!-- Doctor's Daily Activity Report -->
-    <div class="card" style="margin-top:16px; padding:0; overflow:hidden;">
-        <div style="background:#4a90c4; color:#fff; padding:10px 16px; font-weight:700; font-size:1rem; cursor:pointer;"
-             onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? '' : 'none';">
-            &#9660; Doctor's Daily Activity Report
-        </div>
-        <div>
-            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; border-bottom:1px solid #ccc; background:#f0f4f8;">
-                <div style="padding:10px 16px; border-right:1px solid #ccc;">
-                    <span style="font-weight:600;">Date: </span>{{ report_date }}
-                </div>
-                <div style="padding:10px 16px; border-right:1px solid #ccc;">
-                    <span style="font-weight:600;">Work Planned: </span>
-                    {% if planned_areas %}{{ planned_areas|join:" / " }}/{% else %}<span style="color:#aaa;">None</span>{% endif %}
-                </div>
-                <div style="padding:10px 16px;">
-                    <span style="font-weight:600;">Worked Place: </span>
-                    {% if worked_areas %}{{ worked_areas|join:" / " }}/{% else %}<span style="color:#aaa;">None</span>{% endif %}
-                </div>
-            </div>
-
-            {% if coverages %}
-            <table style="width:100%; border-collapse:collapse;">
-                <thead>
-                    <tr style="background:#4a90c4; color:#fff;">
-                        <th style="padding:10px 12px; text-align:left; white-space:nowrap;">SN</th>
-                        <th style="padding:10px 12px; text-align:left; white-space:nowrap;">Reported Date</th>
-                        <th style="padding:10px 12px; text-align:left; white-space:nowrap;">Area Covered</th>
-                        <th style="padding:10px 12px; text-align:left; white-space:nowrap;">Doctor's Name</th>
-                        <th style="padding:10px 12px; text-align:left; white-space:nowrap;">MSL</th>
-                        <th style="padding:10px 12px; text-align:left; white-space:nowrap;">Speciality</th>
-                        <th style="padding:10px 12px; text-align:left; white-space:nowrap;">Worked With</th>
-                        <th style="padding:10px 12px; text-align:left; white-space:nowrap;">Products Promoted</th>
-                        <th style="padding:10px 12px; text-align:left; white-space:nowrap;">Call Time</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for c in coverages %}
-                    <tr style="{% cycle 'background:#fff;' 'background:#f7f9fc;' %}">
-                        <td style="padding:9px 12px; border-bottom:1px solid #eee;">{{ forloop.counter }}</td>
-                        <td style="padding:9px 12px; border-bottom:1px solid #eee;">{{ c.report_date }}</td>
-                        <td style="padding:9px 12px; border-bottom:1px solid #eee;">{{ c.actual_working_place.name }}</td>
-                        <td style="padding:9px 12px; border-bottom:1px solid #eee;">{{ c.doctor.name }}</td>
-                        <td style="padding:9px 12px; border-bottom:1px solid #eee;">{{ c.msl }}</td>
-                        <td style="padding:9px 12px; border-bottom:1px solid #eee;">{{ c.doctor.specialization|default:"-" }}</td>
-                        <td style="padding:9px 12px; border-bottom:1px solid #eee;">{{ c.worked_with|default:"Self" }}</td>
-                        <td style="padding:9px 12px; border-bottom:1px solid #eee;">{{ c.products|default:"-" }}</td>
-                        <td style="padding:9px 12px; border-bottom:1px solid #eee;">{{ c.call_time }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-            {% else %}
-            <p style="padding:16px; color:#888;">No records found.</p>
-            {% endif %}
-        </div>
-    </div>
-
-    <!-- Chemist & Stockist side by side -->
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:16px;">
-
-        <!-- Chemist Daily Activity Report -->
-        <div class="card" style="padding:0; overflow:hidden;">
-            <div style="background:#4a90c4; color:#fff; padding:10px 16px; font-weight:700; font-size:0.95rem; cursor:pointer;"
-                 onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? '' : 'none';">
-                &#9660; Chemist Daily Activity Report
-            </div>
-            <div>
-                {% if chemist_coverages %}
-                <table style="width:100%; border-collapse:collapse; font-size:0.9rem;">
-                    <thead>
-                        <tr>
-                            <th style="padding:9px 12px; background:#4a90c4; color:#fff; text-align:left; white-space:nowrap;">SN.</th>
-                            <th style="padding:9px 12px; background:#4a90c4; color:#fff; text-align:left; white-space:nowrap;">Reported Date</th>
-                            <th style="padding:9px 12px; background:#4a90c4; color:#fff; text-align:left; white-space:nowrap;">Chemist Name</th>
-                            <th style="padding:9px 12px; background:#4a90c4; color:#fff; text-align:left; white-space:nowrap;">Call Time</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for c in chemist_coverages %}
-                        <tr style="{% cycle 'background:#fff;' 'background:#f7f9fc;' %}">
-                            <td style="padding:8px 12px; border-bottom:1px solid #eee;">{{ forloop.counter }}</td>
-                            <td style="padding:8px 12px; border-bottom:1px solid #eee;">{{ c.report_date }}</td>
-                            <td style="padding:8px 12px; border-bottom:1px solid #eee;">{{ c.name }}</td>
-                            <td style="padding:8px 12px; border-bottom:1px solid #eee;">{{ c.call_time }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-                {% else %}
-                <p style="padding:14px; color:#888; font-size:0.88rem;">No chemist records found.</p>
-                {% endif %}
-            </div>
-        </div>
-
-        <!-- Stockist Daily Activity Report -->
-        <div class="card" style="padding:0; overflow:hidden;">
-            <div style="background:#4a90c4; color:#fff; padding:10px 16px; font-weight:700; font-size:0.95rem; cursor:pointer;"
-                 onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? '' : 'none';">
-                &#9660; Stockist Daily Activity Report
-            </div>
-            <div>
-                {% if stockist_coverages %}
-                <table style="width:100%; border-collapse:collapse; font-size:0.9rem;">
-                    <thead>
-                        <tr>
-                            <th style="padding:9px 12px; background:#4a90c4; color:#fff; text-align:left; white-space:nowrap;">SN.</th>
-                            <th style="padding:9px 12px; background:#4a90c4; color:#fff; text-align:left; white-space:nowrap;">Reported Date</th>
-                            <th style="padding:9px 12px; background:#4a90c4; color:#fff; text-align:left; white-space:nowrap;">Stockist's Name</th>
-                            <th style="padding:9px 12px; background:#4a90c4; color:#fff; text-align:left; white-space:nowrap;">Call Time</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for c in stockist_coverages %}
-                        <tr style="{% cycle 'background:#fff;' 'background:#f7f9fc;' %}">
-                            <td style="padding:8px 12px; border-bottom:1px solid #eee;">{{ forloop.counter }}</td>
-                            <td style="padding:8px 12px; border-bottom:1px solid #eee;">{{ c.report_date }}</td>
-                            <td style="padding:8px 12px; border-bottom:1px solid #eee;">{{ c.name }}</td>
-                            <td style="padding:8px 12px; border-bottom:1px solid #eee;">{{ c.call_time }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-                {% else %}
-                <p style="padding:14px; color:#888; font-size:0.88rem;">No stockist records found.</p>
-                {% endif %}
-            </div>
-        </div>
-
+    {% if can_view_others %}
+    <div class="field">
+      <label class="label" for="report-employee">Employee</label>
+      <select name="employee_id" id="report-employee" class="select" style="width:240px">
+        <option value="">Myself</option>
+        {% for emp in all_employees %}
+          <option value="{{ emp.pk }}" {% if emp.pk == selected_employee_id %}selected{% endif %}>
+            {{ emp.get_full_name|default:emp.username }} ({{ emp.get_type_display }})
+          </option>
+        {% endfor %}
+      </select>
     </div>
     {% endif %}
+    <button type="submit" class="btn btn--primary">View report</button>
+  </div>
+</form>
+
+{% if report_date %}
+<div class="stack">
+  <!-- Day summary -->
+  <div class="card">
+    <div class="card__body" style="padding:var(--space-4) var(--space-6)">
+      <div class="grid grid--3" style="gap:var(--space-4)">
+        <div>
+          <div class="t-eyebrow">Date</div>
+          <div style="margin-top:var(--space-1)">{{ report_date|date:"D, j M Y" }}</div>
+        </div>
+        <div>
+          <div class="t-eyebrow">Work planned</div>
+          <div style="margin-top:var(--space-1)">{% if planned_areas %}{{ planned_areas|join:" / " }}{% else %}<span class="t-muted">None</span>{% endif %}</div>
+        </div>
+        <div>
+          <div class="t-eyebrow">Worked place</div>
+          <div style="margin-top:var(--space-1)">{% if worked_areas %}{{ worked_areas|join:" / " }}{% else %}<span class="t-muted">None</span>{% endif %}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Doctor calls -->
+  <div class="card">
+    <div class="card__header">
+      <span class="card__title">Doctor calls</span>
+      <span class="badge badge--primary">{{ coverages|length }} call{{ coverages|length|pluralize }}</span>
+    </div>
+    {% if coverages %}
+    <div class="table-wrap" style="border:none; border-radius:0">
+      <table class="table table--stack">
+        <thead>
+          <tr>
+            <th>SN</th>
+            <th>Area covered</th>
+            <th>Doctor</th>
+            <th>MSL</th>
+            <th>Worked with</th>
+            <th>Products promoted</th>
+            <th>Call time</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for c in coverages %}
+          <tr>
+            <td class="t-secondary stack-hide">{{ forloop.counter }}</td>
+            <td data-label="Area">{{ c.actual_working_place.name }}</td>
+            <td data-label="Doctor">
+              <div class="cell-strong">{{ c.doctor.name }}</div>
+              {% if c.doctor.specialization %}<div class="cell-sub">{{ c.doctor.specialization }}</div>{% endif %}
+            </td>
+            <td data-label="MSL" class="t-mono">{{ c.msl }}</td>
+            <td data-label="Worked with">{{ c.worked_with|default:"Self" }}</td>
+            <td data-label="Products" >{{ c.products|default:"—" }}</td>
+            <td data-label="Call time" class="t-mono t-secondary">{{ c.call_time|time:"H:i" }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="card__body"><p class="t-caption">No doctor calls logged on this date.</p></div>
+    {% endif %}
+  </div>
+
+  <!-- Chemist & stockist side by side -->
+  <div class="grid grid--2" style="align-items:start">
+    <div class="card">
+      <div class="card__header">
+        <span class="card__title">Chemist calls</span>
+        <span class="badge badge--neutral">{{ chemist_coverages|length }}</span>
+      </div>
+      {% if chemist_coverages %}
+      <div class="table-wrap" style="border:none; border-radius:0">
+        <table class="table">
+          <thead><tr><th>SN</th><th>Chemist</th><th>Call time</th></tr></thead>
+          <tbody>
+            {% for c in chemist_coverages %}
+            <tr>
+              <td class="t-secondary">{{ forloop.counter }}</td>
+              <td class="cell-strong">{{ c.name }}</td>
+              <td class="t-mono t-secondary">{{ c.call_time|time:"H:i" }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="card__body"><p class="t-caption">No chemist calls logged on this date.</p></div>
+      {% endif %}
+    </div>
+
+    <div class="card">
+      <div class="card__header">
+        <span class="card__title">Stockist calls</span>
+        <span class="badge badge--neutral">{{ stockist_coverages|length }}</span>
+      </div>
+      {% if stockist_coverages %}
+      <div class="table-wrap" style="border:none; border-radius:0">
+        <table class="table">
+          <thead><tr><th>SN</th><th>Stockist</th><th>Call time</th></tr></thead>
+          <tbody>
+            {% for c in stockist_coverages %}
+            <tr>
+              <td class="t-secondary">{{ forloop.counter }}</td>
+              <td class="cell-strong">{{ c.name }}</td>
+              <td class="t-mono t-secondary">{{ c.call_time|time:"H:i" }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="card__body"><p class="t-caption">No stockist calls logged on this date.</p></div>
+      {% endif %}
+    </div>
+  </div>
 </div>
+{% else %}
+<div class="card">
+  <div class="card__body">
+    <div class="empty">
+      <div class="empty__glyph"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="1.5"/><path d="M3 9h18M8 2v4M16 2v4"/></svg></div>
+      <div class="empty__title">Pick a date</div>
+      <div class="empty__text">Choose a date above to view that day's activity report.</div>
+    </div>
+  </div>
+</div>
+{% endif %}
 {% endblock %}

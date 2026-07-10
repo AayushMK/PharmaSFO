@@ -1,63 +1,82 @@
 {% extends "base.html" %}
 
-{% block title %}Add Doctor to Employee - PharmaSFO{% endblock %}
+{% block title %}Request Doctor Assignment - PharmaSFO{% endblock %}
+{% block legacy_css %}{% endblock %}
 {% block breadcrumb %}<span>Directory</span><span class="sep">/</span><span>My assignments</span><span class="sep">/</span><span class="current">Request assignment</span>{% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="card">
-        <h2>Add Doctor</h2>
-        <p><strong>Employee:</strong> {{ employee.get_full_name|default:employee.username }}</p>
-
-        <form method="post">
-            {% csrf_token %}
-            <div class="form-group">
-                <label for="doctor_search">Search Doctor</label>
-                <input type="text" id="doctor_search" placeholder="Type doctor name, area, or NMC number" autocomplete="off">
-            </div>
-
-            <div class="form-group">
-                <label for="doctor">Doctor</label>
-                <select name="doctor" id="doctor" required size="8">
-                    <option value="">Select a doctor</option>
-                    {% for doctor in available_doctors %}
-                        <option value="{{ doctor.id }}" data-search="{{ doctor.name }} {{ doctor.nmc_number }} {{ doctor.area }}">
-                            {{ doctor.name }} (NMC: {{ doctor.nmc_number }}) - {{ doctor.area }}
-                        </option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label for="msl_number">MSL Number</label>
-                <input type="number" name="msl_number" id="msl_number" min="1" placeholder="Enter MSL number">
-            </div>
-
-            <button type="submit" class="btn">Add Doctor</button>
-            <a href="{% url 'doctor_employee_relation' %}" class="btn" style="margin-left: 8px;">Cancel</a>
-        </form>
-
-        <script>
-            document.addEventListener('DOMContentLoaded', function () {
-                const searchInput = document.getElementById('doctor_search');
-                const doctorSelect = document.getElementById('doctor');
-
-                if (!searchInput || !doctorSelect) return;
-
-                searchInput.addEventListener('input', function () {
-                    const query = this.value.toLowerCase().trim();
-                    Array.from(doctorSelect.options).forEach(function (option) {
-                        if (!option.value) {
-                            option.hidden = false;
-                            return;
-                        }
-
-                        const haystack = (option.getAttribute('data-search') || '').toLowerCase();
-                        option.hidden = haystack.indexOf(query) === -1;
-                    });
-                });
-            });
-        </script>
-    </div>
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Request Doctor Assignment</h1>
+    <p class="page-sub">Requesting for <strong>{{ employee.get_full_name|default:employee.username }}</strong> — the assignment becomes active once HR approves it.</p>
+  </div>
 </div>
+
+<div class="card" style="max-width:720px">
+  <div class="card__body">
+    <form method="post" id="assignment-form" class="stack">
+      {% csrf_token %}
+      <div class="field">
+        <label class="label" for="doctor_search">Search doctor</label>
+        <input type="search" id="doctor_search" class="input" placeholder="Type doctor name, area, or NMC number" autocomplete="off" autofocus>
+      </div>
+
+      <div class="field">
+        <label class="label" for="doctor">Doctor <span class="req">*</span></label>
+        <select name="doctor" id="doctor" class="select listbox" required size="8">
+          {% for doctor in available_doctors %}
+            <option value="{{ doctor.id }}" data-search="{{ doctor.name|lower }} {{ doctor.nmc_number|lower }} {{ doctor.area|lower }}">
+              {{ doctor.name }} · {{ doctor.area }} (NMC: {{ doctor.nmc_number }})
+            </option>
+          {% endfor %}
+        </select>
+        <span class="help" id="doctor-match-count">{{ available_doctors|length }} doctor{{ available_doctors|length|pluralize }} available</span>
+      </div>
+
+      <div class="field" style="max-width:280px">
+        <label class="label" for="msl_number">MSL number <span class="optional">(optional)</span></label>
+        <input type="number" name="msl_number" id="msl_number" class="input" min="1" placeholder="e.g. 12">
+        <span class="help">Importance rank: 1–25 Super Core · 26–75 Core · 76+ (or blank) VIP.</span>
+      </div>
+    </form>
+  </div>
+  <div class="card__footer">
+    <a href="{% url 'doctor_employee_relation' %}" class="btn btn--ghost">Cancel</a>
+    <div class="spacer"></div>
+    <button type="submit" form="assignment-form" class="btn btn--primary">Submit request</button>
+  </div>
+</div>
+
+<style>
+  /* Multi-row listbox variant of .select — no chevron, options as rows */
+  .listbox { height: auto; padding: var(--space-1); background-image: none; }
+  .listbox option { padding: var(--space-2) var(--space-3); border-radius: var(--radius-sm); }
+  .listbox option:checked { background: var(--primary-tint); color: var(--primary); }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const searchInput = document.getElementById('doctor_search');
+    const doctorSelect = document.getElementById('doctor');
+    const matchCount = document.getElementById('doctor-match-count');
+    if (!searchInput || !doctorSelect) return;
+
+    const options = Array.from(doctorSelect.options);
+    const total = options.length;
+
+    searchInput.addEventListener('input', function () {
+        const query = this.value.toLowerCase().trim();
+        let visible = 0;
+        options.forEach(function (option) {
+            const haystack = option.getAttribute('data-search') || '';
+            const show = !query || haystack.indexOf(query) !== -1;
+            option.hidden = !show;
+            if (show) visible++;
+        });
+        matchCount.textContent = query
+            ? visible + ' of ' + total + ' doctors match'
+            : total + ' doctor' + (total === 1 ? '' : 's') + ' available';
+    });
+});
+</script>
 {% endblock %}

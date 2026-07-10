@@ -1,9 +1,11 @@
 import calendar
 from datetime import timedelta
 
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import PermissionDenied
 from django.db.models import Count
-from django.shortcuts import render
+from django.shortcuts import redirect, render
 from django.utils import timezone
 from django.views.decorators.cache import never_cache
 
@@ -11,6 +13,36 @@ from daily_coverage.models import DailyCoverage
 from doctor_employee_relation.models import DoctorEmployeeRelation
 from reports.views import CATEGORY_LABELS, VISIT_TARGETS, _doctor_category
 from tour_plans.models import TourPlan
+
+from .forms import UserCreateForm
+
+
+def _can_manage_users(user):
+    return user.is_authenticated and (
+        user.is_superuser or (user.is_staff and user.type == "HR")
+    )
+
+
+@login_required
+@never_cache
+def add_user(request):
+    if not _can_manage_users(request.user):
+        raise PermissionDenied
+
+    if request.method == "POST":
+        form = UserCreateForm(request.POST)
+        if form.is_valid():
+            new_user = form.save()
+            messages.success(
+                request,
+                f"{new_user.get_full_name() or new_user.username} "
+                f"({new_user.get_type_display()}) added — they can log in now.",
+            )
+            return redirect("add_user")
+    else:
+        form = UserCreateForm()
+
+    return render(request, "users/add_user.html", {"form": form})
 
 
 def _month_visit_count(user, year, month):

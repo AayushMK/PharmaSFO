@@ -1,91 +1,102 @@
 {% extends "base.html" %}
 
 {% block title %}Monthly Target Report - PharmaSFO{% endblock %}
+{% block legacy_css %}{% endblock %}
 {% block breadcrumb %}<span>Reports</span><span class="sep">/</span><span class="current">Monthly target</span>{% endblock %}
 
 {% block content %}
-<div class="container">
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Monthly Target Report</h1>
+    <p class="page-sub">Visit-target attainment per assigned doctor for {{ month_name }} {{ year }}.</p>
+  </div>
+  <div class="page-actions">
+    <a href="{% url 'monthly_target_report_excel' %}?month={{ month_str }}{% if selected_employee_id %}&employee_id={{ selected_employee_id }}{% endif %}"
+       class="btn btn--secondary">
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>
+      Export Excel
+    </a>
+  </div>
+</div>
 
-    <div class="card">
-        <h2>Monthly Target Report</h2>
-        <form method="get" style="margin-top:16px; display:flex; align-items:flex-end; gap:12px; flex-wrap:wrap;">
-            <div>
-                <label style="display:block; margin-bottom:4px; font-weight:600;">Choose Month to view Report</label>
-                <input type="month" name="month" value="{{ month_str }}"
-                       style="padding:6px 10px; border:1px solid #ccc; border-radius:4px;">
-            </div>
-            {% if can_view_others %}
-            <div>
-                <label style="display:block; margin-bottom:4px; font-weight:600;">Employee</label>
-                <select name="employee_id" style="padding:6px 10px; border:1px solid #ccc; border-radius:4px; min-width:180px;">
-                    <option value="">— Select employee —</option>
-                    {% for emp in all_employees %}
-                        <option value="{{ emp.pk }}" {% if emp.pk == selected_employee_id %}selected{% endif %}>
-                            {{ emp.get_full_name|default:emp.username }} ({{ emp.get_type_display }})
-                        </option>
-                    {% endfor %}
-                </select>
-            </div>
-            {% endif %}
-            <button type="submit" class="btn">Go</button>
-        </form>
+<form method="get" class="table-toolbar">
+  <div class="table-toolbar__filters" style="align-items:flex-end">
+    <div class="field">
+      <label class="label" for="report-month">Month</label>
+      <input type="month" name="month" id="report-month" class="input" style="width:180px" value="{{ month_str }}">
     </div>
-
-    <div class="card" style="margin-top:16px; padding:0; overflow:hidden;">
-        <div style="background:#4a90c4; color:#fff; padding:10px 16px; font-weight:700;">
-            Target Achieved — {{ month_name }} {{ year }}
-        </div>
-
-        <!-- Legend -->
-        <div style="padding:12px 16px; display:flex; gap:20px; font-size:0.85rem; border-bottom:1px solid #eee;">
-            <span><span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:#2e7d32;vertical-align:middle;margin-right:4px;"></span> Target met</span>
-            <span><span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:#e67e22;vertical-align:middle;margin-right:4px;"></span> Partially visited</span>
-            <span><span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:#c0392b;vertical-align:middle;margin-right:4px;"></span> Not visited</span>
-            <span style="margin-left:auto; color:#666;">Targets: Super Core = 4/month &nbsp;|&nbsp; Core = 2/month &nbsp;|&nbsp; VIP = 1/month</span>
-        </div>
-
-        <h3 style="padding:12px 16px 4px; margin:0; font-size:1rem; text-align:center;">Doctor</h3>
-
-        {% if rows %}
-        <div style="overflow-x:auto;">
-            <table style="width:100%; border-collapse:collapse; font-size:0.9rem;">
-                <thead>
-                    <tr>
-                        <th style="padding:10px 16px; text-align:center; background:#1a4f7a; color:#fff; width:80px;">State</th>
-                        <th style="padding:10px 16px; text-align:center; background:#1a4f7a; color:#fff;">Doctor's Name</th>
-                        <th style="padding:10px 16px; text-align:center; background:#1a4f7a; color:#fff; width:110px;">MSL No.</th>
-                        <th style="padding:10px 16px; text-align:center; background:#1a4f7a; color:#fff; width:130px;">No. of visits</th>
-                        <th style="padding:10px 16px; text-align:center; background:#1a4f7a; color:#fff; width:120px;">Class</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for row in rows %}
-                    <tr style="{% cycle 'background:#fff;' 'background:#f7f9fc;' %} border-bottom:1px solid #eee;">
-                        <td style="padding:10px 16px; text-align:center;">
-                            {% if row.state == "green" %}
-                                <span style="display:inline-block; width:18px; height:18px; border-radius:50%; background:#2e7d32;"></span>
-                            {% elif row.state == "orange" %}
-                                <span style="display:inline-block; width:18px; height:18px; border-radius:50%; background:#e67e22;"></span>
-                            {% else %}
-                                <span style="display:inline-block; width:18px; height:18px; border-radius:50%; background:#c0392b;"></span>
-                            {% endif %}
-                        </td>
-                        <td style="padding:10px 16px; text-align:center;">{{ row.doctor_name }}</td>
-                        <td style="padding:10px 16px; text-align:center;">{{ row.msl }}</td>
-                        <td style="padding:10px 16px; text-align:center;">
-                            {{ row.visits }}
-                            <span style="color:#aaa; font-size:0.8rem;">/ {{ row.target }}</span>
-                        </td>
-                        <td style="padding:10px 16px; text-align:center;">{{ row.category }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-        {% else %}
-        <p style="padding:16px; color:#888;">No assigned doctors found. Add approved doctor-employee relations first.</p>
-        {% endif %}
+    {% if can_view_others %}
+    <div class="field">
+      <label class="label" for="report-employee">Employee</label>
+      <select name="employee_id" id="report-employee" class="select" style="width:240px">
+        <option value="">Myself</option>
+        {% for emp in all_employees %}
+          <option value="{{ emp.pk }}" {% if emp.pk == selected_employee_id %}selected{% endif %}>
+            {{ emp.get_full_name|default:emp.username }} ({{ emp.get_type_display }})
+          </option>
+        {% endfor %}
+      </select>
     </div>
+    {% endif %}
+    <button type="submit" class="btn btn--primary">View report</button>
+  </div>
+</form>
 
+<div class="card">
+  <div class="card__header">
+    <span class="card__title">Target achieved — {{ month_name }} {{ year }}</span>
+    <span class="t-caption">Targets: Super Core 4 · Core 2 · VIP 1 visits/month</span>
+  </div>
+
+  <div class="card__body" style="padding:var(--space-3) var(--space-6); border-bottom:1px solid var(--border)">
+    <div class="row row--wrap" style="gap:var(--space-3)">
+      <span class="badge badge--success"><span class="dot"></span>Target met</span>
+      <span class="badge badge--warning"><span class="dot"></span>Partially visited</span>
+      <span class="badge badge--danger"><span class="dot"></span>Not visited</span>
+    </div>
+  </div>
+
+  {% if rows %}
+  <div class="table-wrap" style="border:none; border-radius:0">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Status</th>
+          <th>Doctor</th>
+          <th>MSL no.</th>
+          <th>Visits</th>
+          <th>Class</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+        <tr>
+          <td>
+            {% if row.state == "green" %}<span class="badge badge--success"><span class="dot"></span>Met</span>
+            {% elif row.state == "orange" %}<span class="badge badge--warning"><span class="dot"></span>Partial</span>
+            {% else %}<span class="badge badge--danger"><span class="dot"></span>Not visited</span>{% endif %}
+          </td>
+          <td class="cell-strong">{{ row.doctor_name }}</td>
+          <td class="t-mono">{{ row.msl }}</td>
+          <td><span class="cell-strong">{{ row.visits }}</span> <span class="t-caption">/ {{ row.target }}</span></td>
+          <td>
+            {% if row.category == "Super Core" %}<span class="badge badge--primary">Super Core</span>
+            {% elif row.category == "Core" %}<span class="badge badge--warning">Core</span>
+            {% else %}<span class="badge badge--success">VIP</span>{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="card__body">
+    <div class="empty" style="padding:var(--space-6) var(--space-4)">
+      <div class="empty__glyph"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+      <div class="empty__title">No assigned doctors</div>
+      <div class="empty__text">Approved doctor assignments are needed before targets can be tracked.</div>
+    </div>
+  </div>
+  {% endif %}
 </div>
 {% endblock %}

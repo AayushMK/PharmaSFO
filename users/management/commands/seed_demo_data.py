@@ -4,10 +4,10 @@ from datetime import date, time
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
-from doctors.models import Doctor
+from doctors.models import Doctor, Hospital
 from doctor_employee_relation.models import DoctorEmployeeRelation
 from tour_plans.models import Area, TourPlan
-from daily_coverage.models import ChemistCoverage, DailyCoverage, StockistCoverage
+from daily_coverage.models import Chemist, ChemistCoverage, DailyCoverage, Stockist, StockistCoverage
 from users.models import User
 
 DEMO_PASSWORD = "Demo@12345"
@@ -41,11 +41,28 @@ class Command(BaseCommand):
         for name in AREA_NAMES:
             areas[name], _ = Area.objects.get_or_create(name=name)
 
+        hospitals = {}
+        for name in AREA_NAMES:
+            hospitals[name], _ = Hospital.objects.get_or_create(
+                name=f"{name} General Hospital", area=areas[name],
+            )
+
+        # Chemist / stockist master directories
+        for i, name in enumerate(CHEMISTS):
+            Chemist.objects.get_or_create(name=name, area=areas[AREA_NAMES[i % len(AREA_NAMES)]])
+        for i, name in enumerate(STOCKISTS):
+            Stockist.objects.get_or_create(name=name, area=areas[AREA_NAMES[i % len(AREA_NAMES)]])
+
         doctors = []
         for name, nmc, area, spec, msl in DOCTORS:
             doctor, _ = Doctor.objects.get_or_create(
                 nmc_number=nmc,
-                defaults={"name": name, "area": area, "specialization": spec},
+                defaults={
+                    "name": name,
+                    "area": area,
+                    "specialization": spec,
+                    "hospital": hospitals[area],
+                },
             )
             doctors.append((doctor, msl))
 

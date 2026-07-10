@@ -1,44 +1,66 @@
 {% extends "base.html" %}
 
 {% block title %}Review Employee Requests - PharmaSFO{% endblock %}
-{% block breadcrumb %}<span>HR Actions</span><span class="sep">/</span><span>Review requests</span><span class="sep">/</span><span class="current">Employee</span>{% endblock %}
+{% block legacy_css %}{% endblock %}
+{% block breadcrumb %}<span>HR Actions</span><span class="sep">/</span><span>Review requests</span><span class="sep">/</span><span class="current">{{ employee.get_full_name|default:employee.username }}</span>{% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="card">
-        <h2>Pending Requests for {{ employee.get_full_name|default:employee.username }}</h2>
-
-        {% if pending_relations %}
-            <table style="width: 100%; border-collapse: collapse; margin-top: 16px;">
-                <thead>
-                    <tr>
-                        <th style="text-align: left; padding: 8px; border-bottom: 1px solid #ddd;">Doctor</th>
-                        <th style="text-align: left; padding: 8px; border-bottom: 1px solid #ddd;">NMC Number</th>
-                        <th style="text-align: left; padding: 8px; border-bottom: 1px solid #ddd;">MSL Number</th>
-                        <th style="text-align: left; padding: 8px; border-bottom: 1px solid #ddd;">Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for relation in pending_relations %}
-                        <tr>
-                            <td style="padding: 8px; border-bottom: 1px solid #ddd;">{{ relation.doctor.name }}</td>
-                            <td style="padding: 8px; border-bottom: 1px solid #ddd;">{{ relation.doctor.nmc_number }}</td>
-                            <td style="padding: 8px; border-bottom: 1px solid #ddd;">{{ relation.msl_number|default:"-" }}</td>
-                            <td style="padding: 8px; border-bottom: 1px solid #ddd;">
-                                <form method="post" style="display: inline;">
-                                    {% csrf_token %}
-                                    <input type="hidden" name="relation_id" value="{{ relation.id }}">
-                                    <button type="submit" name="action" value="approve" class="btn">Approve</button>
-                                    <button type="submit" name="action" value="reject" class="btn" style="background-color: #c0392b;">Reject</button>
-                                </form>
-                            </td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        {% else %}
-            <p>No pending doctor requests for this employee.</p>
-        {% endif %}
-    </div>
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Requests from {{ employee.get_full_name|default:employee.username }}</h1>
+    <p class="page-sub">Approve or reject each pending doctor assignment request.</p>
+  </div>
+  <div class="page-actions">
+    <a href="{% url 'hr_review_requests' %}" class="btn btn--ghost">
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      All requests
+    </a>
+  </div>
 </div>
+
+{% if pending_relations %}
+<div class="table-wrap">
+  <table class="table table--stack">
+    <thead>
+      <tr>
+        <th>Doctor</th>
+        <th>NMC number</th>
+        <th>MSL no.</th>
+        <th class="col-actions">Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for relation in pending_relations %}
+      <tr>
+        <td data-label="Doctor">
+          <div class="cell-strong">{{ relation.doctor.name }}</div>
+          {% if relation.doctor.specialization %}<div class="cell-sub">{{ relation.doctor.specialization }}</div>{% endif %}
+        </td>
+        <td data-label="NMC number" class="t-mono t-secondary">{{ relation.doctor.nmc_number }}</td>
+        <td data-label="MSL no." class="t-mono">{{ relation.msl_number|default:"—" }}</td>
+        <td data-label="Action" class="col-actions">
+          <form method="post" style="display:inline-flex; gap:var(--space-2)">
+            {% csrf_token %}
+            <input type="hidden" name="relation_id" value="{{ relation.id }}">
+            <button type="submit" name="action" value="approve" class="btn btn--primary btn--sm">Approve</button>
+            <button type="submit" name="action" value="reject" class="btn btn--danger btn--sm">Reject</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="card">
+  <div class="card__body">
+    <div class="empty">
+      <div class="empty__glyph"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>
+      <div class="empty__title">Nothing pending</div>
+      <div class="empty__text">This employee has no pending doctor requests.</div>
+      <div class="empty__actions"><a href="{% url 'hr_review_requests' %}" class="btn btn--secondary btn--sm">Back to all requests</a></div>
+    </div>
+  </div>
+</div>
+{% endif %}
 {% endblock %}

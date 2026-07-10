@@ -5,22 +5,26 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block title %}PharmaSFO{% endblock %}</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231e64d6'/%3E%3Ctext x='16' y='22.5' font-family='-apple-system,Segoe UI,sans-serif' font-size='18' font-weight='700' fill='white' text-anchor='middle'%3EP%3C/text%3E%3C/svg%3E">
     {# Legacy stylesheet loads BEFORE the Lumo files so Lumo wins any class collisions. #}
     {# Pages fully ported to Lumo override this block to drop it. #}
     {% block legacy_css %}<link rel="stylesheet" href="{% static 'css/style.css' %}">{% endblock %}
     <link rel="stylesheet" href="{% static 'lumo/tokens.css' %}">
     <link rel="stylesheet" href="{% static 'lumo/components.css' %}">
+    {# App-level styles on top of Lumo (skip link, stacked mobile tables, …) #}
+    <link rel="stylesheet" href="{% static 'css/app.css' %}">
     <script src="{% static 'lumo/lumo.js' %}" defer></script>
 </head>
 <body>
 {% if user.is_authenticated %}
+<a class="skip-link" href="#main-content">Skip to content</a>
 <div class="app" id="app">
   <!-- ==================== SIDEBAR ==================== -->
   <aside class="sidebar">
-    <div class="sidebar__brand">
+    <a class="sidebar__brand" href="{% url 'dashboard' %}" style="color:inherit;text-decoration:none">
       <span class="brand-mark">P</span>
       <span class="brand-name">Pharma <span>SFO</span></span>
-    </div>
+    </a>
 
     {% with url_name=request.resolver_match.url_name %}
     <nav class="sidebar__nav">
@@ -102,6 +106,18 @@
             <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
             <span class="nav-item__label">Add doctor</span>
           </a>
+          <a class="nav-item{% if url_name == 'add_chemist' %} is-active{% endif %}" href="{% url 'add_chemist' %}">
+            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L4 7v13a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7l-2-5z"/><path d="M4 7h16"/><path d="M16 11a4 4 0 0 1-8 0"/></svg>
+            <span class="nav-item__label">Add chemist</span>
+          </a>
+          <a class="nav-item{% if url_name == 'add_stockist' %} is-active{% endif %}" href="{% url 'add_stockist' %}">
+            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.27 6.96L12 12.01l8.73-5.05"/><path d="M12 22.08V12"/></svg>
+            <span class="nav-item__label">Add stockist</span>
+          </a>
+          <a class="nav-item{% if url_name == 'add_user' %} is-active{% endif %}" href="{% url 'add_user' %}">
+            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg>
+            <span class="nav-item__label">Add user</span>
+          </a>
           {% if user.is_staff and user.type == 'HR' %}
           <a class="nav-item{% if url_name == 'hr_review_requests' or url_name == 'hr_review_employee_requests' %} is-active{% endif %}" href="{% url 'hr_review_requests' %}">
             <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
@@ -148,7 +164,7 @@
       </form>
     </header>
 
-    <main class="page">
+    <main class="page" id="main-content">
       <div class="page__inner">
 {% endif %}
 {% block content %}{% endblock %}
@@ -160,6 +176,33 @@
   {# first cell on desktop and shift the whole layout. Mobile CSS makes it fixed. #}
   <div class="scrim"></div>
 </div>
+
+{# Django messages → Lumo toasts (lumo.js defines window.lumoToast; deferred #}
+{# scripts run before DOMContentLoaded, so the handler below can rely on it). #}
+{% if messages %}
+<div id="dj-messages" hidden>
+  {% for message in messages %}<span data-type="{{ message.tags }}">{{ message }}</span>{% endfor %}
+</div>
+{% endif %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Expose the active nav item to assistive tech
+    document.querySelectorAll('.nav-item.is-active').forEach(function (a) {
+        a.setAttribute('aria-current', 'page');
+    });
+    // Flash messages as toasts
+    var box = document.getElementById('dj-messages');
+    if (box && window.lumoToast) {
+        box.querySelectorAll('span').forEach(function (m) {
+            var tags = (m.dataset.type || '').split(' ');
+            var type = tags.indexOf('error') !== -1 ? 'danger'
+                     : tags.indexOf('warning') !== -1 ? 'warning'
+                     : tags.indexOf('success') !== -1 ? 'success' : 'info';
+            window.lumoToast({ type: type, title: m.textContent });
+        });
+    }
+});
+</script>
 {% endif %}
 </body>
 </html>

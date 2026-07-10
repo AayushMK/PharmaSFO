@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}Add {{ kind }} - PharmaSFO{% endblock %}
+{% block legacy_css %}{% endblock %}
+{% block breadcrumb %}<span>HR Actions</span><span class="sep">/</span><span class="current">Add {{ kind|lower }}</span>{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Add {{ kind }}</h1>
+    <p class="page-sub">Register a {{ kind|lower }} in the directory. Reps pick from it when logging daily coverage.</p>
+  </div>
+</div>
+
+{% if form.non_field_errors %}
+<div class="alert alert--danger" style="margin-bottom:var(--space-6)">
+  <svg class="alert__icon ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6M9 9l6 6"/></svg>
+  <div class="alert__body"><div class="alert__text">{{ form.non_field_errors|striptags }}</div></div>
+</div>
+{% endif %}
+
+<div class="card" style="max-width:720px">
+  <div class="card__body">
+    <form method="post" id="add-partner-form">
+      {% csrf_token %}
+      <div class="grid grid--2">
+        <div class="field{% if form.name.errors %} is-error{% endif %}">
+          <label class="label" for="{{ form.name.id_for_label }}">{{ kind }} name <span class="req">*</span></label>
+          {{ form.name }}
+          {% if form.name.errors %}<span class="help">{{ form.name.errors|striptags }}</span>{% endif %}
+        </div>
+        <div class="field{% if form.area.errors %} is-error{% endif %}">
+          <label class="label" for="{{ form.area.id_for_label }}">Area <span class="req">*</span></label>
+          {{ form.area }}
+          {% if form.area.errors %}<span class="help">{{ form.area.errors|striptags }}</span>
+          {% else %}<span class="help">Name + area together must be unique.</span>{% endif %}
+        </div>
+        <div class="field{% if form.phone.errors %} is-error{% endif %}">
+          <label class="label" for="{{ form.phone.id_for_label }}">Phone <span class="optional">(optional)</span></label>
+          {{ form.phone }}
+          {% if form.phone.errors %}<span class="help">{{ form.phone.errors|striptags }}</span>{% endif %}
+        </div>
+      </div>
+    </form>
+  </div>
+  <div class="card__footer">
+    <a href="{% url 'dashboard' %}" class="btn btn--ghost">Cancel</a>
+    <div class="spacer"></div>
+    <button type="submit" form="add-partner-form" class="btn btn--primary">Add {{ kind|lower }}</button>
+  </div>
+</div>
+{% endblock %}

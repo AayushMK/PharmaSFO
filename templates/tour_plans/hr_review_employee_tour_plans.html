@@ -1,50 +1,65 @@
 {% extends "base.html" %}
 
 {% block title %}Review Tour Plans - PharmaSFO{% endblock %}
-{% block breadcrumb %}<span>HR Actions</span><span class="sep">/</span><span>Review tour plans</span><span class="sep">/</span><span class="current">Employee</span>{% endblock %}
+{% block legacy_css %}{% endblock %}
+{% block breadcrumb %}<span>HR Actions</span><span class="sep">/</span><span>Review tour plans</span><span class="sep">/</span><span class="current">{{ employee.get_full_name|default:employee.username }}</span>{% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="card">
-        <h2>Pending Tour Plans for {{ employee.get_full_name|default:employee.username }}</h2>
-
-        {% if pending_plans %}
-            <table style="width: 100%; border-collapse: collapse; margin-top: 16px;">
-                <thead>
-                    <tr>
-                        <th style="text-align: left; padding: 8px; border-bottom: 1px solid #ddd;">Date</th>
-                        <th style="text-align: left; padding: 8px; border-bottom: 1px solid #ddd;">Area</th>
-                        <th style="text-align: left; padding: 8px; border-bottom: 1px solid #ddd;">Worked With</th>
-                        <th style="text-align: left; padding: 8px; border-bottom: 1px solid #ddd;">Remarks</th>
-                        <th style="text-align: left; padding: 8px; border-bottom: 1px solid #ddd;">Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for plan in pending_plans %}
-                        <tr>
-                            <td style="padding: 8px; border-bottom: 1px solid #ddd;">{{ plan.plan_date }}</td>
-                            <td style="padding: 8px; border-bottom: 1px solid #ddd;">{{ plan.area }}</td>
-                            <td style="padding: 8px; border-bottom: 1px solid #ddd;">{{ plan.worked_with|default:"-" }}</td>
-                            <td style="padding: 8px; border-bottom: 1px solid #ddd;">{{ plan.remarks|default:"-" }}</td>
-                            <td style="padding: 8px; border-bottom: 1px solid #ddd;">
-                                <form method="post" style="display: inline;">
-                                    {% csrf_token %}
-                                    <input type="hidden" name="plan_id" value="{{ plan.id }}">
-                                    <button type="submit" name="action" value="approve" class="btn">Approve</button>
-                                    <button type="submit" name="action" value="reject" class="btn" style="background-color: #c0392b;">Reject</button>
-                                </form>
-                            </td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        {% else %}
-            <p>No pending tour plans for this employee.</p>
-        {% endif %}
-
-        <p style="margin-top: 16px;">
-            <a href="{% url 'hr_review_tour_plans' %}" class="btn">Back to list</a>
-        </p>
-    </div>
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Tour Plans from {{ employee.get_full_name|default:employee.username }}</h1>
+    <p class="page-sub">Approve or reject each pending working day.</p>
+  </div>
+  <div class="page-actions">
+    <a href="{% url 'hr_review_tour_plans' %}" class="btn btn--ghost">
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      All tour plans
+    </a>
+  </div>
 </div>
+
+{% if pending_plans %}
+<div class="table-wrap">
+  <table class="table table--stack">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Area</th>
+        <th>Worked with</th>
+        <th>Remarks</th>
+        <th class="col-actions">Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for plan in pending_plans %}
+      <tr>
+        <td data-label="Date" class="cell-strong" style="white-space:nowrap">{{ plan.plan_date|date:"D, j M Y" }}</td>
+        <td data-label="Area">{{ plan.area }}</td>
+        <td data-label="Worked with">{{ plan.worked_with|default:"—" }}</td>
+        <td data-label="Remarks" class="t-secondary">{{ plan.remarks|default:"—" }}</td>
+        <td data-label="Action" class="col-actions">
+          <form method="post" style="display:inline-flex; gap:var(--space-2)">
+            {% csrf_token %}
+            <input type="hidden" name="plan_id" value="{{ plan.id }}">
+            <button type="submit" name="action" value="approve" class="btn btn--primary btn--sm">Approve</button>
+            <button type="submit" name="action" value="reject" class="btn btn--danger btn--sm">Reject</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="card">
+  <div class="card__body">
+    <div class="empty">
+      <div class="empty__glyph"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>
+      <div class="empty__title">Nothing pending</div>
+      <div class="empty__text">This employee has no pending tour plans.</div>
+      <div class="empty__actions"><a href="{% url 'hr_review_tour_plans' %}" class="btn btn--secondary btn--sm">Back to all tour plans</a></div>
+    </div>
+  </div>
+</div>
+{% endif %}
 {% endblock %}

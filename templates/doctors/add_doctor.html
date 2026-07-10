@@ -1,47 +1,73 @@
 {% extends "base.html" %}
 
 {% block title %}Add Doctor - PharmaSFO{% endblock %}
+{% block legacy_css %}{% endblock %}
 {% block breadcrumb %}<span>HR Actions</span><span class="sep">/</span><span class="current">Add doctor</span>{% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="card">
-        <h2 style="margin-bottom: 16px;">Add Doctor</h2>
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Add Doctor</h1>
+    <p class="page-sub">Register a new doctor in the directory. Reps can then request the assignment from “My assignments”.</p>
+  </div>
+</div>
 
-        {% if form.non_field_errors %}
-        <div class="empty-state" style="color:#b00020;">{{ form.non_field_errors }}</div>
-        {% endif %}
+{% if form.non_field_errors %}
+<div class="alert alert--danger" style="margin-bottom:var(--space-6)">
+  <svg class="alert__icon ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6M9 9l6 6"/></svg>
+  <div class="alert__body"><div class="alert__text">{{ form.non_field_errors|striptags }}</div></div>
+</div>
+{% endif %}
 
-        <form method="post">
-            {% csrf_token %}
-
-            <div class="form-group">
-                <label for="{{ form.name.id_for_label }}">Doctor Name</label>
-                {{ form.name }}
-                {% if form.name.errors %}<small style="color:#b00020;">{{ form.name.errors|striptags }}</small>{% endif %}
-            </div>
-
-            <div class="form-group">
-                <label for="{{ form.nmc_number.id_for_label }}">NMC Number</label>
-                {{ form.nmc_number }}
-                {% if form.nmc_number.errors %}<small style="color:#b00020;">{{ form.nmc_number.errors|striptags }}</small>{% endif %}
-            </div>
-
-            <div class="form-group">
-                <label for="{{ form.area.id_for_label }}">Area</label>
-                {{ form.area }}
-                {% if form.area.errors %}<small style="color:#b00020;">{{ form.area.errors|striptags }}</small>{% endif %}
-            </div>
-
-            <div class="form-group">
-                <label for="{{ form.specialization.id_for_label }}">Specialization</label>
-                {{ form.specialization }}
-                {% if form.specialization.errors %}<small style="color:#b00020;">{{ form.specialization.errors|striptags }}</small>{% endif %}
-            </div>
-
-            <button type="submit" class="btn">Add Doctor</button>
-            <a href="{% url 'doctor_list' %}" class="btn" style="margin-left: 8px;">Cancel</a>
-        </form>
-    </div>
+<div class="card" style="max-width:720px">
+  <div class="card__body">
+    <form method="post" id="add-doctor-form">
+      {% csrf_token %}
+      <div class="grid grid--2">
+        <div class="field{% if form.name.errors %} is-error{% endif %}">
+          <label class="label" for="{{ form.name.id_for_label }}">Doctor name <span class="req">*</span></label>
+          {{ form.name }}
+          {% if form.name.errors %}<span class="help">{{ form.name.errors|striptags }}</span>{% endif %}
+        </div>
+        <div class="field{% if form.nmc_number.errors %} is-error{% endif %}">
+          <label class="label" for="{{ form.nmc_number.id_for_label }}">NMC number <span class="req">*</span></label>
+          {{ form.nmc_number }}
+          {% if form.nmc_number.errors %}<span class="help">{{ form.nmc_number.errors|striptags }}</span>
+          {% else %}<span class="help">Nepal Medical Council number — must be unique.</span>{% endif %}
+        </div>
+        <div class="field{% if form.hospital.errors %} is-error{% endif %}">
+          <label class="label" for="{{ form.hospital.id_for_label }}">Hospital <span class="req">*</span></label>
+          {{ form.hospital }}
+          {% if form.hospital.errors %}<span class="help">{{ form.hospital.errors|striptags }}</span>
+          {% else %}<span class="help">Hospitals are managed in the Django admin.</span>{% endif %}
+        </div>
+        <div class="field{% if form.area.errors %} is-error{% endif %}">
+          <label class="label" for="{{ form.area.id_for_label }}">Area <span class="req">*</span></label>
+          {{ form.area }}
+          {% if form.area.errors %}<span class="help">{{ form.area.errors|striptags }}</span>{% endif %}
+        </div>
+        <div class="field{% if form.specialization.errors %} is-error{% endif %}">
+          <label class="label" for="{{ form.specialization.id_for_label }}">Specialization <span class="optional">(optional)</span></label>
+          {{ form.specialization }}
+          {% if form.specialization.errors %}<span class="help">{{ form.specialization.errors|striptags }}</span>{% endif %}
+        </div>
+        <div class="field{% if form.phone.errors %} is-error{% endif %}">
+          <label class="label" for="{{ form.phone.id_for_label }}">Phone <span class="optional">(optional)</span></label>
+          {{ form.phone }}
+          {% if form.phone.errors %}<span class="help">{{ form.phone.errors|striptags }}</span>{% endif %}
+        </div>
+        <div class="field{% if form.email.errors %} is-error{% endif %}">
+          <label class="label" for="{{ form.email.id_for_label }}">Email <span class="optional">(optional)</span></label>
+          {{ form.email }}
+          {% if form.email.errors %}<span class="help">{{ form.email.errors|striptags }}</span>{% endif %}
+        </div>
+      </div>
+    </form>
+  </div>
+  <div class="card__footer">
+    <a href="{% url 'doctor_list' %}" class="btn btn--ghost">Cancel</a>
+    <div class="spacer"></div>
+    <button type="submit" form="add-doctor-form" class="btn btn--primary">Add doctor</button>
+  </div>
 </div>
 {% endblock %}

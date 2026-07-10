@@ -1,95 +1,101 @@
 {% extends "base.html" %}
 
 {% block title %}Yearly Activity Report - PharmaSFO{% endblock %}
+{% block legacy_css %}{% endblock %}
 {% block breadcrumb %}<span>Reports</span><span class="sep">/</span><span class="current">Yearly activity</span>{% endblock %}
 
 {% block content %}
-<div class="container">
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Yearly Activity Report</h1>
+    <p class="page-sub">Visit dates per doctor across every month of {{ year }}.</p>
+  </div>
+  <div class="page-actions">
+    <a href="{% url 'yearly_activity_report_excel' %}?year={{ year }}{% if selected_employee_id %}&employee_id={{ selected_employee_id }}{% endif %}"
+       class="btn btn--secondary">
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>
+      Export Excel
+    </a>
+  </div>
+</div>
 
-    <div class="card">
-        <h2>Yearly Activity Report</h2>
-        <form method="get" style="margin-top:16px; display:flex; align-items:flex-end; gap:12px; flex-wrap:wrap;">
-            <div>
-                <label style="display:block; margin-bottom:4px; font-weight:600;">Choose Year to view Report</label>
-                <select name="year" style="padding:6px 10px; border:1px solid #ccc; border-radius:4px; min-width:100px;">
-                    {% for y in year_choices %}
-                        <option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            {% if can_view_others %}
-            <div>
-                <label style="display:block; margin-bottom:4px; font-weight:600;">Employee</label>
-                <select name="employee_id" style="padding:6px 10px; border:1px solid #ccc; border-radius:4px; min-width:180px;">
-                    <option value="">— Select employee —</option>
-                    {% for emp in all_employees %}
-                        <option value="{{ emp.pk }}" {% if emp.pk == selected_employee_id %}selected{% endif %}>
-                            {{ emp.get_full_name|default:emp.username }} ({{ emp.get_type_display }})
-                        </option>
-                    {% endfor %}
-                </select>
-            </div>
-            {% endif %}
-            <button type="submit" class="btn">Go</button>
-            <a href="{% url 'yearly_activity_report_excel' %}?year={{ year }}{% if selected_employee_id %}&employee_id={{ selected_employee_id }}{% endif %}"
-               class="btn" style="background:#217346; margin-left:auto;">
-                Export Excel
-            </a>
-        </form>
+<form method="get" class="table-toolbar">
+  <div class="table-toolbar__filters" style="align-items:flex-end">
+    <div class="field">
+      <label class="label" for="report-year">Year</label>
+      <select name="year" id="report-year" class="select" style="width:120px">
+        {% for y in year_choices %}
+          <option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>
+        {% endfor %}
+      </select>
     </div>
-
-    <div class="card" style="margin-top:16px; padding:0; overflow:hidden;">
-        <div style="background:#1a4f7a; color:#fff; padding:10px 16px; font-weight:700;">
-            Yearly Activity Report of {{ year }}
-        </div>
-
-        {% if rows %}
-        <div style="overflow-x:auto;">
-            <table style="width:100%; border-collapse:collapse; font-size:0.82rem; min-width:1200px;">
-                <thead>
-                    <tr>
-                        <th style="padding:8px 10px; text-align:left; white-space:nowrap; min-width:55px; background:#1a4f7a; color:#fff;">MSL No.</th>
-                        <th style="padding:8px 10px; text-align:left; white-space:nowrap; min-width:160px; background:#1a4f7a; color:#fff;">Doctor's Name</th>
-                        <th style="padding:8px 10px; text-align:left; white-space:nowrap; min-width:120px; background:#1a4f7a; color:#fff;">Speciality</th>
-                        <th style="padding:8px 10px; text-align:left; white-space:nowrap; min-width:100px; background:#1a4f7a; color:#fff;">Doctor NMC No.</th>
-                        <th style="padding:8px 10px; text-align:left; white-space:nowrap; min-width:90px; background:#1a4f7a; color:#fff;">City</th>
-                        <th style="padding:8px 10px; text-align:left; white-space:nowrap; min-width:140px; background:#1a4f7a; color:#fff;">Hospital</th>
-                        {% for m in month_abbr %}
-                            <th style="padding:8px 6px; text-align:center; white-space:nowrap; min-width:60px; background:#1a4f7a; color:#fff;">{{ m }}</th>
-                        {% endfor %}
-                        <th style="padding:8px 10px; text-align:center; white-space:nowrap; min-width:65px; background:#163f61; color:#fff;">Total Calls</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for row in rows %}
-                    <tr style="{% cycle 'background:#fff;' 'background:#f7f9fc;' %}">
-                        <td style="padding:8px 10px; border-bottom:1px solid #eee; vertical-align:top;">{{ row.msl }}</td>
-                        <td style="padding:8px 10px; border-bottom:1px solid #eee; vertical-align:top;">{{ row.doctor.name }}</td>
-                        <td style="padding:8px 10px; border-bottom:1px solid #eee; vertical-align:top;">{{ row.doctor.specialization|default:"-" }}</td>
-                        <td style="padding:8px 10px; border-bottom:1px solid #eee; vertical-align:top;">{{ row.doctor.nmc_number }}</td>
-                        <td style="padding:8px 10px; border-bottom:1px solid #eee; vertical-align:top;">{{ row.doctor.area|default:"-" }}</td>
-                        <td style="padding:8px 10px; border-bottom:1px solid #eee; vertical-align:top;">
-                            {% for h in row.hospitals %}{{ h }}<br>{% empty %}-{% endfor %}
-                        </td>
-                        {% for days in row.month_visits %}
-                            <td style="padding:8px 6px; border-bottom:1px solid #eee; text-align:center; vertical-align:top; color:#1a5276;">
-                                {% if days %}
-                                    {% for d in days %}{{ d }},{% endfor %}
-                                {% endif %}
-                            </td>
-                        {% endfor %}
-                        <td style="padding:8px 10px; border-bottom:1px solid #eee; text-align:center; font-weight:700; vertical-align:top;">
-                            {{ row.total_calls }}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-        {% else %}
-        <p style="padding:16px; color:#888;">No data found for {{ year }}. Add approved doctor relations and daily coverage records first.</p>
-        {% endif %}
+    {% if can_view_others %}
+    <div class="field">
+      <label class="label" for="report-employee">Employee</label>
+      <select name="employee_id" id="report-employee" class="select" style="width:240px">
+        <option value="">Myself</option>
+        {% for emp in all_employees %}
+          <option value="{{ emp.pk }}" {% if emp.pk == selected_employee_id %}selected{% endif %}>
+            {{ emp.get_full_name|default:emp.username }} ({{ emp.get_type_display }})
+          </option>
+        {% endfor %}
+      </select>
     </div>
+    {% endif %}
+    <button type="submit" class="btn btn--primary">View report</button>
+  </div>
+</form>
 
+<div class="card">
+  <div class="card__header">
+    <span class="card__title">Yearly activity — {{ year }}</span>
+    {% if rows %}<span class="badge badge--neutral">{{ rows|length }} doctor{{ rows|length|pluralize }}</span>{% endif %}
+  </div>
+
+  {% if rows %}
+  <div class="table-wrap" style="border:none; border-radius:0">
+    <table class="table" style="min-width:1200px">
+      <thead>
+        <tr>
+          <th>MSL no.</th>
+          <th style="min-width:160px">Doctor</th>
+          <th style="min-width:100px">NMC no.</th>
+          <th style="min-width:90px">City</th>
+          <th style="min-width:140px">Hospital</th>
+          {% for m in month_abbr %}
+            <th style="text-align:center; min-width:60px">{{ m }}</th>
+          {% endfor %}
+          <th class="num">Total calls</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+        <tr>
+          <td class="t-mono">{{ row.msl }}</td>
+          <td>
+            <div class="cell-strong">{{ row.doctor.name }}</div>
+            {% if row.doctor.specialization %}<div class="cell-sub">{{ row.doctor.specialization }}</div>{% endif %}
+          </td>
+          <td class="t-mono t-secondary">{{ row.doctor.nmc_number }}</td>
+          <td>{{ row.doctor.area|default:"—" }}</td>
+          <td class="cell-sub">{% for h in row.hospitals %}{{ h }}{% if not forloop.last %}<br>{% endif %}{% empty %}—{% endfor %}</td>
+          {% for days in row.month_visits %}
+            <td class="t-mono t-secondary" style="text-align:center">{% if days %}{% for d in days %}{{ d }}{% if not forloop.last %}, {% endif %}{% endfor %}{% else %}<span class="t-muted">·</span>{% endif %}</td>
+          {% endfor %}
+          <td class="num cell-strong">{{ row.total_calls }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="card__body">
+    <div class="empty" style="padding:var(--space-6) var(--space-4)">
+      <div class="empty__glyph"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg></div>
+      <div class="empty__title">No data for {{ year }}</div>
+      <div class="empty__text">Approved doctor assignments and logged coverage will appear here.</div>
+    </div>
+  </div>
+  {% endif %}
 </div>
 {% endblock %}

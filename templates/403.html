@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block title %}Not Allowed - PharmaSFO{% endblock %}
+{% block legacy_css %}{% endblock %}
+{% block breadcrumb %}<span class="current">Not allowed</span>{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width:520px; margin:10vh auto 0">
+  <div class="card__body">
+    <div class="empty">
+      <div class="empty__glyph"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+      <div class="empty__title">You don't have access to this page</div>
+      <div class="empty__text">This area is limited to HR. If you think that's a mistake, contact your HR team.</div>
+      <div class="empty__actions"><a href="{% url 'dashboard' %}" class="btn btn--primary btn--sm">Back to dashboard</a></div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -20,7 +20,7 @@
 
 <div class="card">
   <div class="card__body">
-    <form method="post" id="daily-coverage-form">
+    <form method="post" id="daily-coverage-form" novalidate>
         {% csrf_token %}
         {{ form.entries }}
         {{ form.chemist_entries }}
@@ -77,7 +77,7 @@
 
         <!-- Chemist Coverage Tab -->
         <div id="tab-chemist" class="tab-panel" style="display:none; padding-top:var(--space-4);">
-            <p class="t-caption" style="margin-bottom:var(--space-4);">Optional — add chemist visits for the day.</p>
+            <p class="t-caption" style="margin-bottom:var(--space-4);">Optional — pick chemists from the directory. New chemists are added by HR.</p>
             <div id="chemist-entry-list" class="stack"></div>
             <div class="row row--wrap" style="margin-top:var(--space-4); gap:var(--space-3);">
                 <button type="button" id="add-chemist-btn" class="btn btn--secondary">
@@ -90,7 +90,7 @@
 
         <!-- Stockist Coverage Tab -->
         <div id="tab-stockist" class="tab-panel" style="display:none; padding-top:var(--space-4);">
-            <p class="t-caption" style="margin-bottom:var(--space-4);">Optional — add stockist visits for the day.</p>
+            <p class="t-caption" style="margin-bottom:var(--space-4);">Optional — pick stockists from the directory. New stockists are added by HR.</p>
             <div id="stockist-entry-list" class="stack"></div>
             <div class="row row--wrap" style="margin-top:var(--space-4); gap:var(--space-3);">
                 <button type="button" id="add-stockist-btn" class="btn btn--secondary">
@@ -106,27 +106,110 @@
   <div class="card__footer">
     <a href="{% url 'daily_coverage_calendar' %}" class="btn btn--ghost">Cancel</a>
     <div class="spacer"></div>
-    <button type="submit" form="daily-coverage-form" class="btn btn--primary">Save All</button>
+    <button type="button" id="next-tab-btn" class="btn btn--secondary" disabled>
+      Next
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+    </button>
+    <button type="submit" form="daily-coverage-form" id="save-all-btn" class="btn btn--primary" disabled>Save All</button>
   </div>
 </div>
 
 <script id="area-options" type="application/json">{{ area_options|safe }}</script>
 <script id="doctor-options" type="application/json">{{ doctor_options|safe }}</script>
+<script id="chemist-options" type="application/json">{{ chemist_options|safe }}</script>
+<script id="stockist-options" type="application/json">{{ stockist_options|safe }}</script>
+<script id="worked-with-options" type="application/json">{{ worked_with_options|safe }}</script>
 <script>
-const areaOptions   = JSON.parse(document.getElementById('area-options').textContent);
-const doctorOptions = JSON.parse(document.getElementById('doctor-options').textContent);
+const areaOptions       = JSON.parse(document.getElementById('area-options').textContent);
+const doctorOptions     = JSON.parse(document.getElementById('doctor-options').textContent);
+const chemistOptions    = JSON.parse(document.getElementById('chemist-options').textContent);
+const stockistOptions   = JSON.parse(document.getElementById('stockist-options').textContent);
+const workedWithOptions = JSON.parse(document.getElementById('worked-with-options').textContent);
 
-// ── Tab switching ────────────────────────────────────────────────────────────
+function esc(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+}
+
+// ── Tab flow & validation ────────────────────────────────────────────────────
+// Forward movement (Next / tab clicks) and Save unlock only when the required
+// fields are filled: the Doctor tab needs at least one complete doctor entry,
+// or "No Doctor Coverage Available" ticked with a reason. Chemist/stockist
+// entries are optional, but any added row must be complete before moving on
+// or saving. (The server enforces the same rules on submit.)
+const TAB_ORDER = ['doctor', 'chemist', 'stockist'];
+let currentTab = 'doctor';
+
+function rowComplete(row, selectors) {
+    return selectors.every(s => ((row.querySelector(s) || {}).value || '').trim() !== '');
+}
+function doctorTabValid() {
+    if (noDoctorCheck.checked) return noDoctorInput.value.trim() !== '';
+    const rows = [...doctorList.querySelectorAll(':scope > div')];
+    return rows.length > 0 && rows.every(r => rowComplete(r, ['.f-date', '.f-doc', '.f-area', '.f-time', '.f-prod', '.f-with']));
+}
+function partnerTabValid(list) {
+    return [...list.querySelectorAll(':scope > div')].every(r => rowComplete(r, ['.f-date', '.f-name', '.f-area', '.f-time']));
+}
+function tabValid(name) {
+    if (name === 'doctor') return doctorTabValid();
+    return partnerTabValid(name === 'chemist' ? chemistList : stockistList);
+}
+function allValid() { return TAB_ORDER.every(tabValid); }
+
+function switchTab(name) {
+    currentTab = name;
+    document.querySelectorAll('.tab-btn').forEach(b => {
+        const active = b.dataset.tab === name;
+        b.classList.toggle('btn--primary', active);
+        b.classList.toggle('active', active);
+        b.classList.toggle('btn--ghost', !active);
+        document.getElementById('tab-' + b.dataset.tab).style.display = active ? '' : 'none';
+    });
+    updateNav();
+}
+
+function updateNav() {
+    const nextBtn = document.getElementById('next-tab-btn');
+    const saveBtn = document.getElementById('save-all-btn');
+    const last = TAB_ORDER.indexOf(currentTab) === TAB_ORDER.length - 1;
+    nextBtn.style.display = last ? 'none' : '';
+    nextBtn.disabled = !last && !tabValid(currentTab);
+    saveBtn.disabled = !allValid();
+    nextBtn.title = nextBtn.disabled ? 'Fill the required fields first' : '';
+    saveBtn.title = saveBtn.disabled ? 'Fill the required fields on every tab first' : '';
+}
+
 document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-        document.querySelectorAll('.tab-btn').forEach(b => {
-            b.classList.remove('btn--primary', 'active');
-            b.classList.add('btn--ghost');
-        });
-        document.querySelectorAll('.tab-panel').forEach(p => p.style.display = 'none');
-        btn.classList.remove('btn--ghost');
-        btn.classList.add('btn--primary', 'active');
-        document.getElementById('tab-' + btn.dataset.tab).style.display = '';
+        const target = btn.dataset.tab;
+        const forward = TAB_ORDER.indexOf(target) > TAB_ORDER.indexOf(currentTab);
+        if (forward && !tabValid(currentTab)) {
+            lumoToast({
+                type: 'warning',
+                title: 'Fill the required fields first',
+                text: currentTab === 'doctor'
+                    ? 'Complete a doctor entry — or tick “No Doctor Coverage Available” and give a reason.'
+                    : 'Complete or remove the incomplete entry before moving on.',
+            });
+            return;
+        }
+        switchTab(target);
+    });
+});
+
+document.getElementById('next-tab-btn').addEventListener('click', () => {
+    const idx = TAB_ORDER.indexOf(currentTab);
+    if (idx < TAB_ORDER.length - 1 && tabValid(currentTab)) switchTab(TAB_ORDER[idx + 1]);
+});
+
+document.getElementById('daily-coverage-form').addEventListener('submit', e => {
+    if (allValid()) return;
+    e.preventDefault();
+    switchTab(TAB_ORDER.find(t => !tabValid(t)));
+    lumoToast({
+        type: 'danger',
+        title: 'Incomplete entries',
+        text: 'Fill the required fields (or remove the incomplete entry) before saving.',
     });
 });
 
@@ -147,6 +230,7 @@ noDoctorCheck.addEventListener('change', () => {
 
 noDoctorInput.addEventListener('input', () => {
     noDoctorHidden.value = noDoctorInput.value;
+    updateNav();
 });
 
 // ── Generic helpers ──────────────────────────────────────────────────────────
@@ -192,15 +276,18 @@ function renderDoctorEntry(initialDate) {
         <div class="field"><label class="label">Doctor <span class="req">*</span></label>
             <select class="select f-doc" name="d_doc_${idx}" required>
                 <option value="">Select doctor</option>
-                ${doctorOptions.map(o => `<option value="${o.value}">${o.label}</option>`).join('')}
+                ${doctorOptions.map(o => `<option value="${o.value}">${esc(o.label)}</option>`).join('')}
             </select></div>
         <div class="field"><label class="label">Actual Working Place <span class="req">*</span></label>${makeAreaSelect(`d_area_${idx}`, 'f-area')}</div>
         <div class="field"><label class="label">Call Time <span class="req">*</span></label>
             <input type="time" class="input f-time" name="d_time_${idx}" required></div>
-        <div class="field"><label class="label">Products <span class="optional">(optional)</span></label>
-            <input type="text" class="input f-prod" name="d_prod_${idx}"></div>
-        <div class="field"><label class="label">Worked With <span class="optional">(optional)</span></label>
-            <input type="text" class="input f-with" name="d_with_${idx}"></div>
+        <div class="field"><label class="label">Products <span class="req">*</span></label>
+            <input type="text" class="input f-prod" name="d_prod_${idx}" placeholder="e.g. ProCard 500" required></div>
+        <div class="field"><label class="label">Worked With <span class="req">*</span></label>
+            <select class="select f-with" name="d_with_${idx}" required>
+                <option value="Self" selected>Self</option>
+                ${workedWithOptions.map(o => `<option value="${esc(o)}">${esc(o)}</option>`).join('')}
+            </select></div>
         <div class="field" style="grid-column: 1 / -1;"><label class="label">Remarks <span class="optional">(optional)</span></label>
             <textarea class="textarea f-rem" name="d_rem_${idx}" rows="2"></textarea></div>
     `, syncDoctorEntries, 'Entry ' + (idx + 1));
@@ -223,11 +310,12 @@ function syncDoctorEntries() {
         worked_with:          r.querySelector('.f-with')?.value  || '',
         remarks:              r.querySelector('.f-rem')?.value   || '',
     })));
+    updateNav();
 }
 
 document.getElementById('add-doctor-btn').addEventListener('click', () => renderDoctorEntry(''));
 document.getElementById('clear-doctor-btn').addEventListener('click', () => {
-    doctorList.innerHTML = ''; doctorHidden.value = '[]';
+    doctorList.innerHTML = ''; doctorHidden.value = '[]'; updateNav();
 });
 
 // ── Chemist entries ──────────────────────────────────────────────────────────
@@ -237,18 +325,26 @@ let chemistIdx = 0;
 
 function renderChemistEntry(initialDate) {
     const idx = chemistIdx++;
-    const defaultDate = initialDate || lastValue(chemistList, '.f-date') || '';
+    const defaultDate = initialDate || lastValue(chemistList, '.f-date') || lastValue(doctorList, '.f-date') || '';
     const defaultArea = lastValue(chemistList, '.f-area');
     const row = makeRow(`
         <div class="field"><label class="label">Date <span class="req">*</span></label>
             <input type="date" class="input f-date" name="c_date_${idx}" value="${defaultDate}" required></div>
-        <div class="field"><label class="label">Chemist Name <span class="req">*</span></label>
-            <input type="text" class="input f-name" name="c_name_${idx}" placeholder="Chemist name" required></div>
+        <div class="field"><label class="label">Chemist <span class="req">*</span></label>
+            <select class="select f-name" name="c_name_${idx}" required>
+                <option value="">Select chemist</option>
+                ${chemistOptions.map(o => `<option value="${esc(o.value)}" data-area="${o.area}">${esc(o.label)}</option>`).join('')}
+            </select></div>
         <div class="field"><label class="label">Area <span class="req">*</span></label>${makeAreaSelect(`c_area_${idx}`, 'f-area')}</div>
         <div class="field"><label class="label">Call Time <span class="req">*</span></label>
             <input type="time" class="input f-time" name="c_time_${idx}" required></div>
     `, syncChemistEntries, 'Entry ' + (idx + 1));
     row.querySelector('.f-area').value = defaultArea;
+    // Picking a chemist pre-fills its home area (still editable)
+    row.querySelector('.f-name').addEventListener('change', e => {
+        const area = e.target.selectedOptions[0]?.dataset.area;
+        if (area) { row.querySelector('.f-area').value = area; syncChemistEntries(); }
+    });
     row.addEventListener('input', syncChemistEntries);
     row.addEventListener('change', syncChemistEntries);
     chemistList.appendChild(row);
@@ -263,11 +359,19 @@ function syncChemistEntries() {
         area:        r.querySelector('.f-area')?.value || '',
         call_time:   r.querySelector('.f-time')?.value || '',
     })));
+    updateNav();
 }
 
-document.getElementById('add-chemist-btn').addEventListener('click', () => renderChemistEntry(''));
+document.getElementById('add-chemist-btn').addEventListener('click', () => {
+    if (!chemistOptions.length) {
+        lumoToast({ type: 'warning', title: 'No chemists in the directory',
+                    text: 'Ask HR to add chemists first (HR Actions → Add chemist).' });
+        return;
+    }
+    renderChemistEntry('');
+});
 document.getElementById('clear-chemist-btn').addEventListener('click', () => {
-    chemistList.innerHTML = ''; chemistHidden.value = '[]';
+    chemistList.innerHTML = ''; chemistHidden.value = '[]'; updateNav();
 });
 
 // ── Stockist entries ─────────────────────────────────────────────────────────
@@ -277,18 +381,26 @@ let stockistIdx = 0;
 
 function renderStockistEntry(initialDate) {
     const idx = stockistIdx++;
-    const defaultDate = initialDate || lastValue(stockistList, '.f-date') || '';
+    const defaultDate = initialDate || lastValue(stockistList, '.f-date') || lastValue(doctorList, '.f-date') || '';
     const defaultArea = lastValue(stockistList, '.f-area');
     const row = makeRow(`
         <div class="field"><label class="label">Date <span class="req">*</span></label>
             <input type="date" class="input f-date" name="s_date_${idx}" value="${defaultDate}" required></div>
-        <div class="field"><label class="label">Stockist Name <span class="req">*</span></label>
-            <input type="text" class="input f-name" name="s_name_${idx}" placeholder="Stockist name" required></div>
+        <div class="field"><label class="label">Stockist <span class="req">*</span></label>
+            <select class="select f-name" name="s_name_${idx}" required>
+                <option value="">Select stockist</option>
+                ${stockistOptions.map(o => `<option value="${esc(o.value)}" data-area="${o.area}">${esc(o.label)}</option>`).join('')}
+            </select></div>
         <div class="field"><label class="label">Area <span class="req">*</span></label>${makeAreaSelect(`s_area_${idx}`, 'f-area')}</div>
         <div class="field"><label class="label">Call Time <span class="req">*</span></label>
             <input type="time" class="input f-time" name="s_time_${idx}" required></div>
     `, syncStockistEntries, 'Entry ' + (idx + 1));
     row.querySelector('.f-area').value = defaultArea;
+    // Picking a stockist pre-fills its home area (still editable)
+    row.querySelector('.f-name').addEventListener('change', e => {
+        const area = e.target.selectedOptions[0]?.dataset.area;
+        if (area) { row.querySelector('.f-area').value = area; syncStockistEntries(); }
+    });
     row.addEventListener('input', syncStockistEntries);
     row.addEventListener('change', syncStockistEntries);
     stockistList.appendChild(row);
@@ -303,11 +415,19 @@ function syncStockistEntries() {
         area:        r.querySelector('.f-area')?.value || '',
         call_time:   r.querySelector('.f-time')?.value || '',
     })));
+    updateNav();
 }
 
-document.getElementById('add-stockist-btn').addEventListener('click', () => renderStockistEntry(''));
+document.getElementById('add-stockist-btn').addEventListener('click', () => {
+    if (!stockistOptions.length) {
+        lumoToast({ type: 'warning', title: 'No stockists in the directory',
+                    text: 'Ask HR to add stockists first (HR Actions → Add stockist).' });
+        return;
+    }
+    renderStockistEntry('');
+});
 document.getElementById('clear-stockist-btn').addEventListener('click', () => {
-    stockistList.innerHTML = ''; stockistHidden.value = '[]';
+    stockistList.innerHTML = ''; stockistHidden.value = '[]'; updateNav();
 });
 
 // ── Seed first doctor row with pre-selected date ─────────────────────────────

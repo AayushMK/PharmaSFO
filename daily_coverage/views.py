@@ -4,18 +4,28 @@ from datetime import datetime, timedelta
 
 from django.core.paginator import Paginator
 
+from django.contrib import messages
+from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
-from django.db.models import Count
+from django.db.models import Count, Max
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.cache import never_cache
 
 from doctors.models import Doctor
 from tour_plans.models import Area, TourPlan
 
-from .forms import DailyCoverageBulkForm, DailyCoverageForm
-from .models import ChemistCoverage, DailyCoverage, StockistCoverage
+from .forms import (
+    ChemistCoverageForm,
+    ChemistForm,
+    DailyCoverageBulkForm,
+    DailyCoverageForm,
+    StockistCoverageForm,
+    StockistForm,
+)
+from .models import Chemist, ChemistCoverage, DailyCoverage, Stockist, StockistCoverage
 
 EDIT_WINDOW_DAYS = 2
 
@@ -23,6 +33,41 @@ EDIT_WINDOW_DAYS = 2
 def _can_edit(record):
     cutoff = timezone.now() - timedelta(days=EDIT_WINDOW_DAYS)
     return record.created_at >= cutoff
+
+
+def _can_manage_directory(user):
+    return user.is_authenticated and (
+        user.is_superuser or (user.is_staff and user.type == "HR")
+    )
+
+
+def _add_partner(request, form_class, kind):
+    """Shared HR view for adding a Chemist / Stockist master entry."""
+    if not _can_manage_directory(request.user):
+        raise PermissionDenied
+
+    if request.method == "POST":
+        form = form_class(request.POST)
+        if form.is_valid():
+            partner = form.save()
+            messages.success(request, f"{kind} “{partner.name}” added to the directory.")
+            return redirect(f"add_{kind.lower()}")
+    else:
+        form = form_class()
+
+    return render(request, "daily_coverage/add_partner.html", {"form": form, "kind": kind})
+
+
+@login_required
+@never_cache
+def add_chemist(request):
+    return _add_partner(request, ChemistForm, "Chemist")
+
+
+@login_required
+@never_cache
+def add_stockist(request):
+    return _add_partner(request, StockistForm, "Stockist")
 
 
 @login_required
@@ -36,15 +81,21 @@ def daily_coverage_calendar(request, year=None, month=None):
     year = int(year)
     month = int(month)
 
-    # {date: visit_count} — drives the "Added (n)" tag per calendar cell
-    counts_by_date = {
-        row["report_date"]: row["n"]
-        for row in DailyCoverage.objects.filter(
+    # {date: visit_count} — drives the "Added (n)" tag per calendar cell.
+    # A day is "locked" once every entry on it is past the edit window.
+    cutoff = timezone.now() - timedelta(days=EDIT_WINDOW_DAYS)
+    counts_by_date = {}
+    locked_dates = set()
+    for row in (
+        DailyCoverage.objects.filter(
             created_by=request.user,
             report_date__year=year,
             report_date__month=month,
-        ).values("report_date").annotate(n=Count("id"))
-    }
+        ).values("report_date").annotate(n=Count("id"), latest=Max("created_at"))
+    ):
+        counts_by_date[row["report_date"]] = row["n"]
+        if row["latest"] < cutoff:
+            locked_dates.add(row["report_date"])
 
     approved_areas = {}  # {date: area name} — approved wins if several plans share a date
     pending_dates = set()
@@ -87,6 +138,7 @@ def daily_coverage_calendar(request, year=None, month=None):
                 "state": state,
                 "is_today": day == today,
                 "area": approved_areas.get(day, ""),
+                "locked": day in locked_dates,
             })
         weeks.append(cells)
 
@@ -191,24 +243,34 @@ def add_daily_coverage(request, selected_date=None):
             if truly_missing and not no_doctor_reason:
                 form_error = "You must add at least one doctor entry or provide a reason for no doctor coverage."
             else:
-                # Save doctor entries
+                saved = {"doctor": 0, "chemist": 0, "stockist": 0}
+                skipped_invalid = 0
+                skipped_unapproved = 0
+
+                # Save doctor entries (products and worked_with are compulsory)
                 for entry in doctor_entries:
                     report_date = _parse_date(entry.get("report_date"))
                     doctor_id = entry.get("doctor")
                     actual_place_id = entry.get("actual_working_place")
                     call_time = entry.get("call_time")
-                    if not report_date or not doctor_id or not actual_place_id or not call_time:
+                    products = (entry.get("products") or "").strip()
+                    worked_with = (entry.get("worked_with") or "").strip()
+                    if (not report_date or not doctor_id or not actual_place_id
+                            or not call_time or not products or not worked_with):
+                        skipped_invalid += 1
                         continue
                     if report_date not in approved_dates:
+                        skipped_unapproved += 1
                         continue
+                    saved["doctor"] += 1
                     DailyCoverage.objects.create(
                         created_by=request.user,
                         report_date=report_date,
                         doctor_id=doctor_id,
                         actual_working_place_id=actual_place_id,
                         call_time=call_time,
-                        products=entry.get("products") or "",
-                        worked_with=entry.get("worked_with") or "",
+                        products=products,
+                        worked_with=worked_with,
                         remarks=entry.get("remarks") or "",
                     )
 
@@ -219,9 +281,12 @@ def add_daily_coverage(request, selected_date=None):
                     area_id = entry.get("area")
                     call_time = entry.get("call_time")
                     if not report_date or not name or not area_id or not call_time:
+                        skipped_invalid += 1
                         continue
                     if report_date not in approved_dates:
+                        skipped_unapproved += 1
                         continue
+                    saved["chemist"] += 1
                     ChemistCoverage.objects.create(
                         created_by=request.user,
                         report_date=report_date,
@@ -237,9 +302,12 @@ def add_daily_coverage(request, selected_date=None):
                     area_id = entry.get("area")
                     call_time = entry.get("call_time")
                     if not report_date or not name or not area_id or not call_time:
+                        skipped_invalid += 1
                         continue
                     if report_date not in approved_dates:
+                        skipped_unapproved += 1
                         continue
+                    saved["stockist"] += 1
                     StockistCoverage.objects.create(
                         created_by=request.user,
                         report_date=report_date,
@@ -248,12 +316,43 @@ def add_daily_coverage(request, selected_date=None):
                         call_time=call_time,
                     )
 
+                total_saved = sum(saved.values())
+                if total_saved:
+                    parts = [f"{n} {kind}" for kind, n in saved.items() if n]
+                    messages.success(request, f"Saved {total_saved} visit{'s' if total_saved != 1 else ''} ({', '.join(parts)}).")
+                if skipped_unapproved:
+                    messages.warning(
+                        request,
+                        f"{skipped_unapproved} entr{'ies' if skipped_unapproved != 1 else 'y'} skipped — no approved tour plan for that date.",
+                    )
+                if skipped_invalid:
+                    messages.warning(
+                        request,
+                        f"{skipped_invalid} incomplete entr{'ies' if skipped_invalid != 1 else 'y'} skipped.",
+                    )
+                if not total_saved and not skipped_unapproved and not skipped_invalid:
+                    messages.info(request, "Nothing to save — no entries were added.")
                 return redirect("daily_coverage_calendar")
     else:
         form = DailyCoverageBulkForm()
 
     area_options = [{"value": str(area.pk), "label": area.name} for area in Area.objects.order_by("name")]
     doctor_options = [{"value": str(doctor.pk), "label": doctor.name} for doctor in Doctor.objects.order_by("name")]
+    # Master directories — value is the name (coverage rows store it as text);
+    # `area` lets the form pre-fill the area select for the picked partner.
+    chemist_options = [
+        {"value": c.name, "label": f"{c.name} ({c.area.name})", "area": str(c.area_id)}
+        for c in Chemist.objects.select_related("area").order_by("name")
+    ]
+    stockist_options = [
+        {"value": s.name, "label": f"{s.name} ({s.area.name})", "area": str(s.area_id)}
+        for s in Stockist.objects.select_related("area").order_by("name")
+    ]
+    # "Worked with" choices — "Self" plus colleagues (stored as plain text)
+    worked_with_options = [
+        user.get_full_name() or user.username
+        for user in get_user_model().objects.exclude(pk=request.user.pk).order_by("username")
+    ]
 
     return render(
         request,
@@ -262,15 +361,25 @@ def add_daily_coverage(request, selected_date=None):
             "form": form,
             "area_options": json.dumps(area_options),
             "doctor_options": json.dumps(doctor_options),
+            "chemist_options": json.dumps(chemist_options),
+            "stockist_options": json.dumps(stockist_options),
+            "worked_with_options": json.dumps(worked_with_options),
             "initial_date": initial_date,
             "form_error": form_error,
         },
     )
 
 
+COVERAGE_TYPES = ("doctor", "chemist", "stockist")
+
+
 @login_required
 @never_cache
 def daily_coverage_list(request):
+    record_type = request.GET.get("type", "doctor")
+    if record_type not in COVERAGE_TYPES:
+        record_type = "doctor"
+
     filter_date_str = request.GET.get("date")
     filter_date = None
     if filter_date_str:
@@ -279,7 +388,12 @@ def daily_coverage_list(request):
         except ValueError:
             pass
 
-    records_qs = DailyCoverage.objects.filter(created_by=request.user).select_related("doctor", "actual_working_place")
+    if record_type == "doctor":
+        records_qs = DailyCoverage.objects.filter(created_by=request.user).select_related("doctor", "actual_working_place")
+    elif record_type == "chemist":
+        records_qs = ChemistCoverage.objects.filter(created_by=request.user).select_related("area")
+    else:
+        records_qs = StockistCoverage.objects.filter(created_by=request.user).select_related("area")
     if filter_date:
         records_qs = records_qs.filter(report_date=filter_date)
 
@@ -297,6 +411,7 @@ def daily_coverage_list(request):
             "page_obj": page_obj,
             "filter_date": filter_date,
             "total_count": paginator.count,
+            "record_type": record_type,
         },
     )
 
@@ -312,6 +427,7 @@ def edit_daily_coverage(request, pk):
         form = DailyCoverageForm(request.POST, instance=record)
         if form.is_valid():
             form.save()
+            messages.success(request, f"Coverage record for Dr. {record.doctor.name} updated.")
             return redirect("daily_coverage_list")
     else:
         form = DailyCoverageForm(instance=record)
@@ -330,7 +446,70 @@ def delete_daily_coverage(request, pk):
         raise PermissionDenied
 
     if request.method == "POST":
+        doctor_name = record.doctor.name
         record.delete()
+        messages.success(request, f"Coverage record for Dr. {doctor_name} deleted.")
         return redirect("daily_coverage_list")
 
     return redirect("daily_coverage_list")
+
+
+def _partner_list_url(kind):
+    return f"{reverse('daily_coverage_list')}?type={kind}"
+
+
+def _edit_partner_coverage(request, model, form_class, pk, kind):
+    """Shared edit view for chemist/stockist coverage rows (same 2-day window)."""
+    record = get_object_or_404(model, pk=pk, created_by=request.user)
+    if not _can_edit(record):
+        raise PermissionDenied
+
+    if request.method == "POST":
+        form = form_class(request.POST, instance=record)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f"{kind.capitalize()} coverage for {record.name} updated.")
+            return redirect(_partner_list_url(kind))
+    else:
+        form = form_class(instance=record)
+
+    return render(
+        request,
+        "daily_coverage/edit_daily_coverage.html",
+        {"form": form, "record": record},
+    )
+
+
+def _delete_partner_coverage(request, model, pk, kind):
+    record = get_object_or_404(model, pk=pk, created_by=request.user)
+    if not _can_edit(record):
+        raise PermissionDenied
+
+    if request.method == "POST":
+        name = record.name
+        record.delete()
+        messages.success(request, f"{kind.capitalize()} coverage for {name} deleted.")
+
+    return redirect(_partner_list_url(kind))
+
+
+@login_required
+@never_cache
+def edit_chemist_coverage(request, pk):
+    return _edit_partner_coverage(request, ChemistCoverage, ChemistCoverageForm, pk, "chemist")
+
+
+@login_required
+def delete_chemist_coverage(request, pk):
+    return _delete_partner_coverage(request, ChemistCoverage, pk, "chemist")
+
+
+@login_required
+@never_cache
+def edit_stockist_coverage(request, pk):
+    return _edit_partner_coverage(request, StockistCoverage, StockistCoverageForm, pk, "stockist")
+
+
+@login_required
+def delete_stockist_coverage(request, pk):
+    return _delete_partner_coverage(request, StockistCoverage, pk, "stockist")

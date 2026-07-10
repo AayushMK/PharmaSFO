@@ -1,48 +1,106 @@
 {% extends "base.html" %}
 
 {% block title %}Doctors - PharmaSFO{% endblock %}
+{% block legacy_css %}{% endblock %}
 {% block breadcrumb %}<span>Directory</span><span class="sep">/</span><span class="current">Doctors</span>{% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="card">
-        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 16px;">
-            <h2 style="margin:0;">Doctors List</h2>
-            {% if can_add %}
-            <a href="{% url 'add_doctor' %}" class="btn">+ Add Doctor</a>
-            {% endif %}
-        </div>
-
-        {% if doctors %}
-        <table>
-            <thead>
-                <tr>
-                    <th>#</th>
-                    <th>Doctor Name</th>
-                    <th>NMC Number</th>
-                    <th>Area</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for doctor in doctors %}
-                <tr>
-                    <td>{{ forloop.counter }}</td>
-                    <td>Dr. {{ doctor.name }}</td>
-                    <td>{{ doctor.nmc_number }}</td>
-                    <td>{{ doctor.area }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        {% else %}
-        <div class="empty-state">
-            <p>No doctors found.</p>
-        </div>
-        {% endif %}
-
-        <div style="margin-top: 16px;">
-            <a href="{% url 'dashboard' %}" class="btn">Back to Dashboard</a>
-        </div>
-    </div>
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Doctors</h1>
+    <p class="page-sub">Master directory of registered doctors across all areas.</p>
+  </div>
+  {% if can_add %}
+  <div class="page-actions">
+    <a href="{% url 'add_doctor' %}" class="btn btn--primary">
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+      Add doctor
+    </a>
+  </div>
+  {% endif %}
 </div>
+
+{% if doctors %}
+<div class="table-toolbar">
+  <div class="table-toolbar__filters">
+    <input type="search" id="doctor-search" class="input" style="width:min(320px, 100%)"
+           placeholder="Search by name, NMC, area, or contact" aria-label="Search doctors">
+  </div>
+  <span class="t-caption" id="doctor-count">{{ doctors|length }} doctor{{ doctors|length|pluralize }}</span>
+</div>
+
+<div class="table-wrap">
+  <table class="table" id="doctor-table">
+    <thead>
+      <tr>
+        <th>Doctor</th>
+        <th>NMC number</th>
+        <th>Hospital</th>
+        <th>Area</th>
+        <th>Contact</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for doctor in doctors %}
+      <tr data-search="{{ doctor.name|lower }} {{ doctor.nmc_number|lower }} {{ doctor.hospital.name|lower }} {{ doctor.area|lower }} {{ doctor.specialization|default:''|lower }} {{ doctor.phone|lower }} {{ doctor.email|lower }}">
+        <td>
+          <div class="cell-strong">Dr. {{ doctor.name }}</div>
+          {% if doctor.specialization %}<div class="cell-sub">{{ doctor.specialization }}</div>{% endif %}
+        </td>
+        <td class="t-mono t-secondary">{{ doctor.nmc_number }}</td>
+        <td>{{ doctor.hospital.name }}</td>
+        <td>{{ doctor.area }}</td>
+        <td>
+          {% if doctor.phone %}<div class="t-mono">{{ doctor.phone }}</div>{% endif %}
+          {% if doctor.email %}<div class="cell-sub"><a href="mailto:{{ doctor.email }}">{{ doctor.email }}</a></div>{% endif %}
+          {% if not doctor.phone and not doctor.email %}<span class="t-muted">—</span>{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <div class="empty" id="doctor-no-results" style="display:none">
+    <div class="empty__glyph"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></div>
+    <div class="empty__title">No matching doctors</div>
+    <div class="empty__text">Try a different name, NMC number, or area.</div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const search = document.getElementById('doctor-search');
+  const rows = Array.from(document.querySelectorAll('#doctor-table tbody tr'));
+  const count = document.getElementById('doctor-count');
+  const noResults = document.getElementById('doctor-no-results');
+  const table = document.getElementById('doctor-table');
+  const total = rows.length;
+
+  search.addEventListener('input', function () {
+    const q = this.value.toLowerCase().trim();
+    let visible = 0;
+    rows.forEach(function (row) {
+      const show = !q || row.dataset.search.indexOf(q) !== -1;
+      row.style.display = show ? '' : 'none';
+      if (show) visible++;
+    });
+    count.textContent = q ? visible + ' of ' + total + ' doctors' : total + ' doctor' + (total === 1 ? '' : 's');
+    table.style.display = visible ? '' : 'none';
+    noResults.style.display = visible ? 'none' : '';
+  });
+})();
+</script>
+{% else %}
+<div class="card">
+  <div class="card__body">
+    <div class="empty">
+      <div class="empty__glyph"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+      <div class="empty__title">No doctors yet</div>
+      <div class="empty__text">{% if can_add %}Add the first doctor to start building the directory.{% else %}Doctors are added by HR — check back later.{% endif %}</div>
+      {% if can_add %}
+      <div class="empty__actions"><a href="{% url 'add_doctor' %}" class="btn btn--primary btn--sm">Add doctor</a></div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endif %}
 {% endblock %}

@@ -1,99 +1,173 @@
 {% extends "base.html" %}
 
-{% block title %}My Daily Coverage - PharmaSFO{% endblock %}
+{% block title %}Coverage Records - PharmaSFO{% endblock %}
+{% block legacy_css %}{% endblock %}
 {% block breadcrumb %}<span>My Work</span><span class="sep">/</span><span class="current">Coverage records</span>{% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="card">
-        <div class="page-hd">
-            <h2>My Daily Coverage{% if filter_date %} — {{ filter_date }}{% endif %}
-                <span style="font-size:0.82rem; font-weight:400; color:#888; margin-left:8px;">{{ total_count }} record{{ total_count|pluralize }}</span>
-            </h2>
-            <a href="{% url 'daily_coverage_calendar' %}" class="btn">Back to Calendar</a>
-        </div>
-
-        <!-- Date filter -->
-        <form method="get" class="filter-row">
-            <div>
-                <label>Filter by date</label>
-                <input type="date" name="date" value="{% if filter_date %}{{ filter_date|date:'Y-m-d' }}{% endif %}">
-            </div>
-            <button type="submit" class="btn">Filter</button>
-            {% if filter_date %}
-                <a href="{% url 'daily_coverage_list' %}" class="btn" style="background:#888;">Clear</a>
-            {% endif %}
-        </form>
-
-        {% if page_obj.object_list %}
-        <div class="table-wrap">
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th>Date</th>
-                        <th>Doctor</th>
-                        <th>Area</th>
-                        <th>Call Time</th>
-                        <th>Products</th>
-                        <th>Worked With</th>
-                        <th>Remarks</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for record in page_obj %}
-                    <tr>
-                        <td>{{ record.report_date }}</td>
-                        <td>{{ record.doctor.name }}</td>
-                        <td>{{ record.actual_working_place.name }}</td>
-                        <td>{{ record.call_time }}</td>
-                        <td>{{ record.products|default:"-" }}</td>
-                        <td>{{ record.worked_with|default:"-" }}</td>
-                        <td>{{ record.remarks|default:"-" }}</td>
-                        <td style="white-space:nowrap;">
-                            {% if record.editable %}
-                                <a href="{% url 'edit_daily_coverage' record.pk %}" class="btn btn-sm">Edit</a>
-                                <form method="post" action="{% url 'delete_daily_coverage' record.pk %}"
-                                      style="display:inline;" onsubmit="return confirm('Delete this record?');">
-                                    {% csrf_token %}
-                                    <button type="submit" class="btn btn-sm btn-danger">Delete</button>
-                                </form>
-                            {% else %}
-                                <span style="color:#bbb; font-size:0.82rem;">Locked</span>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-
-        <!-- Pagination -->
-        {% if page_obj.paginator.num_pages > 1 %}
-        <div class="pagination">
-            {% if page_obj.has_previous %}
-                <a href="?{% if filter_date %}date={{ filter_date|date:'Y-m-d' }}&{% endif %}page=1">&laquo; First</a>
-                <a href="?{% if filter_date %}date={{ filter_date|date:'Y-m-d' }}&{% endif %}page={{ page_obj.previous_page_number }}">Prev</a>
-            {% else %}
-                <span class="pg-disabled">&laquo; First</span>
-                <span class="pg-disabled">Prev</span>
-            {% endif %}
-
-            <span class="pg-current">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
-
-            {% if page_obj.has_next %}
-                <a href="?{% if filter_date %}date={{ filter_date|date:'Y-m-d' }}&{% endif %}page={{ page_obj.next_page_number }}">Next</a>
-                <a href="?{% if filter_date %}date={{ filter_date|date:'Y-m-d' }}&{% endif %}page={{ page_obj.paginator.num_pages }}">Last &raquo;</a>
-            {% else %}
-                <span class="pg-disabled">Next</span>
-                <span class="pg-disabled">Last &raquo;</span>
-            {% endif %}
-        </div>
-        {% endif %}
-
-        {% else %}
-        <p class="empty-state">No coverage records found{% if filter_date %} for {{ filter_date }}{% endif %}.</p>
-        {% endif %}
-    </div>
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Coverage Records</h1>
+    <p class="page-sub">Doctor, chemist and stockist visits you've logged — editable within 2 days.</p>
+  </div>
+  <div class="page-actions">
+    <a href="{% url 'daily_coverage_calendar' %}" class="btn btn--secondary">View calendar</a>
+    <a href="{% url 'add_daily_coverage' %}" class="btn btn--primary">
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+      Log coverage
+    </a>
+  </div>
 </div>
+
+<!-- Record type switcher -->
+<div class="row" style="gap:var(--space-2); border-bottom:1px solid var(--border); padding-bottom:var(--space-3); margin-bottom:var(--space-4)">
+  <a class="btn btn--sm {% if record_type == 'doctor' %}btn--primary{% else %}btn--ghost{% endif %}"
+     href="?type=doctor{% if filter_date %}&date={{ filter_date|date:'Y-m-d' }}{% endif %}">Doctors</a>
+  <a class="btn btn--sm {% if record_type == 'chemist' %}btn--primary{% else %}btn--ghost{% endif %}"
+     href="?type=chemist{% if filter_date %}&date={{ filter_date|date:'Y-m-d' }}{% endif %}">Chemists</a>
+  <a class="btn btn--sm {% if record_type == 'stockist' %}btn--primary{% else %}btn--ghost{% endif %}"
+     href="?type=stockist{% if filter_date %}&date={{ filter_date|date:'Y-m-d' }}{% endif %}">Stockists</a>
+</div>
+
+<div class="table-toolbar">
+  <form method="get" class="table-toolbar__filters">
+    <input type="hidden" name="type" value="{{ record_type }}">
+    <label class="label" for="date-filter" style="margin-right:var(--space-1)">Date</label>
+    <input type="date" name="date" id="date-filter" class="input" style="width:180px"
+           value="{% if filter_date %}{{ filter_date|date:'Y-m-d' }}{% endif %}" onchange="this.form.submit()">
+    {% if filter_date %}
+      <a href="?type={{ record_type }}" class="btn btn--ghost btn--sm">Clear</a>
+    {% endif %}
+  </form>
+  <span class="t-caption">{{ total_count }} record{{ total_count|pluralize }}</span>
+</div>
+
+{% if page_obj.object_list %}
+<div class="table-wrap">
+  {% if record_type == 'doctor' %}
+  <table class="table table--stack">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Doctor</th>
+        <th>Area</th>
+        <th>Time</th>
+        <th>Products</th>
+        <th>Worked with</th>
+        <th>Remarks</th>
+        <th class="col-actions">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for record in page_obj %}
+      <tr>
+        <td data-label="Date" class="t-secondary" style="white-space:nowrap">{{ record.report_date|date:"j M Y" }}</td>
+        <td data-label="Doctor">
+          <div class="cell-strong">{{ record.doctor.name }}</div>
+          {% if record.doctor.specialization %}<div class="cell-sub">{{ record.doctor.specialization }}</div>{% endif %}
+        </td>
+        <td data-label="Area">{{ record.actual_working_place.name }}</td>
+        <td data-label="Time" class="t-mono t-secondary">{{ record.call_time|time:"H:i" }}</td>
+        <td data-label="Products">{{ record.products|default:"—" }}</td>
+        <td data-label="Worked with">{{ record.worked_with|default:"—" }}</td>
+        <td data-label="Remarks" class="t-secondary">{{ record.remarks|default:"—" }}</td>
+        <td data-label="Actions" class="col-actions">
+          {% if record.editable %}
+            <div style="display:inline-flex; gap:var(--space-2)">
+              <a href="{% url 'edit_daily_coverage' record.pk %}" class="btn btn--secondary btn--sm">Edit</a>
+              <form method="post" action="{% url 'delete_daily_coverage' record.pk %}"
+                    style="display:inline" onsubmit="return confirm('Delete this record?');">
+                {% csrf_token %}
+                <button type="submit" class="btn btn--danger btn--sm">Delete</button>
+              </form>
+            </div>
+          {% else %}
+            <span class="badge badge--neutral">Locked</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <table class="table table--stack">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>{{ record_type|capfirst }}</th>
+        <th>Area</th>
+        <th>Time</th>
+        <th class="col-actions">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for record in page_obj %}
+      <tr>
+        <td data-label="Date" class="t-secondary" style="white-space:nowrap">{{ record.report_date|date:"j M Y" }}</td>
+        <td data-label="{{ record_type|capfirst }}"><div class="cell-strong">{{ record.name }}</div></td>
+        <td data-label="Area">{{ record.area.name }}</td>
+        <td data-label="Time" class="t-mono t-secondary">{{ record.call_time|time:"H:i" }}</td>
+        <td data-label="Actions" class="col-actions">
+          {% if record.editable %}
+            <div style="display:inline-flex; gap:var(--space-2)">
+              {% if record_type == 'chemist' %}
+                <a href="{% url 'edit_chemist_coverage' record.pk %}" class="btn btn--secondary btn--sm">Edit</a>
+                <form method="post" action="{% url 'delete_chemist_coverage' record.pk %}"
+                      style="display:inline" onsubmit="return confirm('Delete this record?');">
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn--danger btn--sm">Delete</button>
+                </form>
+              {% else %}
+                <a href="{% url 'edit_stockist_coverage' record.pk %}" class="btn btn--secondary btn--sm">Edit</a>
+                <form method="post" action="{% url 'delete_stockist_coverage' record.pk %}"
+                      style="display:inline" onsubmit="return confirm('Delete this record?');">
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn--danger btn--sm">Delete</button>
+                </form>
+              {% endif %}
+            </div>
+          {% else %}
+            <span class="badge badge--neutral">Locked</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+</div>
+
+{% if page_obj.paginator.num_pages > 1 %}
+<div class="row row--between" style="margin-top:var(--space-4)">
+  <span class="t-caption">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+  <div class="row" style="gap:var(--space-2)">
+    {% if page_obj.has_previous %}
+      <a class="btn btn--sm" href="?type={{ record_type }}{% if filter_date %}&date={{ filter_date|date:'Y-m-d' }}{% endif %}&page={{ page_obj.previous_page_number }}">Previous</a>
+    {% else %}
+      <span class="btn btn--sm" aria-disabled="true">Previous</span>
+    {% endif %}
+    {% if page_obj.has_next %}
+      <a class="btn btn--sm" href="?type={{ record_type }}{% if filter_date %}&date={{ filter_date|date:'Y-m-d' }}{% endif %}&page={{ page_obj.next_page_number }}">Next</a>
+    {% else %}
+      <span class="btn btn--sm" aria-disabled="true">Next</span>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+
+{% else %}
+<div class="card">
+  <div class="card__body">
+    <div class="empty">
+      <div class="empty__glyph"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg></div>
+      <div class="empty__title">No {{ record_type }} coverage records{% if filter_date %} on {{ filter_date|date:"j M Y" }}{% endif %}</div>
+      <div class="empty__text">{% if filter_date %}Try another date or clear the filter.{% else %}Coverage you log from the calendar will appear here.{% endif %}</div>
+      <div class="empty__actions">
+        {% if filter_date %}<a href="?type={{ record_type }}" class="btn btn--secondary btn--sm">Clear filter</a>
+        {% else %}<a href="{% url 'daily_coverage_calendar' %}" class="btn btn--secondary btn--sm">Open calendar</a>{% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
 {% endblock %}

@@ -1,125 +1,138 @@
 {% extends "base.html" %}
 
 {% block title %}Monthly Activity Report - PharmaSFO{% endblock %}
+{% block legacy_css %}{% endblock %}
 {% block breadcrumb %}<span>Reports</span><span class="sep">/</span><span class="current">Monthly activity</span>{% endblock %}
 
 {% block content %}
-<div class="container">
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Monthly Activity Report</h1>
+    <p class="page-sub">Visit frequency by doctor class across {{ month_name }} {{ year }}.</p>
+  </div>
+  <div class="page-actions">
+    <a href="{% url 'monthly_activity_report_excel' %}?month={{ month_str }}{% if selected_employee_id %}&employee_id={{ selected_employee_id }}{% endif %}"
+       class="btn btn--secondary">
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>
+      Export Excel
+    </a>
+  </div>
+</div>
 
-    <div class="card">
-        <h2>Monthly Activity Report</h2>
-        <form method="get" style="margin-top:16px; display:flex; align-items:flex-end; gap:12px; flex-wrap:wrap;">
-            <div>
-                <label style="display:block; margin-bottom:4px; font-weight:600;">Choose Month to view Report</label>
-                <input type="month" name="month" value="{{ month_str }}"
-                       style="padding:6px 10px; border:1px solid #ccc; border-radius:4px;">
-            </div>
-            {% if can_view_others %}
-            <div>
-                <label style="display:block; margin-bottom:4px; font-weight:600;">Employee</label>
-                <select name="employee_id" style="padding:6px 10px; border:1px solid #ccc; border-radius:4px; min-width:180px;">
-                    <option value="">— Select employee —</option>
-                    {% for emp in all_employees %}
-                        <option value="{{ emp.pk }}" {% if emp.pk == selected_employee_id %}selected{% endif %}>
-                            {{ emp.get_full_name|default:emp.username }} ({{ emp.get_type_display }})
-                        </option>
-                    {% endfor %}
-                </select>
-            </div>
-            {% endif %}
-            <button type="submit" class="btn">Go</button>
-        </form>
+<form method="get" class="table-toolbar">
+  <div class="table-toolbar__filters" style="align-items:flex-end">
+    <div class="field">
+      <label class="label" for="report-month">Month</label>
+      <input type="month" name="month" id="report-month" class="input" style="width:180px" value="{{ month_str }}">
     </div>
-
-    <!-- Tabs -->
-    <div style="margin-top:16px; display:flex; gap:0; border-bottom:2px solid #4a90c4;">
-        <button id="tab-freq" onclick="showTab('freq')"
-                style="padding:8px 20px; border:1px solid #4a90c4; border-bottom:none; background:#fff; cursor:pointer; font-weight:600; color:#4a90c4;">
-            Frequency Diagram
-        </button>
-        <button id="tab-list" onclick="showTab('list')"
-                style="padding:8px 20px; border:1px solid #ccc; border-bottom:none; background:#f5f5f5; cursor:pointer; color:#555;">
-            List of Data
-        </button>
+    {% if can_view_others %}
+    <div class="field">
+      <label class="label" for="report-employee">Employee</label>
+      <select name="employee_id" id="report-employee" class="select" style="width:240px">
+        <option value="">Myself</option>
+        {% for emp in all_employees %}
+          <option value="{{ emp.pk }}" {% if emp.pk == selected_employee_id %}selected{% endif %}>
+            {{ emp.get_full_name|default:emp.username }} ({{ emp.get_type_display }})
+          </option>
+        {% endfor %}
+      </select>
     </div>
+    {% endif %}
+    <button type="submit" class="btn btn--primary">View report</button>
+  </div>
+</form>
 
-    <!-- ── Frequency Diagram ─────────────────────────────────────── -->
-    <div id="pane-freq" class="card" style="margin-top:0; border-top:none; border-radius:0 0 6px 6px;">
-        <div style="background:#4a90c4; color:#fff; padding:10px 16px; font-weight:700; margin:-16px -16px 16px;">
-            Frequency of Monthly Activity Report
-        </div>
+<!-- Tabs -->
+<div class="row" style="gap:var(--space-2); border-bottom:1px solid var(--border); padding-bottom:var(--space-3); margin-bottom:var(--space-6)">
+  <button type="button" id="tab-freq" class="tab-btn btn btn--primary btn--sm" data-pane="pane-freq">Frequency diagram</button>
+  <button type="button" id="tab-list" class="tab-btn btn btn--ghost btn--sm" data-pane="pane-list">List of data</button>
+</div>
 
-        <div style="text-align:center; margin-bottom:8px;">
-            <strong>Monthly MSL Frequency Coverage of {{ month_name }} {{ year }}</strong><br>
-            <span style="color:#1565c0;">Total Super Core visited: {{ total_super_core }}</span><br>
-            <span style="color:#c0392b;">Core visited: {{ total_core }}</span><br>
-            <span style="color:#2e7d32;">VIP visited: {{ total_vip }}</span>
-        </div>
-
-        <div style="position:relative; height:380px;">
-            <canvas id="freqChart"></canvas>
-        </div>
-
-        <div style="text-align:center; margin-top:8px; font-size:0.85rem; color:#888;">
-            Super Core: MSL 1–25 &nbsp;|&nbsp; Core: MSL 26–75 &nbsp;|&nbsp; VIP: MSL 76+
-        </div>
+<!-- ── Frequency diagram ─────────────────────────────────────── -->
+<div id="pane-freq" class="card">
+  <div class="card__header">
+    <span class="card__title">MSL frequency coverage — {{ month_name }} {{ year }}</span>
+    <div class="row" style="gap:var(--space-2)">
+      <span class="badge badge--primary"><span class="dot"></span>Super Core · {{ total_super_core }}</span>
+      <span class="badge badge--warning"><span class="dot"></span>Core · {{ total_core }}</span>
+      <span class="badge badge--success"><span class="dot"></span>VIP · {{ total_vip }}</span>
     </div>
-
-    <!-- ── List of Data ──────────────────────────────────────────── -->
-    <div id="pane-list" class="card" style="margin-top:0; border-top:none; border-radius:0 0 6px 6px; display:none; padding:0; overflow:hidden;">
-        <div style="background:#4a90c4; color:#fff; padding:10px 16px; font-weight:700;">
-            Monthly Activity Report
-        </div>
-
-        {% if rows %}
-        <div style="overflow-x:auto;">
-            <table style="width:100%; border-collapse:collapse; font-size:0.85rem; min-width:900px;">
-                <thead>
-                    <tr style="background:#4a90c4; color:#fff;">
-                        <th style="padding:8px 10px; text-align:left; white-space:nowrap;">SN</th>
-                        <th style="padding:8px 10px; text-align:left; white-space:nowrap;">Reported Date</th>
-                        <th style="padding:8px 10px; text-align:left; white-space:nowrap; min-width:120px;">Tour Plan</th>
-                        <th style="padding:8px 10px; text-align:left; white-space:nowrap; min-width:120px;">Actual Work Plan</th>
-                        {% for spec in all_specs %}
-                            <th style="padding:8px 10px; text-align:center; white-space:nowrap;">{{ spec }}</th>
-                        {% endfor %}
-                        <th style="padding:8px 10px; text-align:center; white-space:nowrap; background:#3a7db0;">Total DRS Calls</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for row in rows %}
-                    <tr style="{% cycle 'background:#fff;' 'background:#f7f9fc;' %}">
-                        <td style="padding:8px 10px; border-bottom:1px solid #eee; vertical-align:top;">{{ forloop.counter }}</td>
-                        <td style="padding:8px 10px; border-bottom:1px solid #eee; vertical-align:top; white-space:nowrap;">{{ row.date }}</td>
-                        <td style="padding:8px 10px; border-bottom:1px solid #eee; vertical-align:top;">
-                            {% for area in row.tour_areas %}{{ area }} /{% empty %}-{% endfor %}
-                        </td>
-                        <td style="padding:8px 10px; border-bottom:1px solid #eee; vertical-align:top;">
-                            {% for area in row.actual_areas %}{{ area }}/{% empty %}-{% endfor %}
-                        </td>
-                        {% for val in row.spec_values %}
-                            <td style="padding:8px 10px; border-bottom:1px solid #eee; text-align:center; vertical-align:top;">
-                                {% if val %}{{ val }}{% endif %}
-                            </td>
-                        {% endfor %}
-                        <td style="padding:8px 10px; border-bottom:1px solid #eee; text-align:center; font-weight:700; vertical-align:top;">
-                            {{ row.total_drs }}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-        {% else %}
-        <p style="padding:16px; color:#888;">No coverage records found for {{ month_name }} {{ year }}.</p>
-        {% endif %}
+  </div>
+  <div class="card__body">
+    <div style="position:relative; height:360px">
+      <canvas id="freqChart"></canvas>
     </div>
+    <p class="t-caption" style="text-align:center; margin-top:var(--space-4)">Super Core: MSL 1–25 · Core: MSL 26–75 · VIP: MSL 76+</p>
+  </div>
+</div>
 
+<!-- ── List of data ──────────────────────────────────────────── -->
+<div id="pane-list" class="card" style="display:none">
+  <div class="card__header">
+    <span class="card__title">Daily calls — {{ month_name }} {{ year }}</span>
+    <span class="badge badge--neutral">{{ rows|length }} day{{ rows|length|pluralize }}</span>
+  </div>
+  {% if rows %}
+  <div class="table-wrap" style="border:none; border-radius:0">
+    <table class="table" style="min-width:900px">
+      <thead>
+        <tr>
+          <th>SN</th>
+          <th>Date</th>
+          <th style="min-width:120px">Tour plan</th>
+          <th style="min-width:120px">Actual work plan</th>
+          {% for spec in all_specs %}
+            <th style="text-align:center">{{ spec }}</th>
+          {% endfor %}
+          <th class="num">Total DRS calls</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+        <tr>
+          <td class="t-secondary">{{ forloop.counter }}</td>
+          <td style="white-space:nowrap">{{ row.date|date:"j M Y" }}</td>
+          <td>{% if row.tour_areas %}{{ row.tour_areas|join:" / " }}{% else %}—{% endif %}</td>
+          <td>{% if row.actual_areas %}{{ row.actual_areas|join:" / " }}{% else %}—{% endif %}</td>
+          {% for val in row.spec_values %}
+            <td style="text-align:center">{% if val %}{{ val }}{% else %}<span class="t-muted">·</span>{% endif %}</td>
+          {% endfor %}
+          <td class="num cell-strong">{{ row.total_drs }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="card__body">
+    <div class="empty" style="padding:var(--space-6) var(--space-4)">
+      <div class="empty__title">No coverage records</div>
+      <div class="empty__text">Nothing was logged in {{ month_name }} {{ year }}.</div>
+    </div>
+  </div>
+  {% endif %}
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
+// Tab switching — active tab is btn--primary, inactive btn--ghost (same pattern as Add Daily Coverage).
+// Wired up before the chart init so tabs still work if the Chart.js CDN is unavailable.
+document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => {
+            const active = b === btn;
+            b.classList.toggle('btn--primary', active);
+            b.classList.toggle('btn--ghost', !active);
+            document.getElementById(b.dataset.pane).style.display = active ? '' : 'none';
+        });
+    });
+});
+
 const chartData = {{ chart_data|safe }};
+
+// Pull the Lumo palette from the design tokens so the chart stays on-system.
+const css = getComputedStyle(document.documentElement);
+const tone = name => css.getPropertyValue(name).trim();
 
 const ctx = document.getElementById('freqChart').getContext('2d');
 new Chart(ctx, {
@@ -127,66 +140,25 @@ new Chart(ctx, {
     data: {
         labels: chartData.labels,
         datasets: [
-            {
-                label: 'Super Core',
-                data: chartData.super_core,
-                borderColor: '#1565c0',
-                backgroundColor: '#1565c0',
-                pointStyle: 'circle',
-                pointRadius: 4,
-                tension: 0.1,
-            },
-            {
-                label: 'Core',
-                data: chartData.core,
-                borderColor: '#c0392b',
-                backgroundColor: '#c0392b',
-                pointStyle: 'rectRot',
-                pointRadius: 4,
-                tension: 0.1,
-            },
-            {
-                label: 'VIP',
-                data: chartData.vip,
-                borderColor: '#2e7d32',
-                backgroundColor: '#2e7d32',
-                pointStyle: 'rect',
-                pointRadius: 4,
-                tension: 0.1,
-            },
+            { label: 'Super Core', data: chartData.super_core, borderColor: tone('--primary'), backgroundColor: tone('--primary'), pointStyle: 'circle', pointRadius: 3.5, tension: 0.1 },
+            { label: 'Core', data: chartData.core, borderColor: tone('--warning'), backgroundColor: tone('--warning'), pointStyle: 'rectRot', pointRadius: 3.5, tension: 0.1 },
+            { label: 'VIP', data: chartData.vip, borderColor: tone('--success'), backgroundColor: tone('--success'), pointStyle: 'rect', pointRadius: 3.5, tension: 0.1 },
         ],
     },
     options: {
         responsive: true,
         maintainAspectRatio: false,
+        color: tone('--text-secondary'),
         scales: {
-            x: {
-                title: { display: true, text: 'Date' },
-                ticks: { stepSize: 1 },
-            },
-            y: {
-                title: { display: true, text: 'No. of Visits' },
-                beginAtZero: true,
-                ticks: { precision: 0 },
-            },
+            x: { title: { display: true, text: 'Date', color: tone('--text-secondary') },
+                 ticks: { stepSize: 1, color: tone('--text-secondary') }, grid: { color: tone('--gray-100') } },
+            y: { title: { display: true, text: 'No. of visits', color: tone('--text-secondary') },
+                 beginAtZero: true, ticks: { precision: 0, color: tone('--text-secondary') }, grid: { color: tone('--gray-100') } },
         },
         plugins: {
-            legend: {
-                position: 'bottom',
-                labels: { usePointStyle: true },
-            },
+            legend: { position: 'bottom', labels: { usePointStyle: true, color: tone('--text') } },
         },
     },
 });
-
-function showTab(name) {
-    document.getElementById('pane-freq').style.display = name === 'freq' ? 'block' : 'none';
-    document.getElementById('pane-list').style.display = name === 'list' ? 'block' : 'none';
-
-    const activeStyle = 'padding:8px 20px; border:1px solid #4a90c4; border-bottom:none; background:#fff; cursor:pointer; font-weight:600; color:#4a90c4;';
-    const inactiveStyle = 'padding:8px 20px; border:1px solid #ccc; border-bottom:none; background:#f5f5f5; cursor:pointer; color:#555;';
-    document.getElementById('tab-freq').style.cssText = name === 'freq' ? activeStyle : inactiveStyle;
-    document.getElementById('tab-list').style.cssText = name === 'list' ? activeStyle : inactiveStyle;
-}
 </script>
 {% endblock %}

@@ -1,38 +1,52 @@
 {% extends "base.html" %}
 
-{% block title %}HR Review Requests - PharmaSFO{% endblock %}
+{% block title %}Review Doctor Requests - PharmaSFO{% endblock %}
+{% block legacy_css %}{% endblock %}
 {% block breadcrumb %}<span>HR Actions</span><span class="sep">/</span><span class="current">Review requests</span>{% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="card">
-        <h2>HR Review Requests</h2>
-        <p>Employees with pending doctor addition requests.</p>
-
-        {% if employees_with_pending %}
-            <table style="width: 100%; border-collapse: collapse; margin-top: 16px;">
-                <thead>
-                    <tr>
-                        <th style="text-align: left; padding: 8px; border-bottom: 1px solid #ddd;">Employee</th>
-                        <th style="text-align: left; padding: 8px; border-bottom: 1px solid #ddd;">Pending Requests</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for item in employees_with_pending %}
-                        <tr>
-                            <td style="padding: 8px; border-bottom: 1px solid #ddd;">
-                                <a href="{% url 'hr_review_employee_requests' item.employee.id %}">
-                                    {{ item.employee.get_full_name|default:item.employee.username }}
-                                </a>
-                            </td>
-                            <td style="padding: 8px; border-bottom: 1px solid #ddd;">{{ item.count }}</td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        {% else %}
-            <p>No pending doctor addition requests.</p>
-        {% endif %}
-    </div>
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Review Doctor Requests</h1>
+    <p class="page-sub">Employees with pending doctor assignment requests awaiting your review.</p>
+  </div>
 </div>
+
+{% if employees_with_pending %}
+<div class="table-wrap">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Employee</th>
+        <th>Pending requests</th>
+        <th class="col-actions">Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in employees_with_pending %}
+      <tr>
+        <td>
+          <div class="cell-strong">{{ item.employee.get_full_name|default:item.employee.username }}</div>
+          <div class="cell-sub">{{ item.employee.get_type_display }}</div>
+        </td>
+        <td><span class="badge badge--warning"><span class="dot"></span>{{ item.count }} pending</span></td>
+        <td class="col-actions">
+          <a href="{% url 'hr_review_employee_requests' item.employee.id %}" class="btn btn--secondary btn--sm">Review</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="card">
+  <div class="card__body">
+    <div class="empty">
+      <div class="empty__glyph"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>
+      <div class="empty__title">All caught up</div>
+      <div class="empty__text">There are no pending doctor assignment requests to review.</div>
+    </div>
+  </div>
+</div>
+{% endif %}
 {% endblock %}
