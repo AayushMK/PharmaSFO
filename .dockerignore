@@ -1,0 +1,29 @@
+# Host virtualenv — must never overwrite the one uv builds inside the image
+.venv/
+venv/
+
+# Secrets: compose injects .env at runtime via env_file; it must not be baked in
+.env
+
+.git/
+.gitignore
+
+__pycache__/
+*.py[cod]
+
+# Build artifact — the image runs collectstatic itself
+staticfiles/
+
+# Local tooling / editor / OS noise
+.claude/
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Cloudflare tunnel runtime artifacts
+.cloudflared_tunnel.log
+.tunnel_last_notified_url
+TUNNEL_URL.txt
+tunnel_watchdog*.log
+tunnel_watchdog.*.log

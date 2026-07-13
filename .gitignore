@@ -9,9 +9,6 @@ build/
 .venv/
 venv/
 
-# uv
-uv.lock
-
 # Environment
 .env
 
@@ -31,6 +28,7 @@ Thumbs.db
 
 # Cloudflare tunnel runtime artifacts
 .cloudflared_tunnel.log
+.tunnel_last_notified_url
 TUNNEL_URL.txt
 tunnel_watchdog.log
 tunnel_watchdog.stderr.log

@@ -4,11 +4,15 @@ version = "0.1.0"
 description = "Pharma Sales Force Automation"
 requires-python = ">=3.12"
 dependencies = [
+    "dj-database-url>=2.3",
     "django>=5.1",
     "django-ninja>=1.3",
     "django-ninja-jwt>=5.3",
+    "gunicorn>=23.0",
+    "nepali-datetime>=1.0.8",
     "openpyxl>=3.1.5",
     "psycopg2-binary>=2.9",
+    "whitenoise>=6.8",
 ]
 
 [dependency-groups]
