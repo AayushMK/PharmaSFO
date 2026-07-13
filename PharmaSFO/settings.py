@@ -1,4 +1,5 @@
 import os
+import sys
 from pathlib import Path
 from datetime import timedelta
 
@@ -79,25 +80,39 @@ WSGI_APPLICATION = "PharmaSFO.wsgi.application"
 # Managed hosts (Railway) hand the app a single DATABASE_URL; local Docker Compose
 # passes the POSTGRES_* parts via .env.
 DATABASE_URL = os.environ.get("DATABASE_URL", "").strip()
+
+# A reference Railway couldn't resolve (wrong service name) arrives as the literal
+# "${{...}}" text. Treat it as absent rather than feeding it to the URL parser.
+UNRESOLVED_DB_REF = DATABASE_URL.startswith("${{")
+if UNRESOLVED_DB_REF:
+    DATABASE_URL = ""
+
 ON_RAILWAY = bool(
     os.environ.get("RAILWAY_ENVIRONMENT") or os.environ.get("RAILWAY_PROJECT_ID")
 )
+# collectstatic runs inside `docker build`, where Railway's service variables are
+# NOT injected into RUN steps — only declared ARGs are. It touches no database, so
+# it must never demand DB config, or the guard below would fail every image build.
+BUILDING_IMAGE = "collectstatic" in sys.argv
 
-# An unresolved reference (wrong service name) arrives as the literal template text
-# or as an empty string. Both would silently fall through to the localhost default
-# below, which surfaces as a baffling "connection to localhost refused" — so say it.
-if DATABASE_URL.startswith("${{") or (ON_RAILWAY and not DATABASE_URL):
+# Without this, a missing DATABASE_URL silently falls through to the localhost
+# default below and surfaces as a baffling "connection to localhost refused".
+if ON_RAILWAY and not DATABASE_URL and not BUILDING_IMAGE:
     visible = sorted(
         k for k in os.environ
         if k.startswith(("DATABASE", "PG", "POSTGRES", "RAILWAY_ENVIRONMENT"))
     )
+    detail = (
+        "DATABASE_URL is set, but Railway could not resolve the reference — the "
+        "database service name in ${{ServiceName.DATABASE_URL}} does not match any "
+        "service in this project."
+        if UNRESOLVED_DB_REF else
+        "DATABASE_URL is not set on this service. Add it under Variables with the "
+        "value ${{Postgres.DATABASE_URL}}, using your database service's exact name."
+    )
     raise ImproperlyConfigured(
-        "DATABASE_URL is missing or unresolved on this Railway service, so Django "
-        "would fall back to localhost — where no Postgres is running.\n"
-        "Fix: Railway dashboard > this service > Variables > New Variable, named "
-        "DATABASE_URL, with the value ${{Postgres.DATABASE_URL}} — replacing "
-        "'Postgres' with the exact name of your database service.\n"
-        f"Database/Railway variables visible to this container: {visible or 'NONE'}"
+        f"{detail}\nDjango would otherwise fall back to localhost, where no Postgres "
+        f"is running.\nDatabase/Railway variables visible here: {visible or 'NONE'}"
     )
 
 if DATABASE_URL:
