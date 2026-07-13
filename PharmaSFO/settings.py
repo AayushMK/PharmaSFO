@@ -3,6 +3,7 @@ from pathlib import Path
 from datetime import timedelta
 
 import dj_database_url
+from django.core.exceptions import ImproperlyConfigured
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -77,10 +78,32 @@ WSGI_APPLICATION = "PharmaSFO.wsgi.application"
 
 # Managed hosts (Railway) hand the app a single DATABASE_URL; local Docker Compose
 # passes the POSTGRES_* parts via .env.
-if os.environ.get("DATABASE_URL"):
+DATABASE_URL = os.environ.get("DATABASE_URL", "").strip()
+ON_RAILWAY = bool(
+    os.environ.get("RAILWAY_ENVIRONMENT") or os.environ.get("RAILWAY_PROJECT_ID")
+)
+
+# An unresolved reference (wrong service name) arrives as the literal template text
+# or as an empty string. Both would silently fall through to the localhost default
+# below, which surfaces as a baffling "connection to localhost refused" — so say it.
+if DATABASE_URL.startswith("${{") or (ON_RAILWAY and not DATABASE_URL):
+    visible = sorted(
+        k for k in os.environ
+        if k.startswith(("DATABASE", "PG", "POSTGRES", "RAILWAY_ENVIRONMENT"))
+    )
+    raise ImproperlyConfigured(
+        "DATABASE_URL is missing or unresolved on this Railway service, so Django "
+        "would fall back to localhost — where no Postgres is running.\n"
+        "Fix: Railway dashboard > this service > Variables > New Variable, named "
+        "DATABASE_URL, with the value ${{Postgres.DATABASE_URL}} — replacing "
+        "'Postgres' with the exact name of your database service.\n"
+        f"Database/Railway variables visible to this container: {visible or 'NONE'}"
+    )
+
+if DATABASE_URL:
     DATABASES = {
         "default": dj_database_url.parse(
-            os.environ["DATABASE_URL"], conn_max_age=600, conn_health_checks=True
+            DATABASE_URL, conn_max_age=600, conn_health_checks=True
         )
     }
 else:
