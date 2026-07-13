@@ -81,6 +81,12 @@ class StockistCoverage(models.Model):
 
 
 class DailyCoverage(models.Model):
+    class WorkDay(models.TextChoices):
+        FULL_DAY = "full_day", "Full Day"
+        HALF_DAY = "half_day", "Half Day"
+        NIGHT_TRANSIT = "night_transit", "Night Transit"
+        MEETING = "meeting", "Meeting"
+
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -89,6 +95,12 @@ class DailyCoverage(models.Model):
         blank=True,
     )
     report_date = models.DateField()
+    work_day = models.CharField(
+        max_length=20,
+        choices=WorkDay.choices,
+        default=WorkDay.FULL_DAY,
+        verbose_name="Working day",
+    )
     doctor = models.ForeignKey(Doctor, on_delete=models.PROTECT, related_name="daily_coverages")
     actual_working_place = models.ForeignKey(Area, on_delete=models.PROTECT, related_name="daily_coverage_places")
     call_time = models.TimeField()

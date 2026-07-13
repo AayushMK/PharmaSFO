@@ -8,9 +8,9 @@
 {% block content %}
 <div class="page-header">
   <div>
-    <div class="t-eyebrow">Daily coverage</div>
+    <div class="t-eyebrow">Daily coverage · Today: {{ today_bs_label }} BS</div>
     <h1 class="page-title" style="margin-top:var(--space-2)">Coverage calendar</h1>
-    <p class="page-sub">Log visits only on days with an HR-approved tour plan. Approved days are clickable.</p>
+    <p class="page-sub">Log visits only on days with an HR-approved tour plan. Approved days are clickable. Dates are in Bikram Sambat (BS) with the Gregorian date alongside.</p>
   </div>
   <div class="page-actions">
     <a class="btn btn--secondary" href="{% url 'add_tour_plan' %}">Add tour plan</a>
@@ -55,7 +55,7 @@
 <div class="cal">
   <div class="cal__bar">
     <a class="btn btn--secondary btn--icon btn--sm" href="{% url 'daily_coverage_calendar_month' year=prev_year month=prev_month %}" aria-label="Previous month"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></a>
-    <div class="cal__month">{{ month_name }} {{ year }}</div>
+    <div class="cal__month">{{ month_name }} {{ year }} <span class="t-caption" style="font-weight:var(--weight-regular)">{{ start_ad|date:"j M" }} – {{ end_ad|date:"j M Y" }}</span></div>
     <div class="cal__nav">
       <a class="btn btn--secondary btn--sm" href="{% url 'daily_coverage_calendar' %}">Today</a>
       <a class="btn btn--secondary btn--icon btn--sm" href="{% url 'daily_coverage_calendar_month' year=next_year month=next_month %}" aria-label="Next month"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></a>
@@ -74,26 +74,29 @@
 
     {% for week in weeks %}{% for cell in week %}
     {% if not cell.in_month %}
-    <div class="cal__cell cal__cell--muted"><span class="cal__date">{{ cell.date.day }}</span></div>
+    <div class="cal__cell cal__cell--muted"><span class="cal__date" style="font-size:var(--text-md)">{{ cell.bs_day }}</span><span style="font-size:var(--text-xs);color:var(--text-muted);margin-top:auto;align-self:flex-end">{{ cell.date|date:"j M" }}</span></div>
     {% elif cell.state == "added" %}
     <div class="cal__cell cal__cell--added cal__cell--approved{% if cell.is_today %} cal__cell--today{% endif %}">
-      <span class="cal__date">{{ cell.date.day }}</span>
+      <span class="cal__date" style="font-size:var(--text-md)">{{ cell.bs_day }}</span>
       <a class="cal-tag cal-tag--added" href="{% url 'daily_coverage_list' %}?date={{ cell.date|date:'Y-m-d' }}" style="text-decoration:none"
          title="{% if cell.locked %}Edit window passed — view only{% else %}View or edit records{% endif %}">{% if cell.locked %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:10px;height:10px;flex:none"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>{% else %}<span class="dot"></span>{% endif %}Added ({{ cell.count }})</a>
+      <span style="font-size:var(--text-xs);color:var(--text-muted);margin-top:auto;align-self:flex-end">{{ cell.date|date:"j M" }}</span>
     </div>
     {% elif cell.state == "approved" %}
     <a class="cal__cell cal__cell--approved{% if cell.is_today %} cal__cell--today{% endif %}" href="{% url 'add_daily_coverage' %}?date={{ cell.date|date:'Y-m-d' }}" style="text-decoration:none">
-      <span class="cal__date">{{ cell.date.day }}</span>
+      <span class="cal__date" style="font-size:var(--text-md)">{{ cell.bs_day }}</span>
       <span class="cal-tag cal-tag--approved"><span class="dot"></span>Approved</span>
       {% if cell.is_today %}<span class="cal-note">{{ cell.area }} · tap to log</span>{% endif %}
+      <span style="font-size:var(--text-xs);color:var(--text-muted);{% if not cell.is_today %}margin-top:auto;{% endif %}align-self:flex-end">{{ cell.date|date:"j M" }}</span>
     </a>
     {% elif cell.state == "pending" %}
     <div class="cal__cell{% if cell.is_today %} cal__cell--today{% endif %}">
-      <span class="cal__date">{{ cell.date.day }}</span>
+      <span class="cal__date" style="font-size:var(--text-md)">{{ cell.bs_day }}</span>
       <span class="cal-tag cal-tag--pending"><span class="dot"></span>Pending</span>
+      <span style="font-size:var(--text-xs);color:var(--text-muted);margin-top:auto;align-self:flex-end">{{ cell.date|date:"j M" }}</span>
     </div>
     {% else %}
-    <div class="cal__cell{% if cell.is_today %} cal__cell--today{% endif %}"><span class="cal__date">{{ cell.date.day }}</span></div>
+    <div class="cal__cell{% if cell.is_today %} cal__cell--today{% endif %}"><span class="cal__date" style="font-size:var(--text-md)">{{ cell.bs_day }}</span><span style="font-size:var(--text-xs);color:var(--text-muted);margin-top:auto;align-self:flex-end">{{ cell.date|date:"j M" }}</span></div>
     {% endif %}
     {% endfor %}{% endfor %}
   </div>

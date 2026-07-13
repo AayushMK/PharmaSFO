@@ -98,7 +98,7 @@ function renderEntry() {
         <div class="grid grid--2">
             <div class="field">
                 <label class="label">Date <span class="req">*</span></label>
-                <input type="date" class="input f-date" name="entries[${index}][plan_date]" value="${defaultDate}" required>
+                <input type="hidden" class="f-date" name="entries[${index}][plan_date]" value="${defaultDate}">
             </div>
             <div class="field">
                 <label class="label">Area <span class="req">*</span></label>
@@ -126,6 +126,7 @@ function renderEntry() {
         syncEntries();
     });
     entryList.appendChild(wrapper);
+    bsDateAttach(wrapper.querySelector('.f-date'));
     updateDayLabels();
     syncEntries();
 }

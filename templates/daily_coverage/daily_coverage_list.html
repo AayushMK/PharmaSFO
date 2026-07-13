@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load dc_tags %}
 
 {% block title %}Coverage Records - PharmaSFO{% endblock %}
 {% block legacy_css %}{% endblock %}
@@ -50,8 +51,10 @@
       <tr>
         <th>Date</th>
         <th>Doctor</th>
+        <th>Hospital</th>
         <th>Area</th>
         <th>Time</th>
+        <th>Work day</th>
         <th>Products</th>
         <th>Worked with</th>
         <th>Remarks</th>
@@ -61,13 +64,18 @@
     <tbody>
       {% for record in page_obj %}
       <tr>
-        <td data-label="Date" class="t-secondary" style="white-space:nowrap">{{ record.report_date|date:"j M Y" }}</td>
+        <td data-label="Date" style="white-space:nowrap">
+          <div>{{ record.report_date|bs_date }}</div>
+          <div class="cell-sub">{{ record.report_date|date:"j M Y" }}</div>
+        </td>
         <td data-label="Doctor">
           <div class="cell-strong">{{ record.doctor.name }}</div>
           {% if record.doctor.specialization %}<div class="cell-sub">{{ record.doctor.specialization }}</div>{% endif %}
         </td>
+        <td data-label="Hospital">{{ record.doctor.hospital.name }}</td>
         <td data-label="Area">{{ record.actual_working_place.name }}</td>
         <td data-label="Time" class="t-mono t-secondary">{{ record.call_time|time:"H:i" }}</td>
+        <td data-label="Work day">{{ record.get_work_day_display }}</td>
         <td data-label="Products">{{ record.products|default:"—" }}</td>
         <td data-label="Worked with">{{ record.worked_with|default:"—" }}</td>
         <td data-label="Remarks" class="t-secondary">{{ record.remarks|default:"—" }}</td>
@@ -103,7 +111,10 @@
     <tbody>
       {% for record in page_obj %}
       <tr>
-        <td data-label="Date" class="t-secondary" style="white-space:nowrap">{{ record.report_date|date:"j M Y" }}</td>
+        <td data-label="Date" style="white-space:nowrap">
+          <div>{{ record.report_date|bs_date }}</div>
+          <div class="cell-sub">{{ record.report_date|date:"j M Y" }}</div>
+        </td>
         <td data-label="{{ record_type|capfirst }}"><div class="cell-strong">{{ record.name }}</div></td>
         <td data-label="Area">{{ record.area.name }}</td>
         <td data-label="Time" class="t-mono t-secondary">{{ record.call_time|time:"H:i" }}</td>
@@ -160,7 +171,7 @@
   <div class="card__body">
     <div class="empty">
       <div class="empty__glyph"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg></div>
-      <div class="empty__title">No {{ record_type }} coverage records{% if filter_date %} on {{ filter_date|date:"j M Y" }}{% endif %}</div>
+      <div class="empty__title">No {{ record_type }} coverage records{% if filter_date %} on {{ filter_date|bs_date }}{% endif %}</div>
       <div class="empty__text">{% if filter_date %}Try another date or clear the filter.{% else %}Coverage you log from the calendar will appear here.{% endif %}</div>
       <div class="empty__actions">
         {% if filter_date %}<a href="?type={{ record_type }}" class="btn btn--secondary btn--sm">Clear filter</a>

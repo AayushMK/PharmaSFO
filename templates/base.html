@@ -1,4 +1,4 @@
-{% load static %}
+{% load dc_tags static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -14,6 +14,9 @@
     {# App-level styles on top of Lumo (skip link, stacked mobile tables, …) #}
     <link rel="stylesheet" href="{% static 'css/app.css' %}">
     <script src="{% static 'lumo/lumo.js' %}" defer></script>
+    {# Bikram Sambat date picker: month table + component (not deferred — page scripts call bsDateAttach at parse time) #}
+    <script id="bs-cal-data" type="application/json">{% bs_calendar_json %}</script>
+    <script src="{% static 'js/bs-date.js' %}"></script>
 </head>
 <body>
 {% if user.is_authenticated %}
@@ -59,10 +62,12 @@
           <svg class="nav-group__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
         </button>
         <div class="nav-group__items"><div>
+          {% if user.is_superuser or user.is_staff and user.type == 'HR' %}
           <a class="nav-item{% if url_name == 'doctor_list' %} is-active{% endif %}" href="{% url 'doctor_list' %}">
             <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
             <span class="nav-item__label">Doctors</span>
           </a>
+          {% endif %}
           <a class="nav-item{% if url_name == 'doctor_employee_relation' or url_name == 'add_doctor_employee_relation' %} is-active{% endif %}" href="{% url 'doctor_employee_relation' %}">
             <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M2 7h20M2 17h20"/></svg>
             <span class="nav-item__label">My assignments</span>

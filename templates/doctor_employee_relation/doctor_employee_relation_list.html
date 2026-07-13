@@ -7,19 +7,44 @@
 {% block content %}
 <div class="page-header">
   <div>
+    {% if is_own %}
     <h1 class="page-title">My Assigned Doctors</h1>
     <p class="page-sub">Doctors assigned to you, with their MSL rank. New requests need HR approval.</p>
+    {% else %}
+    <h1 class="page-title">Assigned Doctors — {{ employee.get_full_name|default:employee.username }}</h1>
+    <p class="page-sub">{{ employee.get_type_display }} · doctors assigned to this employee, with their MSL rank.</p>
+    {% endif %}
   </div>
   <div class="page-actions">
+    {% if is_own %}
     <a href="{% url 'add_doctor_employee_relation' %}" class="btn btn--primary">
       <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
       Request assignment
     </a>
+    {% elif can_view_all %}
+    <a href="{% url 'add_doctor_employee_relation_for_employee' employee.pk %}" class="btn btn--primary">
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+      Assign for {{ employee.first_name|default:employee.username }}
+    </a>
+    {% endif %}
   </div>
 </div>
 
 <div class="table-toolbar">
   <form method="get" class="table-toolbar__filters">
+    {% if can_view_all %}
+    <label class="label" for="employee-switch" style="margin-right:var(--space-1)">Employee</label>
+    <select id="employee-switch" class="select" style="width:240px"
+            onchange="if (this.value) location.href = this.value">
+      <option value="{% url 'doctor_employee_relation' %}?status={{ selected_status }}" {% if is_own %}selected{% endif %}>Myself</option>
+      {% for emp in all_employees %}
+      <option value="{% url 'doctor_employee_relation_for_employee' emp.pk %}?status={{ selected_status }}"
+              {% if not is_own and employee.pk == emp.pk %}selected{% endif %}>
+        {{ emp.get_full_name|default:emp.username }} ({{ emp.get_type_display }})
+      </option>
+      {% endfor %}
+    </select>
+    {% endif %}
     <label class="label" for="status-filter" style="margin-right:var(--space-1)">Status</label>
     <select name="status" id="status-filter" class="select" style="width:160px" onchange="this.form.submit()">
       <option value="all"      {% if selected_status == 'all'      %}selected{% endif %}>All</option>
@@ -90,8 +115,8 @@
     <div class="empty">
       <div class="empty__glyph"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
       <div class="empty__title">No doctors found</div>
-      <div class="empty__text">{% if selected_status != 'all' %}No assignments with status “{{ selected_status }}”. Try a different filter.{% else %}Request your first doctor assignment — HR will review it.{% endif %}</div>
-      {% if selected_status == 'all' %}
+      <div class="empty__text">{% if selected_status != 'all' %}No assignments with status “{{ selected_status }}”. Try a different filter.{% elif is_own %}Request your first doctor assignment — HR will review it.{% else %}This employee has no doctor assignments yet.{% endif %}</div>
+      {% if selected_status == 'all' and is_own %}
       <div class="empty__actions"><a href="{% url 'add_doctor_employee_relation' %}" class="btn btn--primary btn--sm">Request assignment</a></div>
       {% endif %}
     </div>

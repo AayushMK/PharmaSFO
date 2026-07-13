@@ -64,6 +64,12 @@
                 </div>
             </div>
 
+            <div class="field" style="max-width:260px; margin-bottom:var(--space-4)">
+                <label class="label" for="{{ form.work_day.id_for_label }}">Working day <span class="req">*</span></label>
+                {{ form.work_day }}
+                <span class="help">Applies to every doctor entry you save below.</span>
+            </div>
+
             <div id="doctor-entry-list" class="stack"></div>
 
             <div class="row row--wrap" style="margin-top:var(--space-4); gap:var(--space-3);">
@@ -272,7 +278,7 @@ function renderDoctorEntry(initialDate) {
     const defaultArea = lastValue(doctorList, '.f-area');
     const row = makeRow(`
         <div class="field"><label class="label">Date <span class="req">*</span></label>
-            <input type="date" class="input f-date" name="d_date_${idx}" value="${defaultDate}" required></div>
+            <input type="hidden" class="f-date" name="d_date_${idx}" value="${defaultDate}"></div>
         <div class="field"><label class="label">Doctor <span class="req">*</span></label>
             <select class="select f-doc" name="d_doc_${idx}" required>
                 <option value="">Select doctor</option>
@@ -295,6 +301,7 @@ function renderDoctorEntry(initialDate) {
     row.addEventListener('input', syncDoctorEntries);
     row.addEventListener('change', syncDoctorEntries);
     doctorList.appendChild(row);
+    bsDateAttach(row.querySelector('.f-date'), { defaultToday: true });
     syncDoctorEntries();
 }
 
@@ -329,7 +336,7 @@ function renderChemistEntry(initialDate) {
     const defaultArea = lastValue(chemistList, '.f-area');
     const row = makeRow(`
         <div class="field"><label class="label">Date <span class="req">*</span></label>
-            <input type="date" class="input f-date" name="c_date_${idx}" value="${defaultDate}" required></div>
+            <input type="hidden" class="f-date" name="c_date_${idx}" value="${defaultDate}"></div>
         <div class="field"><label class="label">Chemist <span class="req">*</span></label>
             <select class="select f-name" name="c_name_${idx}" required>
                 <option value="">Select chemist</option>
@@ -348,6 +355,7 @@ function renderChemistEntry(initialDate) {
     row.addEventListener('input', syncChemistEntries);
     row.addEventListener('change', syncChemistEntries);
     chemistList.appendChild(row);
+    bsDateAttach(row.querySelector('.f-date'), { defaultToday: true });
     syncChemistEntries();
 }
 
@@ -385,7 +393,7 @@ function renderStockistEntry(initialDate) {
     const defaultArea = lastValue(stockistList, '.f-area');
     const row = makeRow(`
         <div class="field"><label class="label">Date <span class="req">*</span></label>
-            <input type="date" class="input f-date" name="s_date_${idx}" value="${defaultDate}" required></div>
+            <input type="hidden" class="f-date" name="s_date_${idx}" value="${defaultDate}"></div>
         <div class="field"><label class="label">Stockist <span class="req">*</span></label>
             <select class="select f-name" name="s_name_${idx}" required>
                 <option value="">Select stockist</option>
@@ -404,6 +412,7 @@ function renderStockistEntry(initialDate) {
     row.addEventListener('input', syncStockistEntries);
     row.addEventListener('change', syncStockistEntries);
     stockistList.appendChild(row);
+    bsDateAttach(row.querySelector('.f-date'), { defaultToday: true });
     syncStockistEntries();
 }
 

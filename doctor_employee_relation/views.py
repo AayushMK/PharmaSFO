@@ -39,11 +39,22 @@ def doctor_employee_relation_list(request, employee_id=None):
     paginator = Paginator(ordered_qs, 25)
     page_obj = paginator.get_page(request.GET.get("page", 1))
 
+    # HR (and superusers) can switch to any employee's assignment list
+    can_view_all = _is_hr_user(request.user) or request.user.is_superuser
+    all_employees = (
+        get_user_model().objects.exclude(pk=request.user.pk)
+        .order_by("first_name", "last_name", "username")
+        if can_view_all else []
+    )
+
     return render(
         request,
         "doctor_employee_relation/doctor_employee_relation_list.html",
         {
             "employee": employee,
+            "is_own": employee == request.user,
+            "can_view_all": can_view_all,
+            "all_employees": all_employees,
             "page_obj": page_obj,
             "total_count": paginator.count,
             "selected_status": selected_status,

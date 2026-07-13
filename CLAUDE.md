@@ -77,7 +77,7 @@ PharmSFAO/
 │   │   ├── hr_review_tour_plans.html    # HR: employees with pending plans
 │   │   └── hr_review_employee_tour_plans.html  # HR: approve/reject per employee
 │   ├── daily_coverage/
-│   │   ├── calendar.html               # Lumo monthly calendar; days gated by tour plan approval
+│   │   ├── calendar.html               # Lumo monthly calendar in Bikram Sambat; days gated by tour plan approval
 │   │   ├── add_daily_coverage.html     # Tabbed bulk add: Doctor / Chemist / Stockist
 │   │   ├── daily_coverage_list.html    # List with edit/delete (2-day window)
 │   │   └── edit_daily_coverage.html
@@ -85,7 +85,7 @@ PharmSFAO/
 │       ├── daily_activity_report.html
 │       ├── monthly_activity_report.html  # Chart.js frequency diagram + list of data tabs
 │       ├── monthly_target_report.html    # Traffic-light dots per doctor
-│       └── yearly_activity_report.html  # Doctor × month visit-date grid + Excel export
+│       └── yearly_activity_report.html  # BS-year doctor × BS-month visit grid + MSL frequency chart + Excel export
 ├── static/
 │   ├── css/app.css         # App-level styles on top of Lumo (skip link, .table--stack mobile card rows)
 │   ├── css/style.css       # Legacy styling — no longer loaded (all pages ported to Lumo); safe to delete
@@ -93,7 +93,7 @@ PharmSFAO/
 ├── lumo/design_handoff_lumo_sfa/  # Design handoff bundle (README.md there is the design source of truth)
 ├── docker-compose.yml      # web + db services
 ├── Dockerfile              # Python 3.12-slim + uv
-├── pyproject.toml          # Dependencies (includes openpyxl)
+├── pyproject.toml          # Dependencies (includes openpyxl, nepali-datetime)
 ├── .env                    # Environment variables (not committed)
 ├── documentation.md        # Full architecture, per-app & end-to-end flow docs
 ├── improvements.md         # Prioritised improvement / tech-debt checklist
@@ -156,6 +156,7 @@ PharmSFAO/
 ### DailyCoverage (daily_coverage.DailyCoverage)
 - `created_by` — FK to User (nullable)
 - `report_date` — DateField
+- `work_day` — choices: full_day / half_day / night_transit / meeting (default full_day); one **required** "Working day" select on the add form applies to all doctor entries in that submission
 - `doctor` — FK to Doctor (PROTECT)
 - `actual_working_place` — FK to Area (PROTECT)
 - `call_time` — TimeField
@@ -215,12 +216,12 @@ Defined in `reports/views.py` as `SUPER_CORE_MAX = 25`, `CORE_MAX = 75`, `VISIT_
 ## Key URLs
 - http://localhost:8000/ — Dashboard
 - http://localhost:8000/login/ — Login page
-- http://localhost:8000/doctors/ — Doctor list
+- http://localhost:8000/doctors/ — Doctor directory (**HR/superuser only**; reps see their doctors via My assignments)
 - http://localhost:8000/doctors/add/ — HR: add a new doctor
 - http://localhost:8000/chemists/add/ — HR: add a chemist to the directory
 - http://localhost:8000/stockists/add/ — HR: add a stockist to the directory
 - http://localhost:8000/users/add/ — HR: onboard a new employee (Admin position excluded; picking HR sets is_staff)
-- http://localhost:8000/doctor_employee_relation/ — My assigned doctors
+- http://localhost:8000/doctor_employee_relation/ — My assigned doctors (HR/superuser get an employee switcher to view anyone's list; `/<employee_id>/` variant)
 - http://localhost:8000/doctor_employee_relation/add/ — Request a doctor assignment
 - http://localhost:8000/review_requests/ — HR: pending doctor requests
 - http://localhost:8000/review_requests/<id>/ — HR: approve/reject per employee
@@ -238,7 +239,7 @@ Defined in `reports/views.py` as `SUPER_CORE_MAX = 25`, `CORE_MAX = 75`, `VISIT_
 - http://localhost:8000/reports/monthly-activity/export/ — Excel export of monthly report (Daily Calls + MSL Frequency sheets)
 - http://localhost:8000/reports/monthly-target/ — Monthly Target Report (traffic-light dots)
 - http://localhost:8000/reports/monthly-target/export/ — Excel export of target report (status-tinted rows + summary)
-- http://localhost:8000/reports/yearly-activity/ — Yearly Activity Report
+- http://localhost:8000/reports/yearly-activity/ — Yearly Activity Report (**BS year**: Baishakh–Chaitra grid + MSL frequency bar chart)
 - http://localhost:8000/reports/yearly-activity/export/ — Excel export of yearly report
 - http://localhost:8000/admin/ — Django admin (add doctors, areas, users here)
 - http://localhost:8000/api/docs — API documentation (Swagger)
@@ -256,7 +257,8 @@ Defined in `reports/views.py` as `SUPER_CORE_MAX = 25`, `CORE_MAX = 75`, `VISIT_
 - Daily coverage edit window is 2 days from `created_at` (defined as `EDIT_WINDOW_DAYS = 2`)
 - Chemist/Stockist coverage is implemented (models + bulk add form + list/edit/delete + Daily Activity report); inclusion in monthly/target/yearly reports is still pending
 - List views (`daily_coverage_list`, `doctor_employee_relation_list`) paginate at 25/page with date/status filters
-- Reports use Gregorian dates (Nepali BS calendar conversion deferred)
+- **Coverage calendar renders in Bikram Sambat** via `nepali-datetime`: the `/daily_coverage/<year>/<month>/` URL params are **BS**, weeks run Sunday-first, cells show the BS day (AD date bottom-right), and all queries/links use the BS month's AD range. Storage and reports remain Gregorian
+- **BS date picker** (`static/js/bs-date.js` + `{% bs_calendar_json %}` tag in dc_tags, both loaded by base.html): renders Year/Month/Day BS selects that write ISO AD into a hidden input. Auto-enhances every server-rendered `input[type=date]` (filters, edit forms); JS-built entry rows call `bsDateAttach(input, {defaultToday})`. Month inputs (`type=month`) stay Gregorian
 - Excel export uses openpyxl, served as streaming `HttpResponse`
 - `reports/` is a plain Python module (no models), not a Django app — no INSTALLED_APPS entry
 - Timezone set to `Asia/Kathmandu`

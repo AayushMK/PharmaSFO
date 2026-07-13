@@ -8,7 +8,7 @@
 <div class="page-header">
   <div>
     <h1 class="page-title">Yearly Activity Report</h1>
-    <p class="page-sub">Visit dates per doctor across every month of {{ year }}.</p>
+    <p class="page-sub">Visit dates per doctor across every month of {{ year }} BS (Baishakh – Chaitra).</p>
   </div>
   <div class="page-actions">
     <a href="{% url 'yearly_activity_report_excel' %}?year={{ year }}{% if selected_employee_id %}&employee_id={{ selected_employee_id }}{% endif %}"
@@ -46,9 +46,27 @@
   </div>
 </form>
 
+<!-- MSL frequency chart -->
+<div class="card" style="margin-bottom:var(--space-6)">
+  <div class="card__header">
+    <span class="card__title">Yearly MSL frequency coverage — {{ year }} BS</span>
+    <div class="row" style="gap:var(--space-2)">
+      <span class="badge badge--primary"><span class="dot"></span>Super Core · {{ total_super_core }}</span>
+      <span class="badge badge--warning"><span class="dot"></span>Core · {{ total_core }}</span>
+      <span class="badge badge--success"><span class="dot"></span>VIP · {{ total_vip }}</span>
+    </div>
+  </div>
+  <div class="card__body">
+    <div style="position:relative; height:340px">
+      <canvas id="yearlyChart"></canvas>
+    </div>
+    <p class="t-caption" style="text-align:center; margin-top:var(--space-4)">Visits per BS month by doctor class · Super Core: MSL 1–25 · Core: MSL 26–75 · VIP: MSL 76+</p>
+  </div>
+</div>
+
 <div class="card">
   <div class="card__header">
-    <span class="card__title">Yearly activity — {{ year }}</span>
+    <span class="card__title">Yearly activity — {{ year }} BS</span>
     {% if rows %}<span class="badge badge--neutral">{{ rows|length }} doctor{{ rows|length|pluralize }}</span>{% endif %}
   </div>
 
@@ -92,10 +110,45 @@
   <div class="card__body">
     <div class="empty" style="padding:var(--space-6) var(--space-4)">
       <div class="empty__glyph"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg></div>
-      <div class="empty__title">No data for {{ year }}</div>
+      <div class="empty__title">No data for {{ year }} BS</div>
       <div class="empty__text">Approved doctor assignments and logged coverage will appear here.</div>
     </div>
   </div>
   {% endif %}
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+const chartData = {{ chart_data|safe }};
+
+// Pull the Lumo palette from the design tokens so the chart stays on-system.
+const css = getComputedStyle(document.documentElement);
+const tone = name => css.getPropertyValue(name).trim();
+
+new Chart(document.getElementById('yearlyChart').getContext('2d'), {
+    type: 'bar',
+    data: {
+        labels: chartData.labels,
+        datasets: [
+            { label: 'Super Core', data: chartData.super_core, backgroundColor: tone('--primary'), borderRadius: 2 },
+            { label: 'Core', data: chartData.core, backgroundColor: tone('--warning'), borderRadius: 2 },
+            { label: 'VIP', data: chartData.vip, backgroundColor: tone('--success'), borderRadius: 2 },
+        ],
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        color: tone('--text-secondary'),
+        scales: {
+            x: { title: { display: true, text: 'Month', color: tone('--text-secondary') },
+                 ticks: { color: tone('--text-secondary') }, grid: { display: false } },
+            y: { title: { display: true, text: 'MSL frequency', color: tone('--text-secondary') },
+                 beginAtZero: true, ticks: { precision: 0, color: tone('--text-secondary') }, grid: { color: tone('--gray-100') } },
+        },
+        plugins: {
+            legend: { position: 'bottom', labels: { usePointStyle: true, pointStyle: 'rect', color: tone('--text') } },
+        },
+    },
+});
+</script>
 {% endblock %}

@@ -40,10 +40,14 @@
   <!-- Day summary -->
   <div class="card">
     <div class="card__body" style="padding:var(--space-4) var(--space-6)">
-      <div class="grid grid--3" style="gap:var(--space-4)">
+      <div class="grid grid--stats" style="gap:var(--space-4)">
         <div>
           <div class="t-eyebrow">Date</div>
           <div style="margin-top:var(--space-1)">{{ report_date|date:"D, j M Y" }}</div>
+        </div>
+        <div>
+          <div class="t-eyebrow">Working day</div>
+          <div style="margin-top:var(--space-1)">{% if work_day_label %}{{ work_day_label }}{% else %}<span class="t-muted">—</span>{% endif %}</div>
         </div>
         <div>
           <div class="t-eyebrow">Work planned</div>
@@ -71,6 +75,7 @@
             <th>SN</th>
             <th>Area covered</th>
             <th>Doctor</th>
+            <th>Hospital</th>
             <th>MSL</th>
             <th>Worked with</th>
             <th>Products promoted</th>
@@ -86,6 +91,7 @@
               <div class="cell-strong">{{ c.doctor.name }}</div>
               {% if c.doctor.specialization %}<div class="cell-sub">{{ c.doctor.specialization }}</div>{% endif %}
             </td>
+            <td data-label="Hospital">{{ c.doctor.hospital.name }}</td>
             <td data-label="MSL" class="t-mono">{{ c.msl }}</td>
             <td data-label="Worked with">{{ c.worked_with|default:"Self" }}</td>
             <td data-label="Products" >{{ c.products|default:"—" }}</td>

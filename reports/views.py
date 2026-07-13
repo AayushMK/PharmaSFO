@@ -1,8 +1,9 @@
 import calendar as cal_module
 import json
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, timedelta
 
+import nepali_datetime
 import openpyxl
 from openpyxl.styles import Alignment, Font, PatternFill
 
@@ -21,8 +22,11 @@ CORE_MAX = 75
 VISIT_TARGETS = {"super_core": 4, "core": 2, "vip": 1}
 CATEGORY_LABELS = {"super_core": "Super Core", "core": "Core", "vip": "VIP"}
 
-MONTH_ABBR = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
-              "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+# The yearly report runs on Bikram Sambat years (Baishakh … Chaitra)
+BS_MONTH_NAMES = ["Baishakh", "Jestha", "Asar", "Shrawan", "Bhadau", "Aswin",
+                  "Kartik", "Mangsir", "Poush", "Magh", "Falgun", "Chaitra"]
+BS_MONTH_ABBR = ["Bai", "Jes", "Asa", "Shr", "Bha", "Asw",
+                 "Kar", "Man", "Pou", "Mag", "Fal", "Cha"]
 
 
 def _get_employee(request):
@@ -52,13 +56,19 @@ def _doctor_category(msl):
     return "vip"
 
 
-def _build_yearly_rows(employee, year):
+def _build_yearly_data(employee, year):
     """
-    Returns a list of row dicts for the yearly report, one per approved
-    doctor-employee relation, ordered by MSL number then doctor name.
-    Each row contains: msl, doctor, hospitals, month_visits (list of 12
-    day-lists), total_calls.
+    Yearly report data for a **BS year**: rows (one per approved
+    doctor-employee relation, ordered by MSL then doctor name, with
+    month_visits as 12 BS-month day-lists) plus per-BS-month visit
+    frequency by doctor category for the chart.
     """
+    try:
+        start_ad = nepali_datetime.date(year, 1, 1).to_datetime_date()
+        end_ad = nepali_datetime.date(year + 1, 1, 1).to_datetime_date() - timedelta(days=1)
+    except ValueError:  # outside nepali-datetime's supported range
+        start_ad = end_ad = None
+
     relations = (
         DoctorEmployeeRelation.objects
         .filter(employee=employee, status=DoctorEmployeeRelation.Status.APPROVED)
@@ -66,11 +76,25 @@ def _build_yearly_rows(employee, year):
         .order_by("msl_number", "doctor__name")
     )
 
-    all_covs = list(
-        DailyCoverage.objects
-        .filter(created_by=employee, report_date__year=year)
-        .order_by("report_date")
-    )
+    all_covs = []
+    if start_ad:
+        all_covs = list(
+            DailyCoverage.objects
+            .filter(created_by=employee, report_date__range=(start_ad, end_ad))
+            .order_by("report_date")
+        )
+    for c in all_covs:
+        c.bs = nepali_datetime.date.from_datetime_date(c.report_date)
+
+    # Chart: visits per BS month split by doctor category (msl over *all*
+    # relations, mirroring the monthly report's classification)
+    msl_map = {
+        rel.doctor_id: rel.msl_number
+        for rel in DoctorEmployeeRelation.objects.filter(employee=employee)
+    }
+    freq = {m: {"super_core": 0, "core": 0, "vip": 0} for m in range(1, 13)}
+    for c in all_covs:
+        freq[c.bs.month][_doctor_category(msl_map.get(c.doctor_id))] += 1
 
     cov_by_doctor = defaultdict(list)
     for c in all_covs:
@@ -83,7 +107,7 @@ def _build_yearly_rows(employee, year):
 
         month_visits = []
         for m in range(1, 13):
-            days = sorted({c.report_date.day for c in covs if c.report_date.month == m})
+            days = sorted({c.bs.day for c in covs if c.bs.month == m})
             month_visits.append(days)
 
         rows.append({
@@ -94,7 +118,14 @@ def _build_yearly_rows(employee, year):
             "total_calls": len(covs),
         })
 
-    return rows
+    months = list(range(1, 13))
+    return {
+        "rows": rows,
+        "freq": freq,
+        "total_super_core": sum(freq[m]["super_core"] for m in months),
+        "total_core":       sum(freq[m]["core"]       for m in months),
+        "total_vip":        sum(freq[m]["vip"]        for m in months),
+    }
 
 
 # ── Daily Activity Report ────────────────────────────────────────────────────
@@ -115,6 +146,7 @@ def daily_activity_report(request):
     coverages = []
     planned_areas = []
     worked_areas = []
+    work_day_label = ""
     chemist_coverages = []
     stockist_coverages = []
 
@@ -122,7 +154,7 @@ def daily_activity_report(request):
         qs = (
             DailyCoverage.objects
             .filter(created_by=employee, report_date=report_date)
-            .select_related("doctor", "actual_working_place")
+            .select_related("doctor", "doctor__hospital", "actual_working_place")
             .order_by("call_time")
         )
         coverages = list(qs)
@@ -144,6 +176,7 @@ def daily_activity_report(request):
             .values_list("area__name", flat=True)
         )
         worked_areas = list(dict.fromkeys(c.actual_working_place.name for c in coverages))
+        work_day_label = coverages[0].get_work_day_display() if coverages else ""
 
         chemist_coverages = list(
             ChemistCoverage.objects
@@ -167,6 +200,7 @@ def daily_activity_report(request):
         "coverages": coverages,
         "planned_areas": planned_areas,
         "worked_areas": worked_areas,
+        "work_day_label": work_day_label,
         "chemist_coverages": chemist_coverages,
         "stockist_coverages": stockist_coverages,
         "can_view_others": can_view_others,
@@ -187,9 +221,33 @@ def _parse_month(month_str):
     return today.year, today.month, f"{today.year}-{today.month:02d}"
 
 
-def _build_monthly_data(employee, year, month):
-    """Data shared by the Monthly Activity report page and its Excel export."""
-    num_days = cal_module.monthrange(year, month)[1]
+def _parse_bs_month(request):
+    """Resolve the requested **BS** month from `year` + `bs_month` selects,
+    defaulting to the current BS month. Returns
+    (bs_year, bs_month, "YYYY-MM", start_ad, end_ad) where the AD span covers
+    exactly that BS month."""
+    today_bs = nepali_datetime.date.from_datetime_date(datetime.today().date())
+    try:
+        year = int(request.GET.get("year", ""))
+        month = int(request.GET.get("bs_month", ""))
+        if not 1 <= month <= 12:
+            raise ValueError
+        start = nepali_datetime.date(year, month, 1)
+    except (ValueError, TypeError):
+        year, month = today_bs.year, today_bs.month
+        start = nepali_datetime.date(year, month, 1)
+
+    nxt = (nepali_datetime.date(year + 1, 1, 1) if month == 12
+           else nepali_datetime.date(year, month + 1, 1))
+    start_ad = start.to_datetime_date()
+    end_ad = nxt.to_datetime_date() - timedelta(days=1)
+    return year, month, f"{year}-{month:02d}", start_ad, end_ad
+
+
+def _build_monthly_data(employee, start_ad, end_ad):
+    """Data shared by the Monthly Activity report page and its Excel export.
+    Scoped to a BS month's AD span; days and frequencies are keyed by BS day."""
+    num_days = (end_ad - start_ad).days + 1
 
     msl_map = {
         rel.doctor_id: rel.msl_number
@@ -198,17 +256,18 @@ def _build_monthly_data(employee, year, month):
 
     coverages = list(
         DailyCoverage.objects
-        .filter(created_by=employee, report_date__year=year, report_date__month=month)
+        .filter(created_by=employee, report_date__range=(start_ad, end_ad))
         .select_related("doctor", "actual_working_place")
         .order_by("report_date", "call_time")
     )
     for c in coverages:
         c.msl = msl_map.get(c.doctor_id)
         c.category = _doctor_category(c.msl)
+        c.bs = nepali_datetime.date.from_datetime_date(c.report_date)
 
     freq = {d: {"super_core": 0, "core": 0, "vip": 0} for d in range(1, num_days + 1)}
     for c in coverages:
-        freq[c.report_date.day][c.category] += 1
+        freq[c.bs.day][c.category] += 1
 
     days = list(range(1, num_days + 1))
 
@@ -216,8 +275,8 @@ def _build_monthly_data(employee, year, month):
 
     tour_by_date = defaultdict(list)
     for tp in TourPlan.objects.filter(
-        created_by=employee, plan_date__year=year,
-        plan_date__month=month, status=TourPlan.Status.APPROVED,
+        created_by=employee, plan_date__range=(start_ad, end_ad),
+        status=TourPlan.Status.APPROVED,
     ).select_related("area").order_by("plan_date"):
         tour_by_date[tp.plan_date].append(tp.area.name)
 
@@ -232,8 +291,10 @@ def _build_monthly_data(employee, year, month):
         for c in day_covs:
             if c.doctor.specialization:
                 spec_counts[c.doctor.specialization] += 1
+        d_bs = nepali_datetime.date.from_datetime_date(d)
         rows.append({
             "date":        d,
+            "date_bs":     f"{d_bs.day} {BS_MONTH_ABBR[d_bs.month - 1]} {d_bs.year}",
             "tour_areas":  tour_by_date.get(d, []),
             "actual_areas": list(dict.fromkeys(c.actual_working_place.name for c in day_covs)),
             "spec_values": [spec_counts.get(s, 0) for s in all_specs],
@@ -255,9 +316,9 @@ def _build_monthly_data(employee, year, month):
 @never_cache
 def monthly_activity_report(request):
     employee, all_employees, selected_employee_id, can_view_others = _get_employee(request)
-    year, month, month_str = _parse_month(request.GET.get("month", ""))
+    year, month, month_str, start_ad, end_ad = _parse_bs_month(request)
 
-    data = _build_monthly_data(employee, year, month)
+    data = _build_monthly_data(employee, start_ad, end_ad)
 
     chart_data = json.dumps({
         "labels":     data["days"],
@@ -270,7 +331,9 @@ def monthly_activity_report(request):
         "month_str":           month_str,
         "year":                year,
         "month":               month,
-        "month_name":          cal_module.month_name[month],
+        "month_name":          BS_MONTH_NAMES[month - 1],
+        "year_choices":        _year_choices(),
+        "bs_months":           BS_MONTH_NAMES,
         "employee":            employee,
         "all_employees":       all_employees,
         "selected_employee_id": selected_employee_id,
@@ -287,8 +350,8 @@ def monthly_activity_report(request):
 @login_required
 def monthly_activity_report_excel(request):
     employee, _, _, _ = _get_employee(request)
-    year, month, _ = _parse_month(request.GET.get("month", ""))
-    data = _build_monthly_data(employee, year, month)
+    year, month, _, start_ad, end_ad = _parse_bs_month(request)
+    data = _build_monthly_data(employee, start_ad, end_ad)
 
     wb = openpyxl.Workbook()
 
@@ -314,7 +377,7 @@ def monthly_activity_report_excel(request):
     for i, row in enumerate(data["rows"], start=1):
         ws.append([
             i,
-            row["date"].strftime("%d %b %Y"),
+            row["date_bs"],
             " / ".join(row["tour_areas"]) or "-",
             " / ".join(row["actual_areas"]) or "-",
             *row["spec_values"],
@@ -363,8 +426,12 @@ def monthly_activity_report_excel(request):
 
 # ── Yearly Activity Report ───────────────────────────────────────────────────
 
+def _current_bs_year():
+    return nepali_datetime.date.from_datetime_date(datetime.today().date()).year
+
+
 def _year_choices():
-    current = datetime.today().year
+    current = _current_bs_year()
     return list(range(current - 4, current + 2))
 
 
@@ -372,13 +439,20 @@ def _year_choices():
 @never_cache
 def yearly_activity_report(request):
     employee, all_employees, selected_employee_id, can_view_others = _get_employee(request)
-    year_str = request.GET.get("year", str(datetime.today().year))
+    year_str = request.GET.get("year", str(_current_bs_year()))
     try:
         year = int(year_str)
     except ValueError:
-        year = datetime.today().year
+        year = _current_bs_year()
 
-    rows = _build_yearly_rows(employee, year)
+    data = _build_yearly_data(employee, year)
+
+    chart_data = json.dumps({
+        "labels":     BS_MONTH_NAMES,
+        "super_core": [data["freq"][m]["super_core"] for m in range(1, 13)],
+        "core":       [data["freq"][m]["core"]       for m in range(1, 13)],
+        "vip":        [data["freq"][m]["vip"]        for m in range(1, 13)],
+    })
 
     return render(request, "reports/yearly_activity_report.html", {
         "year":                year,
@@ -387,21 +461,25 @@ def yearly_activity_report(request):
         "all_employees":       all_employees,
         "selected_employee_id": selected_employee_id,
         "can_view_others":     can_view_others,
-        "rows":                rows,
-        "month_abbr":          MONTH_ABBR,
+        "rows":                data["rows"],
+        "month_abbr":          BS_MONTH_ABBR,
+        "chart_data":          chart_data,
+        "total_super_core":    data["total_super_core"],
+        "total_core":          data["total_core"],
+        "total_vip":           data["total_vip"],
     })
 
 
 @login_required
 def yearly_activity_report_excel(request):
     employee, _, _, _ = _get_employee(request)
-    year_str = request.GET.get("year", str(datetime.today().year))
+    year_str = request.GET.get("year", str(_current_bs_year()))
     try:
         year = int(year_str)
     except ValueError:
-        year = datetime.today().year
+        year = _current_bs_year()
 
-    rows = _build_yearly_rows(employee, year)
+    rows = _build_yearly_data(employee, year)["rows"]
 
     wb = openpyxl.Workbook()
     ws = wb.active
@@ -413,7 +491,7 @@ def yearly_activity_report_excel(request):
 
     headers = (
         ["MSL No.", "Doctor's Name", "Speciality", "Doctor NMC No.", "City", "Hospital"]
-        + MONTH_ABBR
+        + BS_MONTH_ABBR
         + ["Total Calls"]
     )
     ws.append(headers)

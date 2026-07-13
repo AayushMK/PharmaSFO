@@ -1,6 +1,7 @@
-import calendar
 import json
 from datetime import datetime, timedelta
+
+import nepali_datetime
 
 from django.core.paginator import Paginator
 
@@ -73,13 +74,38 @@ def add_stockist(request):
 @login_required
 @never_cache
 def daily_coverage_calendar(request, year=None, month=None):
-    today = timezone.localdate()
-    if year is None or month is None:
-        year = today.year
-        month = today.month
+    """Monthly coverage calendar rendered in Bikram Sambat (BS).
 
-    year = int(year)
-    month = int(month)
+    `year`/`month` URL params are BS; every query and link still uses the
+    Gregorian (AD) dates the data is stored in. Weeks run Sunday-first
+    (Nepali work week, Saturday off).
+    """
+    today = timezone.localdate()
+    today_bs = nepali_datetime.date.from_datetime_date(today)
+
+    try:
+        year = int(year) if year is not None else today_bs.year
+        month = int(month) if month is not None else today_bs.month
+        first_bs = nepali_datetime.date(year, month, 1)
+    except ValueError:
+        return redirect("daily_coverage_calendar")
+
+    # prev / next BS month for calendar navigation
+    if month == 1:
+        prev_year, prev_month = year - 1, 12
+    else:
+        prev_year, prev_month = year, month - 1
+    if month == 12:
+        next_year, next_month = year + 1, 1
+    else:
+        next_year, next_month = year, month + 1
+
+    # AD range covered by this BS month
+    start_ad = first_bs.to_datetime_date()
+    try:
+        end_ad = nepali_datetime.date(next_year, next_month, 1).to_datetime_date() - timedelta(days=1)
+    except ValueError:
+        return redirect("daily_coverage_calendar")
 
     # {date: visit_count} — drives the "Added (n)" tag per calendar cell.
     # A day is "locked" once every entry on it is past the edit window.
@@ -89,8 +115,7 @@ def daily_coverage_calendar(request, year=None, month=None):
     for row in (
         DailyCoverage.objects.filter(
             created_by=request.user,
-            report_date__year=year,
-            report_date__month=month,
+            report_date__range=(start_ad, end_ad),
         ).values("report_date").annotate(n=Count("id"), latest=Max("created_at"))
     ):
         counts_by_date[row["report_date"]] = row["n"]
@@ -102,8 +127,7 @@ def daily_coverage_calendar(request, year=None, month=None):
     for plan in (
         TourPlan.objects.filter(
             created_by=request.user,
-            plan_date__year=year,
-            plan_date__month=month,
+            plan_date__range=(start_ad, end_ad),
         )
         .exclude(status=TourPlan.Status.REJECTED)
         .select_related("area")
@@ -114,52 +138,56 @@ def daily_coverage_calendar(request, year=None, month=None):
         else:
             pending_dates.add(plan.plan_date)
 
-    # Full weeks of real dates (adjacent-month days render muted)
+    # Sunday-first week grid covering the BS month (adjacent-month days muted)
+    grid_start = start_ad - timedelta(days=(start_ad.weekday() + 1) % 7)
+    grid_end = end_ad + timedelta(days=(5 - end_ad.weekday()) % 7)
     weeks = []
-    for week in calendar.Calendar(firstweekday=0).monthdatescalendar(year, month):
-        cells = []
-        for day in week:
-            in_month = day.month == month
-            count = counts_by_date.get(day, 0) if in_month else 0
-            if not in_month:
-                state = ""
-            elif count:
-                state = "added"
-            elif day in approved_areas:
-                state = "approved"
-            elif day in pending_dates:
-                state = "pending"
-            else:
-                state = ""
-            cells.append({
-                "date": day,
-                "in_month": in_month,
-                "count": count,
-                "state": state,
-                "is_today": day == today,
-                "area": approved_areas.get(day, ""),
-                "locked": day in locked_dates,
-            })
-        weeks.append(cells)
+    cells = []
+    day = grid_start
+    while day <= grid_end:
+        in_month = start_ad <= day <= end_ad
+        if in_month:
+            bs_day = (day - start_ad).days + 1
+        else:
+            bs_day = nepali_datetime.date.from_datetime_date(day).day
+        count = counts_by_date.get(day, 0) if in_month else 0
+        if not in_month:
+            state = ""
+        elif count:
+            state = "added"
+        elif day in approved_areas:
+            state = "approved"
+        elif day in pending_dates:
+            state = "pending"
+        else:
+            state = ""
+        cells.append({
+            "date": day,
+            "bs_day": bs_day,
+            "in_month": in_month,
+            "count": count,
+            "state": state,
+            "is_today": day == today,
+            "area": approved_areas.get(day, ""),
+            "locked": day in locked_dates,
+        })
+        if len(cells) == 7:
+            weeks.append(cells)
+            cells = []
+        day += timedelta(days=1)
 
-    # prev / next month for calendar navigation
-    if month == 1:
-        prev_year, prev_month = year - 1, 12
-    else:
-        prev_year, prev_month = year, month - 1
-
-    if month == 12:
-        next_year, next_month = year + 1, 1
-    else:
-        next_year, next_month = year, month + 1
-
-    # Month summary stats
+    # Month summary stats (previous BS month's AD range)
     visits_month = sum(counts_by_date.values())
-    prev_visits = DailyCoverage.objects.filter(
-        created_by=request.user,
-        report_date__year=prev_year,
-        report_date__month=prev_month,
-    ).count()
+    try:
+        prev_start_ad = nepali_datetime.date(prev_year, prev_month, 1).to_datetime_date()
+        prev_month_name = nepali_datetime.date(prev_year, prev_month, 1).strftime("%B")
+        prev_visits = DailyCoverage.objects.filter(
+            created_by=request.user,
+            report_date__range=(prev_start_ad, start_ad - timedelta(days=1)),
+        ).count()
+    except ValueError:
+        prev_month_name = ""
+        prev_visits = 0
     if prev_visits:
         delta = round((visits_month - prev_visits) * 100 / prev_visits)
         visits_trend = "up" if delta > 0 else ("down" if delta < 0 else "flat")
@@ -173,9 +201,12 @@ def daily_coverage_calendar(request, year=None, month=None):
         {
             "year": year,
             "month": month,
-            "month_name": calendar.month_name[month],
+            "month_name": first_bs.strftime("%B"),
+            "start_ad": start_ad,
+            "end_ad": end_ad,
+            "today_bs_label": f"{today_bs.strftime('%B')} {today_bs.day}, {today_bs.year}",
             "weeks": weeks,
-            "day_names": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+            "day_names": ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
             "prev_year": prev_year,
             "prev_month": prev_month,
             "next_year": next_year,
@@ -186,7 +217,7 @@ def daily_coverage_calendar(request, year=None, month=None):
             "visits_month": visits_month,
             "visits_trend": visits_trend,
             "visits_delta": visits_delta,
-            "prev_month_name": calendar.month_name[prev_month],
+            "prev_month_name": prev_month_name,
             "pending_count": len(pending_dates),
         },
     )
@@ -206,6 +237,7 @@ def add_daily_coverage(request, selected_date=None):
             chemist_entries  = form.cleaned_data.get("chemist_entries") or []
             stockist_entries = form.cleaned_data.get("stockist_entries") or []
             no_doctor_reason = (form.cleaned_data.get("no_doctor_reason") or "").strip()
+            work_day = form.cleaned_data.get("work_day") or DailyCoverage.WorkDay.FULL_DAY
 
             approved_dates = set(
                 TourPlan.objects.filter(
@@ -266,6 +298,7 @@ def add_daily_coverage(request, selected_date=None):
                     DailyCoverage.objects.create(
                         created_by=request.user,
                         report_date=report_date,
+                        work_day=work_day,
                         doctor_id=doctor_id,
                         actual_working_place_id=actual_place_id,
                         call_time=call_time,
@@ -389,7 +422,7 @@ def daily_coverage_list(request):
             pass
 
     if record_type == "doctor":
-        records_qs = DailyCoverage.objects.filter(created_by=request.user).select_related("doctor", "actual_working_place")
+        records_qs = DailyCoverage.objects.filter(created_by=request.user).select_related("doctor", "doctor__hospital", "actual_working_place")
     elif record_type == "chemist":
         records_qs = ChemistCoverage.objects.filter(created_by=request.user).select_related("area")
     else:

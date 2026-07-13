@@ -11,7 +11,7 @@
     <p class="page-sub">Visit frequency by doctor class across {{ month_name }} {{ year }}.</p>
   </div>
   <div class="page-actions">
-    <a href="{% url 'monthly_activity_report_excel' %}?month={{ month_str }}{% if selected_employee_id %}&employee_id={{ selected_employee_id }}{% endif %}"
+    <a href="{% url 'monthly_activity_report_excel' %}?year={{ year }}&bs_month={{ month }}{% if selected_employee_id %}&employee_id={{ selected_employee_id }}{% endif %}"
        class="btn btn--secondary">
       <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>
       Export Excel
@@ -22,8 +22,20 @@
 <form method="get" class="table-toolbar">
   <div class="table-toolbar__filters" style="align-items:flex-end">
     <div class="field">
-      <label class="label" for="report-month">Month</label>
-      <input type="month" name="month" id="report-month" class="input" style="width:180px" value="{{ month_str }}">
+      <label class="label" for="report-month">Month (BS)</label>
+      <select name="bs_month" id="report-month" class="select" style="width:150px">
+        {% for name in bs_months %}
+          <option value="{{ forloop.counter }}" {% if forloop.counter == month %}selected{% endif %}>{{ name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="field">
+      <label class="label" for="report-year">Year (BS)</label>
+      <select name="year" id="report-year" class="select" style="width:120px">
+        {% for y in year_choices %}
+          <option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>
+        {% endfor %}
+      </select>
     </div>
     {% if can_view_others %}
     <div class="field">
@@ -91,7 +103,7 @@
         {% for row in rows %}
         <tr>
           <td class="t-secondary">{{ forloop.counter }}</td>
-          <td style="white-space:nowrap">{{ row.date|date:"j M Y" }}</td>
+          <td style="white-space:nowrap">{{ row.date_bs }}</td>
           <td>{% if row.tour_areas %}{{ row.tour_areas|join:" / " }}{% else %}—{% endif %}</td>
           <td>{% if row.actual_areas %}{{ row.actual_areas|join:" / " }}{% else %}—{% endif %}</td>
           {% for val in row.spec_values %}

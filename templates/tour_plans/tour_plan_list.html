@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load dc_tags %}
 
 {% block title %}Tour Plans - PharmaSFO{% endblock %}
 {% block legacy_css %}{% endblock %}
@@ -46,7 +47,10 @@
       <tbody>
         {% for plan in tour_plans %}
         <tr>
-          <td data-label="Date" class="cell-strong" style="white-space:nowrap">{{ plan.plan_date|date:"D, j M Y" }}</td>
+          <td data-label="Date" style="white-space:nowrap">
+            <div class="cell-strong">{{ plan.plan_date|bs_date }}</div>
+            <div class="cell-sub">{{ plan.plan_date|date:"D, j M Y" }}</div>
+          </td>
           <td data-label="Area">{{ plan.area }}</td>
           <td data-label="Worked with">{{ plan.worked_with|default:"—" }}</td>
           <td data-label="Remarks" class="t-secondary">{{ plan.remarks|default:"—" }}</td>

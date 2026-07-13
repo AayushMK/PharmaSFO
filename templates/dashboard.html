@@ -55,34 +55,34 @@
 
 <!-- Stats -->
 <div class="grid grid--stats" style="margin-bottom:var(--space-8)">
-  <div class="card"><div class="stat">
+  <a class="card" href="{% url 'daily_coverage_list' %}"><div class="stat">
     <div class="stat__label">Visits this month</div>
     <div class="stat__value">{{ visits_month }}</div>
     {% if visits_trend == "up" %}<div class="stat__meta stat__meta--up">▲ {{ visits_delta }}% vs. {{ prev_month_name }}</div>
     {% elif visits_trend == "down" %}<div class="stat__meta stat__meta--down">▼ {{ visits_delta }}% vs. {{ prev_month_name }}</div>
     {% elif visits_trend == "flat" %}<div class="stat__meta t-secondary">level with {{ prev_month_name }}</div>
     {% else %}<div class="stat__meta t-secondary">no visits in {{ prev_month_name }}</div>{% endif %}
-  </div></div>
-  <div class="card"><div class="stat">
+  </div></a>
+  <a class="card" href="{% url 'monthly_target_report' %}"><div class="stat">
     <div class="stat__label">Super Core covered</div>
     <div class="stat__value">{{ sc_covered }}/{{ sc_total }}</div>
     {% if not sc_total %}<div class="stat__meta t-secondary">none assigned</div>
     {% elif sc_remaining %}<div class="stat__meta t-secondary">{{ sc_remaining }} doctor{{ sc_remaining|pluralize }} remaining</div>
     {% else %}<div class="stat__meta stat__meta--up">▲ all covered</div>{% endif %}
-  </div></div>
-  <div class="card"><div class="stat">
+  </div></a>
+  <a class="card" href="{% url 'monthly_target_report' %}"><div class="stat">
     <div class="stat__label">Target attainment</div>
     <div class="stat__value">{% if attainment is not None %}{{ attainment }}%{% else %}—{% endif %}</div>
     {% if attainment is None %}<div class="stat__meta t-secondary">no assigned doctors</div>
     {% elif on_track %}<div class="stat__meta stat__meta--up">▲ on track</div>
     {% else %}<div class="stat__meta stat__meta--down">▼ behind pace</div>{% endif %}
-  </div></div>
-  <div class="card"><div class="stat">
+  </div></a>
+  <a class="card" href="{% url 'tour_plans' %}"><div class="stat">
     <div class="stat__label">Pending approvals</div>
     <div class="stat__value">{{ pending_approvals }}</div>
     {% if pending_approvals %}<div class="stat__meta t-secondary">awaiting HR review</div>
     {% else %}<div class="stat__meta stat__meta--up">▲ all clear</div>{% endif %}
-  </div></div>
+  </div></a>
 </div>
 
 <div class="grid grid--2" style="align-items:start">
@@ -135,7 +135,13 @@
   <!-- Right column -->
   <div class="stack">
     <div class="card">
-      <div class="card__header"><span class="card__title">Monthly target</span><span class="badge badge--primary">{{ today|date:"F" }}</span></div>
+      <div class="card__header">
+        <span class="card__title">Monthly target</span>
+        <span class="row" style="gap:var(--space-2)">
+          <span class="badge badge--primary">{{ today|date:"F" }}</span>
+          <a class="btn btn--ghost btn--sm" href="{% url 'monthly_target_report' %}">View report</a>
+        </span>
+      </div>
       <div class="card__body">
         {% if has_assignments %}
         <div class="stack stack--sm">
@@ -152,7 +158,13 @@
 
     {% if upcoming_plans %}
     <div class="card">
-      <div class="card__header"><span class="card__title">Upcoming tour plans</span><span class="badge badge--neutral">next 7 days</span></div>
+      <div class="card__header">
+        <span class="card__title">Upcoming tour plans</span>
+        <span class="row" style="gap:var(--space-2)">
+          <span class="badge badge--neutral">next 7 days</span>
+          <a class="btn btn--ghost btn--sm" href="{% url 'tour_plans' %}">View all</a>
+        </span>
+      </div>
       <div class="card__body">
         <div class="stack stack--sm">
           {% for plan in upcoming_plans %}

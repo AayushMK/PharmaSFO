@@ -36,12 +36,13 @@ class StockistForm(_PartnerForm):
 class DailyCoverageForm(forms.ModelForm):
     class Meta:
         model = DailyCoverage
-        fields = ["report_date", "doctor", "actual_working_place", "call_time", "products", "worked_with", "remarks"]
+        fields = ["report_date", "doctor", "actual_working_place", "call_time", "work_day", "products", "worked_with", "remarks"]
         widgets = {
             "report_date": forms.DateInput(attrs={"type": "date", "class": "input"}, format="%Y-%m-%d"),
             "doctor": forms.Select(attrs={"class": "select"}),
             "actual_working_place": forms.Select(attrs={"class": "select"}),
             "call_time": forms.TimeInput(attrs={"type": "time", "class": "input"}, format="%H:%M"),
+            "work_day": forms.Select(attrs={"class": "select"}),
             "products": forms.TextInput(attrs={"class": "input", "placeholder": "Products promoted (optional)"}),
             "remarks": forms.Textarea(attrs={"rows": 3, "class": "textarea"}),
         }
@@ -109,6 +110,12 @@ class StockistCoverageForm(_PartnerCoverageForm):
 
 
 class DailyCoverageBulkForm(forms.Form):
+    # Day type for every doctor entry in the submission (legacy "*Working Days")
+    work_day = forms.ChoiceField(
+        choices=DailyCoverage.WorkDay.choices,
+        initial=DailyCoverage.WorkDay.FULL_DAY,
+        widget=forms.Select(attrs={"class": "select"}),
+    )
     entries          = forms.JSONField(required=False, widget=forms.HiddenInput())
     chemist_entries  = forms.JSONField(required=False, widget=forms.HiddenInput())
     stockist_entries = forms.JSONField(required=False, widget=forms.HiddenInput())

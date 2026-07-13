@@ -1,6 +1,6 @@
-import calendar
-from datetime import date, time
+from datetime import date, time, timedelta
 
+import nepali_datetime
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
@@ -11,7 +11,29 @@ from daily_coverage.models import Chemist, ChemistCoverage, DailyCoverage, Stock
 from users.models import User
 
 DEMO_PASSWORD = "Demo@12345"
-YEAR, MONTH = 2026, 7
+
+BS_MONTH_NAMES = ["", "Baishakh", "Jestha", "Asar", "Shrawan", "Bhadau", "Aswin",
+                  "Kartik", "Mangsir", "Poush", "Magh", "Falgun", "Chaitra"]
+
+
+def _bs_seed_range():
+    """AD range spanning the previous + current BS months, so the BS calendar
+    and reports show fully-covered Nepali months. Dates stay Gregorian in the
+    DB — only the *span* is aligned to BS."""
+    today_bs = nepali_datetime.date.from_datetime_date(date.today())
+    if today_bs.month == 1:
+        prev_y, prev_m = today_bs.year - 1, 12
+    else:
+        prev_y, prev_m = today_bs.year, today_bs.month - 1
+    if today_bs.month == 12:
+        next_y, next_m = today_bs.year + 1, 1
+    else:
+        next_y, next_m = today_bs.year, today_bs.month + 1
+    start = nepali_datetime.date(prev_y, prev_m, 1).to_datetime_date()
+    end = nepali_datetime.date(next_y, next_m, 1).to_datetime_date() - timedelta(days=1)
+    label = (f"{BS_MONTH_NAMES[prev_m]}–{BS_MONTH_NAMES[today_bs.month]} "
+             f"{today_bs.year} BS")
+    return start, end, label
 
 AREA_NAMES = ["Kathmandu", "Lalitpur", "Bhaktapur", "Pokhara", "Biratnagar"]
 
@@ -33,7 +55,7 @@ PRODUCTS = ["ProCard", "ProCard + NeuroMax", "OrthoFlex", "DermaCare"]
 
 
 class Command(BaseCommand):
-    help = "Seed dummy users (one per hierarchy type), doctors, and July 2026 activity data."
+    help = "Seed dummy users (one per hierarchy type), doctors, and activity spanning the previous + current BS months."
 
     @transaction.atomic
     def handle(self, *args, **options):
@@ -84,7 +106,8 @@ class Command(BaseCommand):
             )
             users.append(user)
 
-        days_in_month = calendar.monthrange(YEAR, MONTH)[1]
+        start_ad, end_ad, bs_label = _bs_seed_range()
+        day_count = (end_ad - start_ad).days + 1
         area_list = list(areas.values())
 
         for u_idx, user in enumerate(users):
@@ -95,14 +118,15 @@ class Command(BaseCommand):
                     employee=user,
                     doctor=doctor,
                     msl_number=msl,
-                    relation_date=date(YEAR, MONTH, 1),
+                    relation_date=start_ad,
                     status=DoctorEmployeeRelation.Status.APPROVED,
                 )
                 relations.append(rel)
 
-            for day in range(1, days_in_month + 1):
-                report_date = date(YEAR, MONTH, day)
-                area = area_list[(day + u_idx) % len(area_list)]
+            for offset in range(day_count):
+                report_date = start_ad + timedelta(days=offset)
+                idx = offset + 1
+                area = area_list[(idx + u_idx) % len(area_list)]
 
                 TourPlan.objects.create(
                     created_by=user,
@@ -112,35 +136,36 @@ class Command(BaseCommand):
                     status=TourPlan.Status.APPROVED,
                 )
 
-                doctor = relations[(day + u_idx) % len(relations)].doctor
+                doctor = relations[(idx + u_idx) % len(relations)].doctor
                 DailyCoverage.objects.create(
                     created_by=user,
                     report_date=report_date,
                     doctor=doctor,
                     actual_working_place=area,
                     call_time=time(10, 0),
-                    products=PRODUCTS[day % len(PRODUCTS)],
+                    products=PRODUCTS[idx % len(PRODUCTS)],
                     worked_with="",
                     remarks="Demo visit",
                 )
 
-                if day % 3 == 0:
+                if idx % 3 == 0:
                     ChemistCoverage.objects.create(
                         created_by=user,
                         report_date=report_date,
-                        name=CHEMISTS[day % len(CHEMISTS)],
+                        name=CHEMISTS[idx % len(CHEMISTS)],
                         area=area,
                         call_time=time(14, 0),
                     )
-                if day % 4 == 0:
+                if idx % 4 == 0:
                     StockistCoverage.objects.create(
                         created_by=user,
                         report_date=report_date,
-                        name=STOCKISTS[day % len(STOCKISTS)],
+                        name=STOCKISTS[idx % len(STOCKISTS)],
                         area=area,
                         call_time=time(15, 0),
                     )
 
         self.stdout.write(self.style.SUCCESS(
-            f"Seeded {len(users)} demo users with July {YEAR} activity. Password for all: {DEMO_PASSWORD}"
+            f"Seeded {len(users)} demo users with activity {start_ad} – {end_ad} AD "
+            f"({bs_label}). Password for all: {DEMO_PASSWORD}"
         ))

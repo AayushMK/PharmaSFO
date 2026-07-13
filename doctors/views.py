@@ -8,7 +8,7 @@ from .forms import DoctorForm
 from .models import Doctor
 
 
-def _can_add_doctor(user):
+def _can_manage_doctors(user):
     return user.is_authenticated and (
         user.is_superuser or (user.is_staff and user.type == "HR")
     )
@@ -17,18 +17,22 @@ def _can_add_doctor(user):
 @login_required
 @never_cache
 def doctor_list(request):
+    # The doctor directory is HR-only; reps see doctors via "My assignments"
+    if not _can_manage_doctors(request.user):
+        raise PermissionDenied
+
     doctors = Doctor.objects.select_related("hospital")
     return render(
         request,
         "doctors/doctor_list.html",
-        {"doctors": doctors, "can_add": _can_add_doctor(request.user)},
+        {"doctors": doctors, "can_add": True},
     )
 
 
 @login_required
 @never_cache
 def add_doctor(request):
-    if not _can_add_doctor(request.user):
+    if not _can_manage_doctors(request.user):
         raise PermissionDenied
 
     if request.method == "POST":

@@ -4,6 +4,10 @@
    anything project-specific lives here. Loaded AFTER tokens/components.css.
    ========================================================================== */
 
+/* ---- Clickable cards (dashboard stats) ----------------------------------- */
+a.card { display: block; text-decoration: none; color: inherit; }
+a.card:hover { text-decoration: none; border-color: var(--border-strong); background: var(--gray-50); }
+
 /* ---- Skip link — visible only when focused (keyboard users) -------------- */
 .skip-link {
   position: absolute; left: var(--space-4); top: -48px; z-index: 100;
