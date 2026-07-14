@@ -57,8 +57,11 @@
       <nav class="topnav" aria-label="Primary">
         {% include "partials/nav.html" with topnav=True %}
       </nav>
-      <div class="breadcrumb">{% block breadcrumb %}<span class="current">PharmaSFO</span>{% endblock %}</div>
       <div class="topbar__spacer"></div>
+      <a href="{% url 'add_daily_coverage' %}" class="btn btn--primary btn--sm topbar__cta">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+        Log visit
+      </a>
       <div class="nav-group topnav__user is-collapsed" data-collapsible>
         <button class="nav-group__header" data-toggle="collapse" aria-expanded="false">
           <span class="avatar">{% if user.first_name %}{{ user.first_name|first|upper }}{{ user.last_name|first|upper }}{% else %}{{ user.username|slice:":2"|upper }}{% endif %}</span>
