@@ -73,3 +73,84 @@ a.card:hover { text-decoration: none; border-color: var(--border-strong); backgr
   .table--stack td.num { font-family: inherit; }
   .table--stack .stack-hide { display: none; }
 }
+
+/* ==========================================================================
+   TOP NAVIGATION — on desktop the sidebar is replaced by a topbar nav of
+   dropdowns; both render templates/partials/nav.html and reuse Lumo's
+   data-collapsible toggle (is-collapsed = closed dropdown). The ≤860px
+   drawer keeps the sidebar exactly as before.
+   ========================================================================== */
+
+/* Dropdown mechanics — shared by the primary nav groups and the user menu.
+   Unscoped by media query: .topnav is hidden on mobile, but .topnav__user
+   lives in the topbar at every width. */
+.topnav .nav-group, .topnav__user { position: relative; margin: 0; }
+.topnav .nav-group__header, .topnav__user .nav-group__header {
+  width: auto;
+  font-size: var(--text-sm); font-weight: var(--weight-medium);
+  letter-spacing: normal; text-transform: none;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+.topnav .nav-group__chevron, .topnav__user .nav-group__chevron { margin-left: var(--space-1); }
+.topnav .nav-group.is-collapsed .nav-group__chevron,
+.topnav__user.is-collapsed .nav-group__chevron { transform: none; }
+.topnav .nav-group:not(.is-collapsed) .nav-group__chevron,
+.topnav__user:not(.is-collapsed) .nav-group__chevron { transform: rotate(180deg); }
+
+.topnav .nav-group__items, .topnav__user .nav-group__items {
+  position: absolute; top: calc(100% + 6px); left: 0; z-index: 30;
+  display: none;
+  min-width: 220px; padding: var(--space-2);
+  background: var(--surface);
+  border: 1px solid var(--border); border-radius: var(--radius);
+  box-shadow: var(--shadow-modal);
+}
+.topnav .nav-group:not(.is-collapsed) .nav-group__items,
+.topnav__user:not(.is-collapsed) .nav-group__items { display: block; }
+.topnav .nav-group__items > div, .topnav__user .nav-group__items > div { overflow: visible; }
+
+/* Trigger of the group holding the current page */
+.topnav .nav-group.has-active > .nav-group__header { color: var(--primary); }
+
+/* User menu: right-aligned panel with an identity header and POST logout */
+.topnav__user .nav-group__items { left: auto; right: 0; }
+.topnav__user-id {
+  padding: var(--space-2) var(--space-3) var(--space-3);
+  margin-bottom: var(--space-2);
+  border-bottom: 1px solid var(--border);
+}
+button.nav-item {
+  width: 100%; background: none; border: none;
+  font-family: inherit; text-align: left; cursor: pointer;
+}
+
+/* Desktop shell: single-column app grid, sidebar hidden, nav in the topbar */
+@media (min-width: 861px) {
+  .app { grid-template-columns: 1fr; }
+  .sidebar { display: none; }
+  .topbar { gap: var(--space-2); }
+  .topbar__brand {
+    display: flex; align-items: center; gap: var(--space-2);
+    margin-right: var(--space-3);
+    color: inherit; text-decoration: none;
+  }
+  .topbar__brand:hover { text-decoration: none; }
+  .topnav { display: flex; align-items: center; gap: var(--space-1); }
+  /* Standalone links (Dashboard) sit inline beside the dropdown triggers */
+  .topnav > .nav-item { margin: 0; padding: var(--space-2) var(--space-3);
+                        font-size: var(--text-sm); white-space: nowrap; }
+  .topnav > .nav-item .ico { width: 16px; height: 16px; }
+  .topbar .breadcrumb { margin-left: var(--space-3); padding-left: var(--space-4);
+                        border-left: 1px solid var(--border); }
+  .topnav__user-name { max-width: 160px; overflow: hidden; text-overflow: ellipsis; }
+}
+/* Between the drawer and a roomy desktop the breadcrumb is the first to go */
+@media (min-width: 861px) and (max-width: 1199px) {
+  .topbar .breadcrumb { display: none; }
+}
+@media (max-width: 860px) {
+  .topbar__brand { display: none; }
+  .topnav { display: none; }
+  .topnav__user-name { display: none; }
+}

@@ -57,7 +57,9 @@ PharmSFAO/
 ├── api/                    # Django Ninja API
 │   ├── api.py              # NinjaAPI + JWT controller + /doctors endpoint
 ├── templates/
-│   ├── base.html           # Lumo app shell: sidebar nav + topbar (POST logout); `legacy_css` block; messages→toast bridge
+│   ├── base.html           # Lumo app shell: desktop top-nav dropdowns + mobile sidebar drawer, topbar user menu (POST logout); `legacy_css` block; messages→toast bridge
+│   ├── partials/
+│   │   └── nav.html        # Primary nav, rendered twice: sidebar drawer (mobile) and `.topnav` dropdowns (desktop, `with topnav=True`)
 │   ├── 403.html / 404.html # Styled error pages (Django picks them up automatically)
 │   ├── users/
 │   │   └── add_user.html   # HR: onboard employee (UserCreateForm)
@@ -246,6 +248,7 @@ Defined in `reports/views.py` as `SUPER_CORE_MAX = 25`, `CORE_MAX = 75`, `VISIT_
 
 ## Design Decisions
 - **UI:** Lumo SFA design system — `static/lumo/` files are verbatim copies from `lumo/design_handoff_lumo_sfa/` (never re-derive colors/spacing; extend by composing `components.css` classes). `base.html` renders the app shell for all authenticated pages. The `.scrim` div must stay the **last** child of `.app` — as first child it occupies the grid's first cell and breaks the desktop layout.
+- **Navigation:** desktop (>860px) hides the sidebar and renders `templates/partials/nav.html` as `.topnav` dropdowns in the topbar (Dashboard standalone; groups reuse Lumo's `data-collapsible`/`is-collapsed` toggle restyled as popovers in `app.css`); ≤860px keeps the sidebar drawer, which renders the same partial. A `.topnav__user` dropdown (avatar → identity + POST logout) lives in the topbar at every width; base.html's inline JS adds one-open-at-a-time, outside-click and Escape closing, `has-active` on the trigger of the current page's group, and an HR pending-count badge shows on the collapsed HR Actions trigger. Breadcrumb shows only ≥1200px.
 - **Action feedback:** views use `django.contrib.messages` (success/warning/error) for every create/edit/delete/approve/reject, including saved-vs-skipped counts on bulk forms; `base.html` renders them as Lumo toasts via `window.lumoToast` (defined in `lumo/lumo.js`). Add a message in the view and it just works.
 - **A11y:** skip-to-content link in `base.html`, `aria-current="page"` set on the active nav item, autofocus on the primary field of add forms; inline SVG favicon (data URI) in `base.html` + `login.html`
 - **Mobile tables:** wide list tables use `.table.table--stack` (defined in `static/css/app.css`) — under 860px each row collapses into a labeled card; every `<td>` needs `data-label`, `.stack-hide` hides noise cells (e.g. SN). Grid-like report tables (monthly list, yearly) intentionally keep horizontal scroll.

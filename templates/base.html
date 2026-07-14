@@ -29,117 +29,9 @@
       <span class="brand-name">Pharma <span>SFO</span></span>
     </a>
 
-    {% with url_name=request.resolver_match.url_name %}
     <nav class="sidebar__nav">
-      <!-- My Work -->
-      <div class="nav-group" data-collapsible>
-        <button class="nav-group__header" data-toggle="collapse" aria-expanded="true">My Work
-          <svg class="nav-group__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
-        </button>
-        <div class="nav-group__items"><div>
-          <a class="nav-item{% if url_name == 'dashboard' %} is-active{% endif %}" href="{% url 'dashboard' %}">
-            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5L12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>
-            <span class="nav-item__label">Dashboard</span>
-          </a>
-          <a class="nav-item{% if url_name == 'daily_coverage_calendar' or url_name == 'daily_coverage_calendar_month' %} is-active{% endif %}" href="{% url 'daily_coverage_calendar' %}">
-            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="1.5"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>
-            <span class="nav-item__label">Calendar</span>
-          </a>
-          <a class="nav-item{% if url_name == 'daily_coverage_list' or url_name == 'edit_daily_coverage' %} is-active{% endif %}" href="{% url 'daily_coverage_list' %}">
-            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
-            <span class="nav-item__label">Coverage records</span>
-          </a>
-          <a class="nav-item{% if url_name == 'tour_plans' or url_name == 'add_tour_plan' %} is-active{% endif %}" href="{% url 'tour_plans' %}">
-            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-            <span class="nav-item__label">Tour plans</span>
-          </a>
-        </div></div>
-      </div>
-
-      <!-- Directory -->
-      <div class="nav-group" data-collapsible>
-        <button class="nav-group__header" data-toggle="collapse" aria-expanded="true">Directory
-          <svg class="nav-group__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
-        </button>
-        <div class="nav-group__items"><div>
-          {% if user.is_superuser or user.is_staff and user.type == 'HR' %}
-          <a class="nav-item{% if url_name == 'doctor_list' %} is-active{% endif %}" href="{% url 'doctor_list' %}">
-            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-            <span class="nav-item__label">Doctors</span>
-          </a>
-          {% endif %}
-          <a class="nav-item{% if url_name == 'doctor_employee_relation' or url_name == 'add_doctor_employee_relation' %} is-active{% endif %}" href="{% url 'doctor_employee_relation' %}">
-            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M2 7h20M2 17h20"/></svg>
-            <span class="nav-item__label">My assignments</span>
-          </a>
-        </div></div>
-      </div>
-
-      <!-- Reports -->
-      <div class="nav-group" data-collapsible>
-        <button class="nav-group__header" data-toggle="collapse" aria-expanded="true">Reports
-          <svg class="nav-group__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
-        </button>
-        <div class="nav-group__items"><div>
-          <a class="nav-item{% if url_name == 'daily_activity_report' %} is-active{% endif %}" href="{% url 'daily_activity_report' %}">
-            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
-            <span class="nav-item__label">Daily activity</span>
-          </a>
-          <a class="nav-item{% if url_name == 'monthly_activity_report' %} is-active{% endif %}" href="{% url 'monthly_activity_report' %}">
-            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/></svg>
-            <span class="nav-item__label">Monthly activity</span>
-          </a>
-          <a class="nav-item{% if url_name == 'monthly_target_report' %} is-active{% endif %}" href="{% url 'monthly_target_report' %}">
-            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
-            <span class="nav-item__label">Monthly target</span>
-          </a>
-          <a class="nav-item{% if url_name == 'yearly_activity_report' %} is-active{% endif %}" href="{% url 'yearly_activity_report' %}">
-            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg>
-            <span class="nav-item__label">Yearly activity</span>
-          </a>
-        </div></div>
-      </div>
-
-      <!-- HR Actions -->
-      {% if user.is_superuser or user.is_staff and user.type == 'HR' %}
-      <div class="nav-group" data-collapsible>
-        <button class="nav-group__header" data-toggle="collapse" aria-expanded="true">HR Actions
-          <svg class="nav-group__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
-        </button>
-        <div class="nav-group__items"><div>
-          <a class="nav-item{% if url_name == 'add_doctor' %} is-active{% endif %}" href="{% url 'add_doctor' %}">
-            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
-            <span class="nav-item__label">Add doctor</span>
-          </a>
-          <a class="nav-item{% if url_name == 'add_chemist' %} is-active{% endif %}" href="{% url 'add_chemist' %}">
-            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L4 7v13a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7l-2-5z"/><path d="M4 7h16"/><path d="M16 11a4 4 0 0 1-8 0"/></svg>
-            <span class="nav-item__label">Add chemist</span>
-          </a>
-          <a class="nav-item{% if url_name == 'add_stockist' %} is-active{% endif %}" href="{% url 'add_stockist' %}">
-            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.27 6.96L12 12.01l8.73-5.05"/><path d="M12 22.08V12"/></svg>
-            <span class="nav-item__label">Add stockist</span>
-          </a>
-          <a class="nav-item{% if url_name == 'add_user' %} is-active{% endif %}" href="{% url 'add_user' %}">
-            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg>
-            <span class="nav-item__label">Add user</span>
-          </a>
-          {% if user.is_staff and user.type == 'HR' %}
-          <a class="nav-item{% if url_name == 'hr_review_requests' or url_name == 'hr_review_employee_requests' %} is-active{% endif %}" href="{% url 'hr_review_requests' %}">
-            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-            <span class="nav-item__label">Review requests</span>
-            {% if nav_pending_doctor_requests %}<span class="badge badge--danger badge--count">{{ nav_pending_doctor_requests }}</span>{% endif %}
-          </a>
-          <a class="nav-item{% if url_name == 'hr_review_tour_plans' or url_name == 'hr_review_employee_tour_plans' %} is-active{% endif %}" href="{% url 'hr_review_tour_plans' %}">
-            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="1.5"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>
-            <span class="nav-item__label">Review tour plans</span>
-            {% if nav_pending_tour_plans %}<span class="badge badge--warning badge--count">{{ nav_pending_tour_plans }}</span>{% endif %}
-          </a>
-          {% endif %}
-        </div></div>
-      </div>
-      {% endif %}
+      {% include "partials/nav.html" %}
     </nav>
-    {% endwith %}
 
     <div class="sidebar__footer">
       <div class="user-chip">
@@ -158,15 +50,35 @@
       <button class="btn btn--ghost btn--icon topbar__menu" data-nav-toggle aria-label="Menu">
         <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
       </button>
+      <a class="topbar__brand" href="{% url 'dashboard' %}">
+        <span class="brand-mark">P</span>
+        <span class="brand-name">Pharma <span>SFO</span></span>
+      </a>
+      <nav class="topnav" aria-label="Primary">
+        {% include "partials/nav.html" with topnav=True %}
+      </nav>
       <div class="breadcrumb">{% block breadcrumb %}<span class="current">PharmaSFO</span>{% endblock %}</div>
       <div class="topbar__spacer"></div>
-      <form method="post" action="{% url 'logout' %}">
-        {% csrf_token %}
-        <button type="submit" class="btn btn--ghost btn--sm">
-          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></svg>
-          Log out
+      <div class="nav-group topnav__user is-collapsed" data-collapsible>
+        <button class="nav-group__header" data-toggle="collapse" aria-expanded="false">
+          <span class="avatar">{% if user.first_name %}{{ user.first_name|first|upper }}{{ user.last_name|first|upper }}{% else %}{{ user.username|slice:":2"|upper }}{% endif %}</span>
+          <span class="topnav__user-name">{{ user.get_full_name|default:user.username }}</span>
+          <svg class="nav-group__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
         </button>
-      </form>
+        <div class="nav-group__items"><div>
+          <div class="topnav__user-id">
+            <div class="user-chip__name">{{ user.get_full_name|default:user.username }}</div>
+            <div class="user-chip__role">{{ user.get_type_display }}</div>
+          </div>
+          <form method="post" action="{% url 'logout' %}">
+            {% csrf_token %}
+            <button type="submit" class="nav-item">
+              <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></svg>
+              Log out
+            </button>
+          </form>
+        </div></div>
+      </div>
     </header>
 
     <main class="page" id="main-content">
@@ -194,6 +106,33 @@ document.addEventListener('DOMContentLoaded', function () {
     // Expose the active nav item to assistive tech
     document.querySelectorAll('.nav-item.is-active').forEach(function (a) {
         a.setAttribute('aria-current', 'page');
+    });
+
+    // Topbar dropdowns (primary nav + user menu). lumo.js's data-collapsible
+    // handler does the toggling; registered later, these run after it and add
+    // menu semantics: one open at a time, outside click / Escape closes.
+    var dropdowns = Array.prototype.slice.call(
+        document.querySelectorAll('.topnav .nav-group, .topnav__user'));
+    function closeDropdown(g) {
+        g.classList.add('is-collapsed');
+        var h = g.querySelector('.nav-group__header');
+        if (h) h.setAttribute('aria-expanded', 'false');
+    }
+    dropdowns.forEach(function (g) {
+        var h = g.querySelector('.nav-group__header');
+        if (h) h.setAttribute('aria-haspopup', 'true');
+        if (g.querySelector('.nav-item.is-active')) g.classList.add('has-active');
+    });
+    document.addEventListener('click', function (e) {
+        var current = e.target.closest('.topnav .nav-group, .topnav__user');
+        dropdowns.forEach(function (g) { if (g !== current) closeDropdown(g); });
+    });
+    document.addEventListener('keydown', function (e) {
+        if (e.key !== 'Escape') return;
+        var inside = document.activeElement &&
+                     document.activeElement.closest('.topnav .nav-group, .topnav__user');
+        dropdowns.forEach(closeDropdown);
+        if (inside) inside.querySelector('.nav-group__header').focus();
     });
     // Flash messages as toasts
     var box = document.getElementById('dj-messages');
