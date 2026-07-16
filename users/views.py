@@ -36,7 +36,7 @@ def add_user(request):
             messages.success(
                 request,
                 f"{new_user.get_full_name() or new_user.username} "
-                f"({new_user.get_type_display()}) added — they can log in now.",
+                f"({new_user.get_type_display()}) added. They can log in now.",
             )
             return redirect("add_user")
     else:

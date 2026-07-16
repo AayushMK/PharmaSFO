@@ -356,7 +356,7 @@ def add_daily_coverage(request, selected_date=None):
                 if skipped_unapproved:
                     messages.warning(
                         request,
-                        f"{skipped_unapproved} entr{'ies' if skipped_unapproved != 1 else 'y'} skipped — no approved tour plan for that date.",
+                        f"{skipped_unapproved} entr{'ies' if skipped_unapproved != 1 else 'y'} skipped because there is no approved tour plan for that date.",
                     )
                 if skipped_invalid:
                     messages.warning(
@@ -364,7 +364,7 @@ def add_daily_coverage(request, selected_date=None):
                         f"{skipped_invalid} incomplete entr{'ies' if skipped_invalid != 1 else 'y'} skipped.",
                     )
                 if not total_saved and not skipped_unapproved and not skipped_invalid:
-                    messages.info(request, "Nothing to save — no entries were added.")
+                    messages.info(request, "Nothing to save. No entries were added.")
                 return redirect("daily_coverage_calendar")
     else:
         form = DailyCoverageBulkForm()

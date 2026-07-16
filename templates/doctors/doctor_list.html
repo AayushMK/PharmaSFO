@@ -95,7 +95,7 @@
     <div class="empty">
       <div class="empty__glyph"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
       <div class="empty__title">No doctors yet</div>
-      <div class="empty__text">{% if can_add %}Add the first doctor to start building the directory.{% else %}Doctors are added by HR — check back later.{% endif %}</div>
+      <div class="empty__text">{% if can_add %}Add the first doctor to start building the directory.{% else %}Doctors are added by HR. Check back later.{% endif %}</div>
       {% if can_add %}
       <div class="empty__actions"><a href="{% url 'add_doctor' %}" class="btn btn--primary btn--sm">Add doctor</a></div>
       {% endif %}
