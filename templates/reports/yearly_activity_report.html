@@ -8,7 +8,7 @@
 <div class="page-header">
   <div>
     <h1 class="page-title">Yearly Activity Report</h1>
-    <p class="page-sub">Visit dates per doctor across every month of {{ year }} BS (Baishakh – Chaitra).</p>
+    <p class="page-sub">Visit dates per doctor across every month of {{ year }} BS, Baishakh to Chaitra.</p>
   </div>
   <div class="page-actions">
     <a href="{% url 'yearly_activity_report_excel' %}?year={{ year }}{% if selected_employee_id %}&employee_id={{ selected_employee_id }}{% endif %}"
@@ -50,7 +50,7 @@
 <!-- MSL frequency chart -->
 <div class="card" style="margin-bottom:var(--space-6)">
   <div class="card__header">
-    <span class="card__title">Yearly MSL frequency coverage — {{ year }} BS</span>
+    <span class="card__title">MSL frequency coverage for {{ year }} BS</span>
     <div class="row" style="gap:var(--space-2)">
       <span class="badge badge--primary"><span class="dot"></span>Super Core · {{ total_super_core }}</span>
       <span class="badge badge--warning"><span class="dot"></span>Core · {{ total_core }}</span>
@@ -67,7 +67,7 @@
 
 <div class="card">
   <div class="card__header">
-    <span class="card__title">Yearly activity — {{ year }} BS</span>
+    <span class="card__title">Yearly activity for {{ year }} BS</span>
     {% if rows %}<span class="badge badge--neutral">{{ rows|length }} doctor{{ rows|length|pluralize }}</span>{% endif %}
   </div>
 

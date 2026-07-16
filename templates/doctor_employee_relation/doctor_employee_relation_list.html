@@ -11,7 +11,7 @@
     <h1 class="page-title">My Assigned Doctors</h1>
     <p class="page-sub">Doctors assigned to you, with their MSL rank. New requests need HR approval.</p>
     {% else %}
-    <h1 class="page-title">Assigned Doctors — {{ employee.get_full_name|default:employee.username }}</h1>
+    <h1 class="page-title">{% if is_own %}My Doctors{% else %}Doctors assigned to {{ employee.get_full_name|default:employee.username }}{% endif %}</h1>
     <p class="page-sub">{{ employee.get_type_display }} · doctors assigned to this employee, with their MSL rank.</p>
     {% endif %}
   </div>
@@ -115,7 +115,7 @@
     <div class="empty">
       <div class="empty__glyph"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
       <div class="empty__title">No doctors found</div>
-      <div class="empty__text">{% if selected_status != 'all' %}No assignments with status “{{ selected_status }}”. Try a different filter.{% elif is_own %}Request your first doctor assignment — HR will review it.{% else %}This employee has no doctor assignments yet.{% endif %}</div>
+      <div class="empty__text">{% if selected_status != 'all' %}No assignments with status “{{ selected_status }}”. Try a different filter.{% elif is_own %}Request your first doctor assignment. HR will review it.{% else %}This employee has no doctor assignments yet.{% endif %}</div>
       {% if selected_status == 'all' and is_own %}
       <div class="empty__actions"><a href="{% url 'add_doctor_employee_relation' %}" class="btn btn--primary btn--sm">Request assignment</a></div>
       {% endif %}

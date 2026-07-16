@@ -54,7 +54,7 @@
 <!-- ── Frequency diagram ─────────────────────────────────────── -->
 <div id="pane-freq" class="card">
   <div class="card__header">
-    <span class="card__title">MSL frequency coverage — {{ month_name }} {{ year }}</span>
+    <span class="card__title">MSL frequency coverage for {{ month_name }} {{ year }}</span>
     <div class="row" style="gap:var(--space-2)">
       <span class="badge badge--primary"><span class="dot"></span>Super Core · {{ total_super_core }}</span>
       <span class="badge badge--warning"><span class="dot"></span>Core · {{ total_core }}</span>
@@ -72,7 +72,7 @@
 <!-- ── List of data ──────────────────────────────────────────── -->
 <div id="pane-list" class="card" style="display:none">
   <div class="card__header">
-    <span class="card__title">Daily calls — {{ month_name }} {{ year }}</span>
+    <span class="card__title">Daily calls in {{ month_name }} {{ year }}</span>
     <span class="badge badge--neutral">{{ rows|length }} day{{ rows|length|pluralize }}</span>
   </div>
   {% if rows %}

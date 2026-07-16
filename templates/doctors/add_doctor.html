@@ -8,7 +8,7 @@
 <div class="page-header">
   <div>
     <h1 class="page-title">Add Doctor</h1>
-    <p class="page-sub">Register a new doctor in the directory. Reps can then request the assignment from “My assignments”.</p>
+    <p class="page-sub">Register a new doctor in the directory. Reps can then request the assignment from the My doctors page.</p>
   </div>
 </div>
 
@@ -33,7 +33,7 @@
           <label class="label" for="{{ form.nmc_number.id_for_label }}">NMC number <span class="req">*</span></label>
           {{ form.nmc_number }}
           {% if form.nmc_number.errors %}<span class="help">{{ form.nmc_number.errors|striptags }}</span>
-          {% else %}<span class="help">Nepal Medical Council number — must be unique.</span>{% endif %}
+          {% else %}<span class="help">Nepal Medical Council number. Must be unique.</span>{% endif %}
         </div>
         <div class="field{% if form.hospital.errors %} is-error{% endif %}">
           <label class="label" for="{{ form.hospital.id_for_label }}">Hospital <span class="req">*</span></label>

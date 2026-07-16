@@ -82,9 +82,9 @@ def add_tour_plan(request):
             if created:
                 messages.success(request, f"{created} day{'s' if created != 1 else ''} submitted for HR approval.")
             if skipped:
-                messages.warning(request, f"{skipped} entr{'ies' if skipped != 1 else 'y'} skipped — date or area was missing.")
+                messages.warning(request, f"{skipped} entr{'ies' if skipped != 1 else 'y'} skipped because the date or area was missing.")
             if not entries:
-                messages.error(request, "No days were submitted — add at least one day.")
+                messages.error(request, "No days were submitted. Add at least one day.")
             return redirect("tour_plans")
     else:
         form = TourPlanBulkForm()
@@ -158,7 +158,7 @@ def hr_review_employee_tour_plans(request, employee_id):
 
         if action == "approve":
             plan.status = TourPlan.Status.APPROVED
-            messages.success(request, f"Approved {plan.plan_date:%-d %b} in {plan.area.name} — coverage logging is now open.")
+            messages.success(request, f"Approved {plan.plan_date:%-d %b} in {plan.area.name}. Coverage logging is now open.")
         else:
             plan.status = TourPlan.Status.REJECTED
             messages.warning(request, f"Rejected the plan for {plan.plan_date:%-d %b} in {plan.area.name}.")

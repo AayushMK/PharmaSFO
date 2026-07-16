@@ -83,7 +83,7 @@
 
         <!-- Chemist Coverage Tab -->
         <div id="tab-chemist" class="tab-panel" style="display:none; padding-top:var(--space-4);">
-            <p class="t-caption" style="margin-bottom:var(--space-4);">Optional — pick chemists from the directory. New chemists are added by HR.</p>
+            <p class="t-caption" style="margin-bottom:var(--space-4);">Optional. Pick chemists from the directory. New chemists are added by HR.</p>
             <div id="chemist-entry-list" class="stack"></div>
             <div class="row row--wrap" style="margin-top:var(--space-4); gap:var(--space-3);">
                 <button type="button" id="add-chemist-btn" class="btn btn--secondary">
@@ -96,7 +96,7 @@
 
         <!-- Stockist Coverage Tab -->
         <div id="tab-stockist" class="tab-panel" style="display:none; padding-top:var(--space-4);">
-            <p class="t-caption" style="margin-bottom:var(--space-4);">Optional — pick stockists from the directory. New stockists are added by HR.</p>
+            <p class="t-caption" style="margin-bottom:var(--space-4);">Optional. Pick stockists from the directory. New stockists are added by HR.</p>
             <div id="stockist-entry-list" class="stack"></div>
             <div class="row row--wrap" style="margin-top:var(--space-4); gap:var(--space-3);">
                 <button type="button" id="add-stockist-btn" class="btn btn--secondary">
@@ -194,7 +194,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
                 type: 'warning',
                 title: 'Fill the required fields first',
                 text: currentTab === 'doctor'
-                    ? 'Complete a doctor entry — or tick “No Doctor Coverage Available” and give a reason.'
+                    ? 'Complete a doctor entry, or tick “No Doctor Coverage Available” and give a reason.'
                     : 'Complete or remove the incomplete entry before moving on.',
             });
             return;

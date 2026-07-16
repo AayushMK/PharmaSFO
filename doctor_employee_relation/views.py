@@ -162,7 +162,7 @@ def hr_review_employee_requests(request, employee_id):
             relation.status = DoctorEmployeeRelation.Status.APPROVED
             messages.success(
                 request,
-                f"Approved — Dr. {relation.doctor.name} assigned to {employee.get_full_name() or employee.username}.",
+                f"Approved. Dr. {relation.doctor.name} is now assigned to {employee.get_full_name() or employee.username}.",
             )
         else:
             relation.status = DoctorEmployeeRelation.Status.REJECTED

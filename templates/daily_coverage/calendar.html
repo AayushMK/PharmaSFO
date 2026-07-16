@@ -79,7 +79,7 @@
     <div class="cal__cell cal__cell--added cal__cell--approved{% if cell.is_today %} cal__cell--today{% endif %}">
       <span class="cal__date" style="font-size:var(--text-md)">{{ cell.bs_day }}</span>
       <a class="cal-tag cal-tag--added" href="{% url 'daily_coverage_list' %}?date={{ cell.date|date:'Y-m-d' }}" style="text-decoration:none"
-         title="{% if cell.locked %}Edit window passed — view only{% else %}View or edit records{% endif %}">{% if cell.locked %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:10px;height:10px;flex:none"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>{% else %}<span class="dot"></span>{% endif %}Added ({{ cell.count }})</a>
+         title="{% if cell.locked %}Edit window passed (view only){% else %}View or edit records{% endif %}">{% if cell.locked %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:10px;height:10px;flex:none"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>{% else %}<span class="dot"></span>{% endif %}Added ({{ cell.count }})</a>
       <span style="font-size:var(--text-xs);color:var(--text-muted);margin-top:auto;align-self:flex-end">{{ cell.date|date:"j M" }}</span>
     </div>
     {% elif cell.state == "approved" %}
