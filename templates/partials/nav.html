@@ -1,0 +1,113 @@
+{% comment %}
+Primary navigation, rendered in two contexts from the same markup:
+  - sidebar drawer (mobile):    {% include "partials/nav.html" %}
+  - topbar (desktop):           {% include "partials/nav.html" with topnav=True %}
+The daily-loop pages are flat links; only Reports and HR are groups. In the
+topbar the groups become dropdowns (`topnav` starts them collapsed; app.css
+restyles .nav-group inside .topnav as a popover, and lumo.js's
+data-collapsible click handler does the open/close toggling in both contexts).
+{% endcomment %}
+{% with url_name=request.resolver_match.url_name %}
+<a class="nav-item{% if url_name == 'dashboard' %} is-active{% endif %}" href="{% url 'dashboard' %}">
+  <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5L12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>
+  <span class="nav-item__label">Dashboard</span>
+</a>
+<!-- My Work -->
+<div class="nav-group{% if topnav %} is-collapsed{% endif %}" data-collapsible>
+  <button class="nav-group__header" data-toggle="collapse" aria-expanded="{% if topnav %}false{% else %}true{% endif %}">My Work
+    <svg class="nav-group__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+  </button>
+  <div class="nav-group__items"><div>
+    <a class="nav-item{% if url_name == 'daily_coverage_calendar' or url_name == 'daily_coverage_calendar_month' %} is-active{% endif %}" href="{% url 'daily_coverage_calendar' %}">
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="1.5"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>
+      <span class="nav-item__label">Calendar</span>
+    </a>
+    <a class="nav-item{% if url_name == 'daily_coverage_list' or url_name == 'edit_daily_coverage' or url_name == 'edit_chemist_coverage' or url_name == 'edit_stockist_coverage' %} is-active{% endif %}" href="{% url 'daily_coverage_list' %}">
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+      <span class="nav-item__label">Coverage</span>
+    </a>
+    <a class="nav-item{% if url_name == 'tour_plans' or url_name == 'add_tour_plan' %} is-active{% endif %}" href="{% url 'tour_plans' %}">
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      <span class="nav-item__label">Tour plans</span>
+    </a>
+    <a class="nav-item{% if url_name == 'doctor_employee_relation' or url_name == 'add_doctor_employee_relation' %} is-active{% endif %}" href="{% url 'doctor_employee_relation' %}">
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <span class="nav-item__label">My doctors</span>
+    </a>
+  </div></div>
+</div>
+
+<!-- Reports -->
+<div class="nav-group{% if topnav %} is-collapsed{% endif %}" data-collapsible>
+  <button class="nav-group__header" data-toggle="collapse" aria-expanded="{% if topnav %}false{% else %}true{% endif %}">Reports
+    <svg class="nav-group__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+  </button>
+  <div class="nav-group__items"><div>
+    <a class="nav-item{% if url_name == 'daily_activity_report' %} is-active{% endif %}" href="{% url 'daily_activity_report' %}">
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+      <span class="nav-item__label">Daily activity</span>
+    </a>
+    <a class="nav-item{% if url_name == 'monthly_activity_report' %} is-active{% endif %}" href="{% url 'monthly_activity_report' %}">
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/></svg>
+      <span class="nav-item__label">Monthly activity</span>
+    </a>
+    <a class="nav-item{% if url_name == 'monthly_target_report' %} is-active{% endif %}" href="{% url 'monthly_target_report' %}">
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+      <span class="nav-item__label">Monthly target</span>
+    </a>
+    <a class="nav-item{% if url_name == 'yearly_activity_report' %} is-active{% endif %}" href="{% url 'yearly_activity_report' %}">
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg>
+      <span class="nav-item__label">Yearly activity</span>
+    </a>
+  </div></div>
+</div>
+
+<!-- HR -->
+{% if user.is_superuser or user.is_staff and user.type == 'HR' %}
+<div class="nav-group{% if topnav %} is-collapsed{% endif %}" data-collapsible>
+  <button class="nav-group__header" data-toggle="collapse" aria-expanded="{% if topnav %}false{% else %}true{% endif %}">HR
+    {% if topnav and nav_pending_doctor_requests or topnav and nav_pending_tour_plans %}
+    <span class="badge badge--danger badge--count">{{ nav_pending_doctor_requests|add:nav_pending_tour_plans }}</span>
+    {% endif %}
+    <svg class="nav-group__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+  </button>
+  <div class="nav-group__items"><div>
+    {% if user.is_staff and user.type == 'HR' %}
+    <div class="nav-label">Approvals</div>
+    <a class="nav-item{% if url_name == 'hr_review_requests' or url_name == 'hr_review_employee_requests' %} is-active{% endif %}" href="{% url 'hr_review_requests' %}">
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      <span class="nav-item__label">Doctor requests</span>
+      {% if nav_pending_doctor_requests %}<span class="badge badge--danger badge--count">{{ nav_pending_doctor_requests }}</span>{% endif %}
+    </a>
+    <a class="nav-item{% if url_name == 'hr_review_tour_plans' or url_name == 'hr_review_employee_tour_plans' %} is-active{% endif %}" href="{% url 'hr_review_tour_plans' %}">
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="1.5"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>
+      <span class="nav-item__label">Tour plans</span>
+      {% if nav_pending_tour_plans %}<span class="badge badge--warning badge--count">{{ nav_pending_tour_plans }}</span>{% endif %}
+    </a>
+    <hr class="nav-sep">
+    {% endif %}
+    <div class="nav-label">Manage</div>
+    <a class="nav-item{% if url_name == 'doctor_list' %} is-active{% endif %}" href="{% url 'doctor_list' %}">
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M2 7h20M2 17h20"/></svg>
+      <span class="nav-item__label">Doctor directory</span>
+    </a>
+    <a class="nav-item{% if url_name == 'add_doctor' %} is-active{% endif %}" href="{% url 'add_doctor' %}">
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+      <span class="nav-item__label">Add doctor</span>
+    </a>
+    <a class="nav-item{% if url_name == 'add_chemist' %} is-active{% endif %}" href="{% url 'add_chemist' %}">
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L4 7v13a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7l-2-5z"/><path d="M4 7h16"/><path d="M16 11a4 4 0 0 1-8 0"/></svg>
+      <span class="nav-item__label">Add chemist</span>
+    </a>
+    <a class="nav-item{% if url_name == 'add_stockist' %} is-active{% endif %}" href="{% url 'add_stockist' %}">
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.27 6.96L12 12.01l8.73-5.05"/><path d="M12 22.08V12"/></svg>
+      <span class="nav-item__label">Add stockist</span>
+    </a>
+    <a class="nav-item{% if url_name == 'add_user' %} is-active{% endif %}" href="{% url 'add_user' %}">
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg>
+      <span class="nav-item__label">Add employee</span>
+    </a>
+  </div></div>
+</div>
+{% endif %}
+{% endwith %}

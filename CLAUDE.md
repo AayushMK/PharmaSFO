@@ -57,7 +57,9 @@ PharmSFAO/
 ├── api/                    # Django Ninja API
 │   ├── api.py              # NinjaAPI + JWT controller + /doctors endpoint
 ├── templates/
-│   ├── base.html           # Lumo app shell: sidebar nav + topbar (POST logout); `legacy_css` block; messages→toast bridge
+│   ├── base.html           # Lumo app shell: desktop top-nav dropdowns + mobile sidebar drawer, topbar user menu (POST logout); `legacy_css` block; messages→toast bridge
+│   ├── partials/
+│   │   └── nav.html        # Primary nav, rendered twice: sidebar drawer (mobile) and topbar (desktop, `with topnav=True`) — flat daily-loop links + Reports/HR dropdowns
 │   ├── 403.html / 404.html # Styled error pages (Django picks them up automatically)
 │   ├── users/
 │   │   └── add_user.html   # HR: onboard employee (UserCreateForm)
@@ -246,6 +248,7 @@ Defined in `reports/views.py` as `SUPER_CORE_MAX = 25`, `CORE_MAX = 75`, `VISIT_
 
 ## Design Decisions
 - **UI:** Lumo SFA design system — `static/lumo/` files are verbatim copies from `lumo/design_handoff_lumo_sfa/` (never re-derive colors/spacing; extend by composing `components.css` classes). `base.html` renders the app shell for all authenticated pages. The `.scrim` div must stay the **last** child of `.app` — as first child it occupies the grid's first cell and breaks the desktop layout.
+- **Navigation:** desktop (>860px) hides the sidebar and renders `templates/partials/nav.html` in the topbar: Dashboard as a flat text link plus three dropdowns — My Work (Calendar, Coverage, Tour plans, My doctors), Reports, and HR (sectioned into Approvals/Manage with `.nav-label`/`.nav-sep`; combined pending badge on the collapsed trigger). A primary `+ Log visit` CTA (→ add daily coverage) and a `.topnav__user` menu (avatar → identity + POST logout) sit on the right; the user menu shows at every width. Groups reuse Lumo's `data-collapsible`/`is-collapsed` toggle restyled as popovers in `app.css`; base.html's inline JS adds one-open-at-a-time, outside-click/Escape closing, and `has-active` on the current group's trigger. ≤860px keeps the sidebar drawer rendering the same partial (groups expanded, icons shown). The topbar breadcrumb was removed — `{% block breadcrumb %}` in page templates is defined but unrendered.
 - **Action feedback:** views use `django.contrib.messages` (success/warning/error) for every create/edit/delete/approve/reject, including saved-vs-skipped counts on bulk forms; `base.html` renders them as Lumo toasts via `window.lumoToast` (defined in `lumo/lumo.js`). Add a message in the view and it just works.
 - **A11y:** skip-to-content link in `base.html`, `aria-current="page"` set on the active nav item, autofocus on the primary field of add forms; inline SVG favicon (data URI) in `base.html` + `login.html`
 - **Mobile tables:** wide list tables use `.table.table--stack` (defined in `static/css/app.css`) — under 860px each row collapses into a labeled card; every `<td>` needs `data-label`, `.stack-hide` hides noise cells (e.g. SN). Grid-like report tables (monthly list, yearly) intentionally keep horizontal scroll.
@@ -257,8 +260,9 @@ Defined in `reports/views.py` as `SUPER_CORE_MAX = 25`, `CORE_MAX = 75`, `VISIT_
 - Daily coverage edit window is 2 days from `created_at` (defined as `EDIT_WINDOW_DAYS = 2`)
 - Chemist/Stockist coverage is implemented (models + bulk add form + list/edit/delete + Daily Activity report); inclusion in monthly/target/yearly reports is still pending
 - List views (`daily_coverage_list`, `doctor_employee_relation_list`) paginate at 25/page with date/status filters
-- **Coverage calendar renders in Bikram Sambat** via `nepali-datetime`: the `/daily_coverage/<year>/<month>/` URL params are **BS**, weeks run Sunday-first, cells show the BS day (AD date bottom-right), and all queries/links use the BS month's AD range. Storage and reports remain Gregorian
-- **BS date picker** (`static/js/bs-date.js` + `{% bs_calendar_json %}` tag in dc_tags, both loaded by base.html): renders Year/Month/Day BS selects that write ISO AD into a hidden input. Auto-enhances every server-rendered `input[type=date]` (filters, edit forms); JS-built entry rows call `bsDateAttach(input, {defaultToday})`. Month inputs (`type=month`) stay Gregorian
+- **Coverage calendar renders in Bikram Sambat** via `nepali-datetime`: the `/daily_coverage/<year>/<month>/` URL params are **BS**, weeks run Sunday-first, cells show the BS day (AD date bottom-right), and all queries/links use the BS month's AD range. Storage stays Gregorian; the monthly/yearly reports render BS months (activity + target parse a BS `month=YYYY-MM` param via `_parse_bs_month`, filtering by the BS month's AD span)
+- **BS date picker** (`static/js/bs-date.js` + `{% bs_calendar_json %}` tag in dc_tags, both loaded by base.html): renders Year/Month/Day BS selects that write ISO AD into a hidden input. Auto-enhances every server-rendered `input[type=date]` (filters, edit forms); JS-built entry rows call `bsDateAttach(input, {defaultToday})`. Month inputs (`type=month`) get the BS month picker below
+- **BS month picker** (`static/js/month-picker.js`, loaded by the monthly target + activity report templates): auto-enhances `input[type=month]` into a grid popover — `‹ BS year ›` steppers (clamped to the `bs_calendar_json` table, embedded by base.html as `{% bs_calendar_json 5 1 %}`), 4×3 Baishakh–Chaitra grid, "This month" shortcut — writing **BS** `YYYY-MM` to the hidden input for `_parse_bs_month` (native `type=month` speaks AD, hides year scroll in Chrome, and is unsupported in Firefox/desktop Safari)
 - Excel export uses openpyxl, served as streaming `HttpResponse`
 - `reports/` is a plain Python module (no models), not a Django app — no INSTALLED_APPS entry
 - Timezone set to `Asia/Kathmandu`

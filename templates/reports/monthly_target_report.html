@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}Monthly Target Report - PharmaSFO{% endblock %}
 {% block legacy_css %}{% endblock %}
@@ -22,7 +23,7 @@
 <form method="get" class="table-toolbar">
   <div class="table-toolbar__filters" style="align-items:flex-end">
     <div class="field">
-      <label class="label" for="report-month">Month</label>
+      <label class="label" for="report-month">Month (BS)</label>
       <input type="month" name="month" id="report-month" class="input" style="width:180px" value="{{ month_str }}">
     </div>
     {% if can_view_others %}
@@ -41,6 +42,8 @@
     <button type="submit" class="btn btn--primary">View report</button>
   </div>
 </form>
+{# Grid month picker (year steppers + month grid) replacing the native input #}
+<script src="{% static 'js/month-picker.js' %}"></script>
 
 <div class="card">
   <div class="card__header">

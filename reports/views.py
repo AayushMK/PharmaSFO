@@ -1,4 +1,3 @@
-import calendar as cal_module
 import json
 from collections import defaultdict
 from datetime import datetime, timedelta
@@ -209,31 +208,27 @@ def daily_activity_report(request):
 
 # ── Monthly Activity Report ──────────────────────────────────────────────────
 
-def _parse_month(month_str):
-    """Return (year, month, normalized "YYYY-MM"); defaults to the current month."""
-    if month_str:
-        try:
-            dt = datetime.strptime(month_str, "%Y-%m")
-            return dt.year, dt.month, month_str
-        except ValueError:
-            pass
-    today = datetime.today()
-    return today.year, today.month, f"{today.year}-{today.month:02d}"
-
-
 def _parse_bs_month(request):
-    """Resolve the requested **BS** month from `year` + `bs_month` selects,
-    defaulting to the current BS month. Returns
+    """Resolve the requested **BS** month from the `month` param ("YYYY-MM",
+    BS values — written by the month picker), falling back to the legacy
+    `year` + `bs_month` select params, then to the current BS month. Returns
     (bs_year, bs_month, "YYYY-MM", start_ad, end_ad) where the AD span covers
     exactly that BS month."""
     today_bs = nepali_datetime.date.from_datetime_date(datetime.today().date())
     try:
-        year = int(request.GET.get("year", ""))
-        month = int(request.GET.get("bs_month", ""))
+        y_s, m_s = request.GET.get("month", "").split("-")
+        year, month = int(y_s), int(m_s)
+    except ValueError:
+        try:
+            year = int(request.GET.get("year", ""))
+            month = int(request.GET.get("bs_month", ""))
+        except (ValueError, TypeError):
+            year, month = today_bs.year, today_bs.month
+    try:
         if not 1 <= month <= 12:
             raise ValueError
         start = nepali_datetime.date(year, month, 1)
-    except (ValueError, TypeError):
+    except ValueError:
         year, month = today_bs.year, today_bs.month
         start = nepali_datetime.date(year, month, 1)
 
@@ -332,8 +327,6 @@ def monthly_activity_report(request):
         "year":                year,
         "month":               month,
         "month_name":          BS_MONTH_NAMES[month - 1],
-        "year_choices":        _year_choices(),
-        "bs_months":           BS_MONTH_NAMES,
         "employee":            employee,
         "all_employees":       all_employees,
         "selected_employee_id": selected_employee_id,
@@ -536,8 +529,9 @@ def yearly_activity_report_excel(request):
 
 # ── Monthly Target Report ────────────────────────────────────────────────────
 
-def _build_target_rows(employee, year, month):
-    """Rows shared by the Monthly Target report page and its Excel export."""
+def _build_target_rows(employee, start_ad, end_ad):
+    """Rows shared by the Monthly Target report page and its Excel export.
+    Scoped to a BS month's AD span."""
     relations = (
         DoctorEmployeeRelation.objects
         .filter(employee=employee, status=DoctorEmployeeRelation.Status.APPROVED)
@@ -548,8 +542,7 @@ def _build_target_rows(employee, year, month):
     visit_counts = defaultdict(int)
     for cov in DailyCoverage.objects.filter(
         created_by=employee,
-        report_date__year=year,
-        report_date__month=month,
+        report_date__range=(start_ad, end_ad),
     ).values("doctor_id"):
         visit_counts[cov["doctor_id"]] += 1
 
@@ -582,15 +575,15 @@ def _build_target_rows(employee, year, month):
 @never_cache
 def monthly_target_report(request):
     employee, all_employees, selected_employee_id, can_view_others = _get_employee(request)
-    year, month, month_str = _parse_month(request.GET.get("month", ""))
+    year, month, month_str, start_ad, end_ad = _parse_bs_month(request)
 
-    rows = _build_target_rows(employee, year, month)
+    rows = _build_target_rows(employee, start_ad, end_ad)
 
     return render(request, "reports/monthly_target_report.html", {
         "month_str":           month_str,
         "year":                year,
         "month":               month,
-        "month_name":          cal_module.month_name[month],
+        "month_name":          BS_MONTH_NAMES[month - 1],
         "employee":            employee,
         "all_employees":       all_employees,
         "selected_employee_id": selected_employee_id,
@@ -606,8 +599,8 @@ STATE_FILLS = {"green": "C6EFCE", "orange": "FFEB9C", "red": "FFC7CE"}
 @login_required
 def monthly_target_report_excel(request):
     employee, _, _, _ = _get_employee(request)
-    year, month, _ = _parse_month(request.GET.get("month", ""))
-    rows = _build_target_rows(employee, year, month)
+    year, month, _, start_ad, end_ad = _parse_bs_month(request)
+    rows = _build_target_rows(employee, start_ad, end_ad)
 
     wb = openpyxl.Workbook()
     ws = wb.active
