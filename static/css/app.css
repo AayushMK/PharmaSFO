@@ -165,3 +165,13 @@ button.nav-item {
   .topbar__cta { display: none; }
   .topnav__user-name { display: none; }
 }
+
+/* ---- Card headers on phones ----------------------------------------------
+   Titles share their flex row with badge clusters (report chart cards).
+   Without wrapping, a long title collapses into a one-word-per-line column
+   and the last badge overflows the card. Let the header wrap: the title
+   keeps its line, badges flow underneath. */
+@media (max-width: 860px) {
+  .card__header { flex-wrap: wrap; row-gap: var(--space-2); }
+  .card__header .row { flex-wrap: wrap; row-gap: var(--space-2); }
+}
