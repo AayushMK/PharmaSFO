@@ -194,6 +194,11 @@
       render();
       closeAll();
       trigger.focus();
+      // Filter-style usage: picking a month applies it without a submit click
+      if (input.form && input.hasAttribute("data-autosubmit")) {
+        if (input.form.requestSubmit) input.form.requestSubmit();
+        else input.form.submit();
+      }
     }
 
     trigger.addEventListener("click", function () {
