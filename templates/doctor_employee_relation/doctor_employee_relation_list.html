@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}My Assigned Doctors - PharmaSFO{% endblock %}
+{% block title %}My Doctors - PharmaSFO{% endblock %}
 {% block legacy_css %}{% endblock %}
 {% block breadcrumb %}<span>Directory</span><span class="sep">/</span><span class="current">My assignments</span>{% endblock %}
 
@@ -8,10 +8,10 @@
 <div class="page-header">
   <div>
     {% if is_own %}
-    <h1 class="page-title">My Assigned Doctors</h1>
+    <h1 class="page-title">My Doctors</h1>
     <p class="page-sub">Doctors assigned to you, with their MSL rank. New requests need HR approval.</p>
     {% else %}
-    <h1 class="page-title">{% if is_own %}My Doctors{% else %}Doctors assigned to {{ employee.get_full_name|default:employee.username }}{% endif %}</h1>
+    <h1 class="page-title">Doctors assigned to {{ employee.get_full_name|default:employee.username }}</h1>
     <p class="page-sub">{{ employee.get_type_display }} · doctors assigned to this employee, with their MSL rank.</p>
     {% endif %}
   </div>
