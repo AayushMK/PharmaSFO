@@ -1,11 +1,15 @@
-/* Month picker — grid popover with year steppers.
+/* Bikram Sambat month picker — grid popover with year steppers.
  *
- * Replaces native `<input type="month">`, which hides year selection behind
- * an unsignposted scroll list in Chrome and renders as a bare text box in
- * Firefox/desktop Safari. The trigger opens a panel with a ‹ year › header,
- * a 4×3 month grid, and a "This month" shortcut; picking a month writes
- * "YYYY-MM" to the underlying (hidden) input, so forms and the server see
- * exactly what the native control submitted.
+ * Replaces `<input type="month">` with a trigger that opens a panel showing
+ * a ‹ BS year › header, a 4×3 grid of BS months (Baishakh–Chaitra), and a
+ * "This month" shortcut. Picking a month writes **BS** "YYYY-MM" to the
+ * underlying (hidden) input — the reports' `_parse_bs_month` reads exactly
+ * that. (The native control was wrong twice over: it speaks AD, and it
+ * renders as a bare text box in Firefox/desktop Safari.)
+ *
+ * Needs the BS month table embedded by the `bs_calendar_json` template tag
+ * (loaded globally by base.html): [{y, m, days, start}] — `start` being the
+ * AD date of BS day 1. Year steppers clamp to the years the table covers.
  *
  * Usage:
  *   - Server-rendered `<input type="month">` elements are auto-enhanced on load.
@@ -14,10 +18,41 @@
 (function () {
   "use strict";
 
-  var MONTHS = ["January", "February", "March", "April", "May", "June", "July",
-                "August", "September", "October", "November", "December"];
-  var ABBR = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
-              "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  var MONTHS = ["Baishakh", "Jestha", "Asar", "Shrawan", "Bhadau", "Aswin",
+                "Kartik", "Mangsir", "Poush", "Magh", "Falgun", "Chaitra"];
+  var ABBR = ["Bai", "Jes", "Asa", "Shr", "Bha", "Asw",
+              "Kar", "Man", "Pou", "Mag", "Fal", "Cha"];
+  var DAY_MS = 86400000;
+  var CAL = [];
+
+  function loadCal() {
+    if (CAL.length) return true;
+    var el = document.getElementById("bs-cal-data");
+    if (!el) return false;
+    try { CAL = JSON.parse(el.textContent); } catch (e) { CAL = []; }
+    return CAL.length > 0;
+  }
+
+  function calYearBounds() {
+    var min = Infinity, max = -Infinity;
+    for (var i = 0; i < CAL.length; i++) {
+      if (CAL[i].y < min) min = CAL[i].y;
+      if (CAL[i].y > max) max = CAL[i].y;
+    }
+    return { min: min, max: max };
+  }
+
+  function todayBS() {
+    var now = new Date();
+    var iso = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
+      .toISOString().slice(0, 10);
+    var t = Date.parse(iso + "T00:00:00Z");
+    for (var i = 0; i < CAL.length; i++) {
+      var diff = Math.round((t - Date.parse(CAL[i].start + "T00:00:00Z")) / DAY_MS);
+      if (diff >= 0 && diff < CAL[i].days) return { y: CAL[i].y, m: CAL[i].m };
+    }
+    return null;
+  }
 
   var STYLES = "" +
     ".mp-wrap{position:relative;display:inline-block}" +
@@ -32,7 +67,8 @@
     ".mp-year{font-size:var(--text-base);font-weight:var(--weight-semibold)}" +
     ".mp-nav{display:grid;place-items:center;width:28px;height:28px;border:none;background:none;" +
       "border-radius:var(--radius-sm);color:var(--text-secondary);cursor:pointer}" +
-    ".mp-nav:hover{background:var(--gray-100);color:var(--text)}" +
+    ".mp-nav:not(:disabled):hover{background:var(--gray-100);color:var(--text)}" +
+    ".mp-nav:disabled{opacity:.35;cursor:default}" +
     ".mp-nav svg{width:16px;height:16px}" +
     ".mp-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}" +
     ".mp-mon{height:32px;border:none;background:none;border-radius:var(--radius-sm);" +
@@ -71,23 +107,19 @@
     return { y: parseInt(m[1], 10), m: mon };
   }
 
-  function nowYM() {
-    var d = new Date();
-    return { y: d.getFullYear(), m: d.getMonth() + 1 };
-  }
-
   function fmtYM(sel) {
     return sel.y + "-" + (sel.m < 10 ? "0" : "") + sel.m;
   }
 
   window.monthPickerAttach = function (input) {
-    if (input.dataset.mpAttached) return;
+    if (!loadCal() || input.dataset.mpAttached) return;
     input.dataset.mpAttached = "1";
     injectStyles();
 
-    var sel = parseYM(input.value) || nowYM();
-    var view = sel.y;                       // year currently shown in the panel
-    var today = nowYM();
+    var bounds = calYearBounds();
+    var today = todayBS();
+    var sel = parseYM(input.value) || today || { y: bounds.max, m: 1 };
+    var view = sel.y;                       // BS year currently shown in the panel
 
     input.type = "hidden";
     input.value = fmtYM(sel);
@@ -110,7 +142,7 @@
     panel.className = "mp-panel";
     panel.hidden = true;
     panel.setAttribute("role", "dialog");
-    panel.setAttribute("aria-label", "Choose month");
+    panel.setAttribute("aria-label", "Choose month (Bikram Sambat)");
     panel.innerHTML =
       '<div class="mp-head">' +
         '<button type="button" class="mp-nav" data-step="-1" aria-label="Previous year">' +
@@ -123,6 +155,8 @@
       '<div class="mp-foot"><button type="button" class="mp-today">This month</button></div>';
     var yearEl = panel.querySelector(".mp-year");
     var grid = panel.querySelector(".mp-grid");
+    var prevBtn = panel.querySelector('[data-step="-1"]');
+    var nextBtn = panel.querySelector('[data-step="1"]');
 
     input.parentNode.insertBefore(wrap, input);
     wrap.appendChild(input);
@@ -138,12 +172,14 @@
     function render() {
       label.textContent = MONTHS[sel.m - 1] + " " + sel.y;
       yearEl.textContent = view;
+      prevBtn.disabled = view <= bounds.min;
+      nextBtn.disabled = view >= bounds.max;
       grid.innerHTML = "";
       for (var m = 1; m <= 12; m++) {
         var b = document.createElement("button");
         b.type = "button";
         b.className = "mp-mon" +
-          (view === today.y && m === today.m ? " is-now" : "") +
+          (today && view === today.y && m === today.m ? " is-now" : "") +
           (view === sel.y && m === sel.m ? " is-selected" : "");
         b.dataset.m = m;
         b.textContent = ABBR[m - 1];
@@ -181,7 +217,8 @@
       if (b) pick(view, parseInt(b.dataset.m, 10));
     });
     panel.querySelector(".mp-today").addEventListener("click", function () {
-      today = nowYM();
+      today = todayBS() || today;
+      if (!today) return;
       view = today.y;
       pick(today.y, today.m);
     });

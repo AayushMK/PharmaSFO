@@ -15,7 +15,8 @@
     <link rel="stylesheet" href="{% static 'css/app.css' %}">
     <script src="{% static 'lumo/lumo.js' %}" defer></script>
     {# Bikram Sambat date picker: month table + component (not deferred — page scripts call bsDateAttach at parse time) #}
-    <script id="bs-cal-data" type="application/json">{% bs_calendar_json %}</script>
+    {# 5 years back so the report month pickers can reach historical months #}
+    <script id="bs-cal-data" type="application/json">{% bs_calendar_json 5 1 %}</script>
     <script src="{% static 'js/bs-date.js' %}"></script>
 </head>
 <body>
