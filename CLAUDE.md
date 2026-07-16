@@ -262,6 +262,7 @@ Defined in `reports/views.py` as `SUPER_CORE_MAX = 25`, `CORE_MAX = 75`, `VISIT_
 - List views (`daily_coverage_list`, `doctor_employee_relation_list`) paginate at 25/page with date/status filters
 - **Coverage calendar renders in Bikram Sambat** via `nepali-datetime`: the `/daily_coverage/<year>/<month>/` URL params are **BS**, weeks run Sunday-first, cells show the BS day (AD date bottom-right), and all queries/links use the BS month's AD range. Storage and reports remain Gregorian
 - **BS date picker** (`static/js/bs-date.js` + `{% bs_calendar_json %}` tag in dc_tags, both loaded by base.html): renders Year/Month/Day BS selects that write ISO AD into a hidden input. Auto-enhances every server-rendered `input[type=date]` (filters, edit forms); JS-built entry rows call `bsDateAttach(input, {defaultToday})`. Month inputs (`type=month`) stay Gregorian
+- **Gregorian month picker** (`static/js/month-picker.js`, loaded by `monthly_target_report.html`): auto-enhances `input[type=month]` into a grid popover — `‹ year ›` steppers, 4×3 month grid, "This month" shortcut — writing `YYYY-MM` to the hidden input (native `type=month` hides year scroll in Chrome and is unsupported in Firefox/desktop Safari)
 - Excel export uses openpyxl, served as streaming `HttpResponse`
 - `reports/` is a plain Python module (no models), not a Django app — no INSTALLED_APPS entry
 - Timezone set to `Asia/Kathmandu`
