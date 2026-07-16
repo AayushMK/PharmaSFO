@@ -23,7 +23,8 @@
   <div class="table-toolbar__filters" style="align-items:flex-end">
     <div class="field">
       <label class="label" for="report-year">Year</label>
-      <select name="year" id="report-year" class="select" style="width:120px">
+      <select name="year" id="report-year" class="select" style="width:120px"
+              onchange="this.form.requestSubmit ? this.form.requestSubmit() : this.form.submit()">
         {% for y in year_choices %}
           <option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>
         {% endfor %}
@@ -32,7 +33,8 @@
     {% if can_view_others %}
     <div class="field">
       <label class="label" for="report-employee">Employee</label>
-      <select name="employee_id" id="report-employee" class="select" style="width:240px">
+      <select name="employee_id" id="report-employee" class="select" style="width:240px"
+              onchange="this.form.requestSubmit ? this.form.requestSubmit() : this.form.submit()">
         <option value="">Myself</option>
         {% for emp in all_employees %}
           <option value="{{ emp.pk }}" {% if emp.pk == selected_employee_id %}selected{% endif %}>
@@ -42,7 +44,6 @@
       </select>
     </div>
     {% endif %}
-    <button type="submit" class="btn btn--primary">View report</button>
   </div>
 </form>
 
