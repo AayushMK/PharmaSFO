@@ -95,26 +95,26 @@ function renderEntry(presetDate) {
                 <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
             </button>
         </div>
-        <div class="grid grid--2">
-            <div class="field">
+        <div class="entry-fields">
+            <div class="field" style="flex:0 1 170px">
                 <label class="label">Date <span class="req">*</span></label>
                 <input type="hidden" class="f-date" name="entries[${index}][plan_date]" value="${defaultDate}">
             </div>
-            <div class="field">
+            <div class="field" style="flex:1 1 180px">
                 <label class="label">Area <span class="req">*</span></label>
                 <select class="select f-area" name="entries[${index}][area]" required>
                     <option value="">Select area</option>
                     ${areaOptions.map(option => `<option value="${option.value}" ${option.value === defaultArea ? 'selected' : ''}>${option.label}</option>`).join('')}
                 </select>
             </div>
-            <div class="field">
+            <div class="field" style="flex:1 1 180px">
                 <label class="label">Worked with <span class="optional">(optional)</span></label>
                 <select class="select f-worked" name="entries[${index}][worked_with]">
                     <option value="">Select member</option>
                     ${userOptions.map(option => `<option value="${option.value}">${option.label}</option>`).join('')}
                 </select>
             </div>
-            <div class="field" style="grid-column: 1 / -1;">
+            <div class="field entry-fields__full">
                 <label class="label">Remarks <span class="optional">(optional)</span></label>
                 <textarea class="textarea f-remarks" name="entries[${index}][remarks]" rows="2" placeholder="Any notes for this day…"></textarea>
             </div>

@@ -220,3 +220,22 @@ button.nav-item {
    state-neutral equivalent instead of borrowing --approved's name. */
 .cal__cell--clickable { cursor: pointer; }
 .cal__cell--clickable:hover { background: var(--gray-50); }
+
+/* ---- Bulk-entry rows (Add Tour Plan, Add Daily Coverage) ------------------
+   Each entry's structured fields (everything but Remarks) stack one-per-line
+   on phones — same as Lumo's .grid--2 collapse, just self-contained rather
+   than depending on that class — but compact onto a single horizontal line
+   on desktop, so adding several entries isn't a long vertical scroll of
+   mostly-empty label/control pairs. Individual field widths are set inline
+   per row template (Date and Call Time stay narrow; Doctor/Products get more
+   room); a field marked .entry-fields__full (e.g. Remarks) always keeps its
+   own full-width line regardless of viewport. */
+.entry-fields { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--space-4); }
+@media (max-width: 860px) {
+  .entry-fields { grid-template-columns: 1fr; }
+}
+@media (min-width: 861px) {
+  .entry-fields { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--space-3) var(--space-4); }
+  .entry-fields > .field { min-width: 0; }
+  .entry-fields__full { flex: 1 1 100%; }
+}

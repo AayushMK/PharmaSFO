@@ -254,7 +254,7 @@ function makeRow(fields, onRemove, label) {
                 <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
             </button>
         </div>
-        <div class="grid grid--2">${fields}</div>
+        <div class="entry-fields">${fields}</div>
     `;
     div.querySelector('.remove-row-btn').addEventListener('click', () => { div.remove(); onRemove(); });
     return div;
@@ -277,24 +277,24 @@ function renderDoctorEntry(initialDate) {
     const defaultDate = initialDate || lastValue(doctorList, '.f-date') || '';
     const defaultArea = lastValue(doctorList, '.f-area');
     const row = makeRow(`
-        <div class="field"><label class="label">Date <span class="req">*</span></label>
+        <div class="field" style="flex:0 1 170px"><label class="label">Date <span class="req">*</span></label>
             <input type="hidden" class="f-date" name="d_date_${idx}" value="${defaultDate}"></div>
-        <div class="field"><label class="label">Doctor <span class="req">*</span></label>
+        <div class="field" style="flex:1 1 190px"><label class="label">Doctor <span class="req">*</span></label>
             <select class="select f-doc" name="d_doc_${idx}" required>
                 <option value="">Select doctor</option>
                 ${doctorOptions.map(o => `<option value="${o.value}">${esc(o.label)}</option>`).join('')}
             </select></div>
-        <div class="field"><label class="label">Actual Working Place <span class="req">*</span></label>${makeAreaSelect(`d_area_${idx}`, 'f-area')}</div>
-        <div class="field"><label class="label">Call Time <span class="req">*</span></label>
+        <div class="field" style="flex:1 1 170px"><label class="label">Actual Working Place <span class="req">*</span></label>${makeAreaSelect(`d_area_${idx}`, 'f-area')}</div>
+        <div class="field" style="flex:0 1 120px"><label class="label">Call Time <span class="req">*</span></label>
             <input type="time" class="input f-time" name="d_time_${idx}" required></div>
-        <div class="field"><label class="label">Products <span class="req">*</span></label>
+        <div class="field" style="flex:1 1 170px"><label class="label">Products <span class="req">*</span></label>
             <input type="text" class="input f-prod" name="d_prod_${idx}" placeholder="e.g. ProCard 500" required></div>
-        <div class="field"><label class="label">Worked With <span class="req">*</span></label>
+        <div class="field" style="flex:1 1 150px"><label class="label">Worked With <span class="req">*</span></label>
             <select class="select f-with" name="d_with_${idx}" required>
                 <option value="Self" selected>Self</option>
                 ${workedWithOptions.map(o => `<option value="${esc(o)}">${esc(o)}</option>`).join('')}
             </select></div>
-        <div class="field" style="grid-column: 1 / -1;"><label class="label">Remarks <span class="optional">(optional)</span></label>
+        <div class="field entry-fields__full"><label class="label">Remarks <span class="optional">(optional)</span></label>
             <textarea class="textarea f-rem" name="d_rem_${idx}" rows="2"></textarea></div>
     `, syncDoctorEntries, 'Entry ' + (idx + 1));
     row.querySelector('.f-area').value = defaultArea;
@@ -335,15 +335,15 @@ function renderChemistEntry(initialDate) {
     const defaultDate = initialDate || lastValue(chemistList, '.f-date') || lastValue(doctorList, '.f-date') || '';
     const defaultArea = lastValue(chemistList, '.f-area');
     const row = makeRow(`
-        <div class="field"><label class="label">Date <span class="req">*</span></label>
+        <div class="field" style="flex:0 1 170px"><label class="label">Date <span class="req">*</span></label>
             <input type="hidden" class="f-date" name="c_date_${idx}" value="${defaultDate}"></div>
-        <div class="field"><label class="label">Chemist <span class="req">*</span></label>
+        <div class="field" style="flex:1 1 190px"><label class="label">Chemist <span class="req">*</span></label>
             <select class="select f-name" name="c_name_${idx}" required>
                 <option value="">Select chemist</option>
                 ${chemistOptions.map(o => `<option value="${esc(o.value)}" data-area="${o.area}">${esc(o.label)}</option>`).join('')}
             </select></div>
-        <div class="field"><label class="label">Area <span class="req">*</span></label>${makeAreaSelect(`c_area_${idx}`, 'f-area')}</div>
-        <div class="field"><label class="label">Call Time <span class="req">*</span></label>
+        <div class="field" style="flex:1 1 170px"><label class="label">Area <span class="req">*</span></label>${makeAreaSelect(`c_area_${idx}`, 'f-area')}</div>
+        <div class="field" style="flex:0 1 120px"><label class="label">Call Time <span class="req">*</span></label>
             <input type="time" class="input f-time" name="c_time_${idx}" required></div>
     `, syncChemistEntries, 'Entry ' + (idx + 1));
     row.querySelector('.f-area').value = defaultArea;
@@ -392,15 +392,15 @@ function renderStockistEntry(initialDate) {
     const defaultDate = initialDate || lastValue(stockistList, '.f-date') || lastValue(doctorList, '.f-date') || '';
     const defaultArea = lastValue(stockistList, '.f-area');
     const row = makeRow(`
-        <div class="field"><label class="label">Date <span class="req">*</span></label>
+        <div class="field" style="flex:0 1 170px"><label class="label">Date <span class="req">*</span></label>
             <input type="hidden" class="f-date" name="s_date_${idx}" value="${defaultDate}"></div>
-        <div class="field"><label class="label">Stockist <span class="req">*</span></label>
+        <div class="field" style="flex:1 1 190px"><label class="label">Stockist <span class="req">*</span></label>
             <select class="select f-name" name="s_name_${idx}" required>
                 <option value="">Select stockist</option>
                 ${stockistOptions.map(o => `<option value="${esc(o.value)}" data-area="${o.area}">${esc(o.label)}</option>`).join('')}
             </select></div>
-        <div class="field"><label class="label">Area <span class="req">*</span></label>${makeAreaSelect(`s_area_${idx}`, 'f-area')}</div>
-        <div class="field"><label class="label">Call Time <span class="req">*</span></label>
+        <div class="field" style="flex:1 1 170px"><label class="label">Area <span class="req">*</span></label>${makeAreaSelect(`s_area_${idx}`, 'f-area')}</div>
+        <div class="field" style="flex:0 1 120px"><label class="label">Call Time <span class="req">*</span></label>
             <input type="time" class="input f-time" name="s_time_${idx}" required></div>
     `, syncStockistEntries, 'Entry ' + (idx + 1));
     row.querySelector('.f-area').value = defaultArea;
