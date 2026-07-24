@@ -3,9 +3,12 @@ from tour_plans.models import TourPlan
 
 
 def nav_counts(request):
-    """Pending-approval counts for the sidebar HR badges (HR staff only)."""
+    """Pending-approval counts for the HR nav badges (HR staff and superusers)."""
     user = getattr(request, "user", None)
-    if not (user and user.is_authenticated and user.is_staff and user.type == "HR"):
+    is_hr = user and user.is_authenticated and (
+        user.is_superuser or (user.is_staff and user.type == "HR")
+    )
+    if not is_hr:
         return {}
     return {
         "nav_pending_doctor_requests": DoctorEmployeeRelation.objects.filter(

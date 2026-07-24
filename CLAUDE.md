@@ -208,7 +208,7 @@ Defined in `reports/views.py` as `SUPER_CORE_MAX = 25`, `CORE_MAX = 75`, `VISIT_
 - **API:** JWT via `django-ninja-jwt` (for future React/mobile)
 - Logout uses POST (Django 5+ requirement)
 - `@never_cache` on all authenticated views to prevent back-button access after logout
-- HR-only views check `user.is_staff and user.type == "HR"` and raise `PermissionDenied`
+- HR-only views check `user.is_superuser or (user.is_staff and user.type == "HR")` and raise `PermissionDenied`
 - **Reports:** hierarchy-based visibility via `_get_employee` (reports/views.py) — a user sees their own reports plus those of strictly lower positions; requesting anyone else 404s; template flag `can_view_others` shows the employee dropdown
 
 ## Credentials (dev only)

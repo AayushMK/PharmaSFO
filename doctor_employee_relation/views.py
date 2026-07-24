@@ -13,7 +13,9 @@ from .models import DoctorEmployeeRelation
 
 
 def _is_hr_user(user):
-    return user.is_authenticated and user.is_staff and user.type == "HR"
+    return user.is_authenticated and (
+        user.is_superuser or (user.is_staff and user.type == "HR")
+    )
 
 
 @login_required
@@ -40,7 +42,7 @@ def doctor_employee_relation_list(request, employee_id=None):
     page_obj = paginator.get_page(request.GET.get("page", 1))
 
     # HR (and superusers) can switch to any employee's assignment list
-    can_view_all = _is_hr_user(request.user) or request.user.is_superuser
+    can_view_all = _is_hr_user(request.user)
     all_employees = (
         get_user_model().objects.exclude(pk=request.user.pk)
         .order_by("first_name", "last_name", "username")

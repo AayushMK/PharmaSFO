@@ -17,7 +17,9 @@ from .models import Area, TourPlan
 
 
 def _is_hr_user(user):
-    return user.is_authenticated and user.is_staff and user.type == "HR"
+    return user.is_authenticated and (
+        user.is_superuser or (user.is_staff and user.type == "HR")
+    )
 
 
 @login_required
