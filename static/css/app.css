@@ -172,6 +172,22 @@ button.nav-item {
   border-top: 1px solid var(--border); font-size: var(--text-sm); font-weight: var(--weight-medium);
 }
 
+/* On phones the bell sits right next to the (also narrow) avatar trigger,
+   close to the screen's right edge. The desktop popover anchors right:0 to
+   the bell itself and is 340px wide — anchored to a trigger that's only
+   ~300px from the left edge, most of the panel lands off-screen to the
+   left. Anchor to the viewport instead of the trigger below 861px. */
+@media (max-width: 860px) {
+  .topnav__notif .nav-group__items {
+    position: fixed;
+    top: calc(var(--topbar-height) + var(--space-2));
+    left: var(--space-3);
+    right: var(--space-3);
+    width: auto;
+    max-width: none;
+  }
+}
+
 /* Brand lives in the topbar at every width (the drawer repeats it inside) */
 .topbar__brand {
   display: flex; align-items: center; gap: var(--space-2);
