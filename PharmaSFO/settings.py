@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     "doctor_employee_relation",
     "tour_plans",
     "daily_coverage",
+    "notifications",
 ]
 
 MIDDLEWARE = [
@@ -70,6 +71,7 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "users.context_processors.nav_counts",
+                "notifications.context_processors.unread_count",
             ],
         },
     },
