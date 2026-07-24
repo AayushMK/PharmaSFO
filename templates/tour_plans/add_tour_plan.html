@@ -81,9 +81,9 @@ function updateDayLabels() {
     emptyStateMsg.style.display = entryList.children.length ? 'none' : '';
 }
 
-function renderEntry() {
+function renderEntry(presetDate) {
     const index = entryIndex++;
-    const defaultDate = nextDefaultDate();
+    const defaultDate = presetDate || nextDefaultDate();
     const defaultArea = lastDefaultArea();
     const wrapper = document.createElement('div');
     wrapper.className = 'entry-row';
@@ -142,9 +142,9 @@ function syncEntries() {
     entriesInput.value = JSON.stringify(payload);
 }
 
-document.getElementById('add-entry-btn').addEventListener('click', renderEntry);
+document.getElementById('add-entry-btn').addEventListener('click', () => renderEntry());
 
-renderEntry();
+renderEntry(new URLSearchParams(location.search).get('date'));
 
 entryList.addEventListener('input', syncEntries);
 entryList.addEventListener('change', syncEntries);
