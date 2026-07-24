@@ -118,7 +118,8 @@ PharmSFAO/
 - `specialization` — CharField(255), optional
 - `phone` — CharField(20), optional
 - `email` — EmailField, optional
-- Ordered by name; added via Django admin or the HR "Add Doctor" form (`/doctors/add/`)
+- Ordered by name; added, edited, and deleted via Django admin or the HR "Add/Edit Doctor" forms (`/doctors/add/`, `/doctors/<pk>/edit/`, `/doctors/<pk>/delete/` — same `_can_manage_doctors` gate as the directory itself)
+- Deleting a doctor cascades their `DoctorEmployeeRelation` assignments (confirm dialog says so) but is blocked (`ProtectedError` caught, shown as a message) while any `DailyCoverage` references them — logged history is never silently lost
 - Phone/email surface in the doctor list ("Contact" column + client-side search), the add form, admin, and `GET /api/doctors/`
 
 ### Hospital (doctors.Hospital)
