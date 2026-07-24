@@ -84,8 +84,8 @@ a.card:hover { text-decoration: none; border-color: var(--border-strong); backgr
 /* Dropdown mechanics — shared by the primary nav groups and the user menu.
    Unscoped by media query: .topnav is hidden on mobile, but .topnav__user
    lives in the topbar at every width. */
-.topnav .nav-group, .topnav__user { position: relative; margin: 0; }
-.topnav .nav-group__header, .topnav__user .nav-group__header {
+.topnav .nav-group, .topnav__user, .topnav__notif { position: relative; margin: 0; }
+.topnav .nav-group__header, .topnav__user .nav-group__header, .topnav__notif .nav-group__header {
   width: auto;
   font-size: var(--text-sm); font-weight: var(--weight-medium);
   letter-spacing: normal; text-transform: none;
@@ -98,7 +98,7 @@ a.card:hover { text-decoration: none; border-color: var(--border-strong); backgr
 .topnav .nav-group:not(.is-collapsed) .nav-group__chevron,
 .topnav__user:not(.is-collapsed) .nav-group__chevron { transform: rotate(180deg); }
 
-.topnav .nav-group__items, .topnav__user .nav-group__items {
+.topnav .nav-group__items, .topnav__user .nav-group__items, .topnav__notif .nav-group__items {
   position: absolute; top: calc(100% + 6px); left: 0; z-index: 30;
   display: none;
   min-width: 220px; padding: var(--space-2);
@@ -107,8 +107,10 @@ a.card:hover { text-decoration: none; border-color: var(--border-strong); backgr
   box-shadow: var(--shadow-modal);
 }
 .topnav .nav-group:not(.is-collapsed) .nav-group__items,
-.topnav__user:not(.is-collapsed) .nav-group__items { display: block; }
-.topnav .nav-group__items > div, .topnav__user .nav-group__items > div { overflow: visible; }
+.topnav__user:not(.is-collapsed) .nav-group__items,
+.topnav__notif:not(.is-collapsed) .nav-group__items { display: block; }
+.topnav .nav-group__items > div, .topnav__user .nav-group__items > div,
+.topnav__notif .nav-group__items > div { overflow: visible; }
 
 /* Trigger of the group holding the current page */
 .topnav .nav-group.has-active > .nav-group__header { color: var(--primary); }
@@ -134,6 +136,41 @@ button.nav-item {
 }
 .nav-sep { height: 1px; margin: var(--space-2) var(--space-3);
            background: var(--border); border: none; }
+
+/* Notification bell: right-aligned panel like the user menu, with its own
+   header row (title + Mark all read) and a scrollable list of rows. */
+.topnav__notif-trigger { width: auto; padding: var(--space-2); }
+.topnav__notif-trigger .ico { width: 18px; height: 18px; flex: none; }
+.topnav__notif .nav-group__items { left: auto; right: 0; width: 340px; max-width: calc(100vw - var(--space-6)); padding: 0; }
+.topnav__notif-head {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--space-2);
+  padding: var(--space-3); border-bottom: 1px solid var(--border);
+  font-size: var(--text-sm); font-weight: var(--weight-semibold);
+}
+.topnav__notif-list { max-height: 360px; overflow-y: auto; padding: var(--space-2); }
+.notif-row { margin: 0; }
+.notif-row__btn {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 2px;
+  width: 100%; padding: var(--space-2) var(--space-3);
+  background: none; border: none; border-radius: var(--radius-sm);
+  font-family: inherit; text-align: left; cursor: pointer;
+}
+.notif-row__btn:hover { background: var(--gray-100); }
+.notif-row.is-unread .notif-row__btn { position: relative; }
+.notif-row.is-unread .notif-row__btn::before {
+  content: ""; position: absolute; left: 4px; top: 50%; transform: translateY(-50%);
+  width: 6px; height: 6px; border-radius: 50%; background: var(--primary);
+}
+.notif-row.is-unread .notif-row__msg { font-weight: var(--weight-semibold); padding-left: var(--space-3); }
+.notif-row:not(.is-unread) .notif-row__msg { color: var(--text-secondary); }
+.notif-row__msg { font-size: var(--text-sm); white-space: normal; }
+.notif-row__time { font-size: var(--text-xs); color: var(--text-muted); }
+.notif-row.is-unread .notif-row__time { padding-left: var(--space-3); }
+.topnav__notif-empty { padding: var(--space-6) var(--space-3); text-align: center; color: var(--text-muted); font-size: var(--text-sm); }
+.topnav__notif-viewall {
+  display: block; text-align: center; padding: var(--space-2) var(--space-3);
+  border-top: 1px solid var(--border); font-size: var(--text-sm); font-weight: var(--weight-medium);
+}
 
 /* Brand lives in the topbar at every width (the drawer repeats it inside) */
 .topbar__brand {

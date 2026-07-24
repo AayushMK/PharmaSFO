@@ -59,11 +59,7 @@
         <td class="col-actions">
           <div style="display:inline-flex; gap:var(--space-2)">
             <a href="{% url 'edit_doctor' doctor.pk %}" class="btn btn--secondary btn--sm">Edit</a>
-            <form method="post" action="{% url 'delete_doctor' doctor.pk %}"
-                  style="display:inline" onsubmit="return confirm('Delete Dr. {{ doctor.name|escapejs }}? Any doctor-employee assignments for them will also be removed.');">
-              {% csrf_token %}
-              <button type="submit" class="btn btn--danger btn--sm">Delete</button>
-            </form>
+            <a href="{% url 'delete_doctor' doctor.pk %}" class="btn btn--danger btn--sm">Delete</a>
           </div>
         </td>
       </tr>

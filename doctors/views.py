@@ -1,9 +1,13 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
-from django.db.models import ProtectedError
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.views.decorators.cache import never_cache
+
+from daily_coverage.models import DailyCoverage
+from doctor_employee_relation.models import DoctorEmployeeRelation
+from notifications.utils import notify
 
 from .forms import DoctorForm
 from .models import Doctor
@@ -60,6 +64,18 @@ def edit_doctor(request, pk):
         if form.is_valid():
             form.save()
             messages.success(request, f"Dr. {doctor.name} updated.")
+
+            assigned_employees = list(
+                DoctorEmployeeRelation.objects.filter(
+                    doctor=doctor, status=DoctorEmployeeRelation.Status.APPROVED
+                ).select_related("employee")
+            )
+            if assigned_employees:
+                notify(
+                    {rel.employee for rel in assigned_employees},
+                    f"Dr. {doctor.name}'s details were updated.",
+                    url=reverse("doctor_employee_relation"),
+                )
             return redirect("doctor_list")
     else:
         form = DoctorForm(instance=doctor)
@@ -68,21 +84,71 @@ def edit_doctor(request, pk):
 
 
 @login_required
+@never_cache
 def delete_doctor(request, pk):
     if not _can_manage_doctors(request.user):
         raise PermissionDenied
 
     doctor = get_object_or_404(Doctor, pk=pk)
-    if request.method == "POST":
-        name = doctor.name
-        try:
-            doctor.delete()
-        except ProtectedError:
-            messages.error(
-                request,
-                f"Dr. {name} has logged coverage history and can't be deleted.",
-            )
-        else:
-            messages.success(request, f"Dr. {name} removed from the directory.")
+    coverage_records = list(
+        DailyCoverage.objects.filter(doctor=doctor)
+        .select_related("created_by", "actual_working_place")
+        .order_by("-report_date", "-call_time")
+    )
+    relations = list(
+        DoctorEmployeeRelation.objects.filter(doctor=doctor).select_related("employee")
+    )
 
-    return redirect("doctor_list")
+    if request.method == "POST":
+        if coverage_records and not request.POST.get("confirm_delete_coverage"):
+            messages.error(request, "Confirm removing the coverage records to delete this doctor.")
+            return render(request, "doctors/delete_doctor.html", {
+                "doctor": doctor,
+                "coverage_records": coverage_records,
+                "relations": relations,
+            })
+
+        name = doctor.name
+
+        # Figure out, per affected rep, exactly what's about to disappear for
+        # them — an assignment, their own logged coverage, or both — before
+        # any of it is deleted.
+        relation_user_ids = {rel.employee_id for rel in relations}
+        coverage_user_ids = {c.created_by_id for c in coverage_records if c.created_by_id}
+        affected = {rel.employee_id: rel.employee for rel in relations}
+        affected.update({c.created_by_id: c.created_by for c in coverage_records if c.created_by_id})
+
+        coverage_count = len(coverage_records)
+        if coverage_records:
+            DailyCoverage.objects.filter(doctor=doctor).delete()
+        doctor.delete()  # cascades DoctorEmployeeRelation
+
+        for user_id, user in affected.items():
+            parts = []
+            if user_id in relation_user_ids:
+                parts.append("your assignment to them was removed")
+            if user_id in coverage_user_ids:
+                parts.append("your logged coverage for them was removed")
+            detail = " and ".join(parts)
+            notify(
+                user,
+                f"Dr. {name} was removed from the doctor directory; {detail}.",
+                url=reverse("doctor_employee_relation"),
+            )
+
+        messages.success(
+            request,
+            f"Dr. {name} removed from the directory"
+            + (
+                f" along with {coverage_count} coverage record{'s' if coverage_count != 1 else ''}"
+                if coverage_count else ""
+            )
+            + ".",
+        )
+        return redirect("doctor_list")
+
+    return render(request, "doctors/delete_doctor.html", {
+        "doctor": doctor,
+        "coverage_records": coverage_records,
+        "relations": relations,
+    })

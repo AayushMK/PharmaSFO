@@ -37,11 +37,16 @@ PharmSFAO/
 ├── doctors/                # Doctors app
 │   ├── models.py           # Doctor(name, nmc_number, area, specialization)
 │   ├── admin.py            # DoctorAdmin with search/filter
-│   ├── forms.py            # DoctorForm (HR add-doctor form)
-│   ├── views.py            # doctor_list, add_doctor (HR-only) views
+│   ├── forms.py            # DoctorForm (HR add-doctor form; reused by edit_doctor)
+│   ├── views.py            # doctor_list, add_doctor, edit_doctor, delete_doctor (all HR-only)
 ├── doctor_employee_relation/  # Doctor-MR assignment app
 │   ├── models.py           # DoctorEmployeeRelation (employee, doctor, msl_number, status)
 │   ├── views.py            # list, add, HR review views
+├── notifications/          # In-app notifications
+│   ├── models.py           # Notification (recipient, message, url, is_read, created_at)
+│   ├── utils.py            # notify(recipients, message, url="") — one user or an iterable
+│   ├── context_processors.py  # unread_count — badge count + latest 8 for the topbar dropdown (every page)
+│   ├── views.py            # notification_list (paginated), mark_notification_read, mark_all_read
 ├── tour_plans/             # Tour planning app
 │   ├── models.py           # Area, TourPlan (with status: pending/approved/rejected)
 │   ├── forms.py            # TourPlanBulkForm
@@ -67,7 +72,9 @@ PharmSFAO/
 │   ├── registration/
 │   │   └── login.html
 │   ├── doctors/
-│   │   └── doctor_list.html
+│   │   ├── doctor_list.html
+│   │   ├── add_doctor.html / edit_doctor.html  # Shared DoctorForm layout
+│   │   └── delete_doctor.html          # GET-confirm page: relations + coverage table + cascade checkbox
 │   ├── doctor_employee_relation/
 │   │   ├── doctor_employee_relation_list.html
 │   │   ├── add_doctor_employee_relation.html
@@ -83,6 +90,8 @@ PharmSFAO/
 │   │   ├── add_daily_coverage.html     # Tabbed bulk add: Doctor / Chemist / Stockist
 │   │   ├── daily_coverage_list.html    # List with edit/delete (2-day window)
 │   │   └── edit_daily_coverage.html
+│   ├── notifications/
+│   │   └── notification_list.html      # Full paginated list; topbar dropdown lives in base.html
 │   └── reports/
 │       ├── daily_activity_report.html
 │       ├── monthly_activity_report.html  # Chart.js frequency diagram + list of data tabs
@@ -119,7 +128,7 @@ PharmSFAO/
 - `phone` — CharField(20), optional
 - `email` — EmailField, optional
 - Ordered by name; added, edited, and deleted via Django admin or the HR "Add/Edit Doctor" forms (`/doctors/add/`, `/doctors/<pk>/edit/`, `/doctors/<pk>/delete/` — same `_can_manage_doctors` gate as the directory itself)
-- Deleting a doctor cascades their `DoctorEmployeeRelation` assignments (confirm dialog says so) but is blocked (`ProtectedError` caught, shown as a message) while any `DailyCoverage` references them — logged history is never silently lost
+- `/doctors/<pk>/delete/` is a GET-confirm/POST-act page (`delete_doctor.html`), not a JS `confirm()`: it lists every `DoctorEmployeeRelation` that will cascade and, if any `DailyCoverage` rows reference the doctor, a table of them plus a required "also delete these" checkbox — `ProtectedError` blocks a bare delete, but ticking the box deletes the coverage first, then the doctor. Every affected rep (assignment removed, coverage removed, or both — differentiated per user) gets a `notifications.notify()` call; editing a doctor notifies reps with an **approved** assignment only
 - Phone/email surface in the doctor list ("Contact" column + client-side search), the add form, admin, and `GET /api/doctors/`
 
 ### Hospital (doctors.Hospital)
@@ -249,7 +258,7 @@ Defined in `reports/views.py` as `SUPER_CORE_MAX = 25`, `CORE_MAX = 75`, `VISIT_
 
 ## Design Decisions
 - **UI:** Lumo SFA design system — `static/lumo/` files are verbatim copies from `lumo/design_handoff_lumo_sfa/` (never re-derive colors/spacing; extend by composing `components.css` classes). `base.html` renders the app shell for all authenticated pages. The `.scrim` div must stay the **last** child of `.app` — as first child it occupies the grid's first cell and breaks the desktop layout.
-- **Navigation:** desktop (>860px) hides the sidebar and renders `templates/partials/nav.html` in the topbar: Dashboard as a flat text link plus three dropdowns — My Work (Calendar, Coverage, Tour plans, My doctors), Reports, and HR (sectioned into Approvals/Manage with `.nav-label`/`.nav-sep`; combined pending badge on the collapsed trigger). A primary `+ Log visit` CTA (→ add daily coverage) and a `.topnav__user` menu (avatar → identity + POST logout) sit on the right; the user menu shows at every width. Groups reuse Lumo's `data-collapsible`/`is-collapsed` toggle restyled as popovers in `app.css`; base.html's inline JS adds one-open-at-a-time, outside-click/Escape closing, and `has-active` on the current group's trigger. ≤860px keeps the sidebar drawer rendering the same partial (groups expanded, icons shown). The topbar breadcrumb was removed — `{% block breadcrumb %}` in page templates is defined but unrendered.
+- **Navigation:** desktop (>860px) hides the sidebar and renders `templates/partials/nav.html` in the topbar: Dashboard as a flat text link plus three dropdowns — My Work (Calendar, Coverage, Tour plans, My doctors), Reports, and HR (sectioned into Approvals/Manage with `.nav-label`/`.nav-sep`; combined pending badge on the collapsed trigger). A primary `+ Log visit` CTA (→ add daily coverage), a `.topnav__notif` bell (unread badge + dropdown of the latest 8, "Mark all read", "View all" → `/notifications/`), and a `.topnav__user` menu (avatar → identity + POST logout) sit on the right; the bell and user menu show at every width. Groups reuse Lumo's `data-collapsible`/`is-collapsed` toggle restyled as popovers in `app.css`; base.html's inline JS adds one-open-at-a-time, outside-click/Escape closing, and `has-active` on the current group's trigger. ≤860px keeps the sidebar drawer rendering the same partial (groups expanded, icons shown). The topbar breadcrumb was removed — `{% block breadcrumb %}` in page templates is defined but unrendered.
 - **Action feedback:** views use `django.contrib.messages` (success/warning/error) for every create/edit/delete/approve/reject, including saved-vs-skipped counts on bulk forms; `base.html` renders them as Lumo toasts via `window.lumoToast` (defined in `lumo/lumo.js`). Add a message in the view and it just works.
 - **A11y:** skip-to-content link in `base.html`, `aria-current="page"` set on the active nav item, autofocus on the primary field of add forms; inline SVG favicon (data URI) in `base.html` + `login.html`
 - **Mobile tables:** wide list tables use `.table.table--stack` (defined in `static/css/app.css`) — under 860px each row collapses into a labeled card; every `<td>` needs `data-label`, `.stack-hide` hides noise cells (e.g. SN). Grid-like report tables (monthly list, yearly) intentionally keep horizontal scroll.
