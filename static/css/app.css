@@ -212,3 +212,11 @@ button.nav-item {
   .card__header { flex-wrap: wrap; row-gap: var(--space-2); }
   .card__header .row { flex-wrap: wrap; row-gap: var(--space-2); }
 }
+
+/* ---- Calendar: clickable pending/no-plan days -----------------------------
+   Lumo's .cal__cell--approved doubles as "this cell is clickable" (cursor +
+   hover tint), but that class name is semantically "plan approved" — pending
+   and no-plan days are now clickable too (to Add tour plan), so they get a
+   state-neutral equivalent instead of borrowing --approved's name. */
+.cal__cell--clickable { cursor: pointer; }
+.cal__cell--clickable:hover { background: var(--gray-50); }
