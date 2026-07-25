@@ -27,6 +27,12 @@
         {{ form.stockist_entries }}
         {{ form.no_doctor_reason }}
 
+        <div class="field" style="max-width:260px; margin-bottom:var(--space-4)">
+            <label class="label" for="global-date-input">Date <span class="req">*</span></label>
+            <input type="date" id="global-date-input" value="{{ initial_date }}">
+            <span class="help">Applies to every entry you add below, across all three tabs.</span>
+        </div>
+
         <!-- Tabs -->
         <div class="coverage-tabs" style="border-bottom:1px solid var(--border); padding-bottom:var(--space-3);">
             <button type="button" class="tab-btn btn btn--primary btn--sm active" data-tab="doctor">
@@ -131,6 +137,7 @@ const doctorOptions     = JSON.parse(document.getElementById('doctor-options').t
 const chemistOptions    = JSON.parse(document.getElementById('chemist-options').textContent);
 const stockistOptions   = JSON.parse(document.getElementById('stockist-options').textContent);
 const workedWithOptions = JSON.parse(document.getElementById('worked-with-options').textContent);
+const globalDateInput   = document.getElementById('global-date-input');
 
 function esc(s) {
     return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
@@ -148,13 +155,18 @@ let currentTab = 'doctor';
 function rowComplete(row, selectors) {
     return selectors.every(s => ((row.querySelector(s) || {}).value || '').trim() !== '');
 }
+function dateValid() {
+    return globalDateInput.value.trim() !== '';
+}
 function doctorTabValid() {
-    if (noDoctorCheck.checked) return noDoctorInput.value.trim() !== '';
+    if (noDoctorCheck.checked) return dateValid() && noDoctorInput.value.trim() !== '';
     const rows = [...doctorList.querySelectorAll(':scope > div')];
-    return rows.length > 0 && rows.every(r => rowComplete(r, ['.f-date', '.f-doc', '.f-area', '.f-time', '.f-prod', '.f-with']));
+    return dateValid() && rows.length > 0 && rows.every(r => rowComplete(r, ['.f-doc', '.f-area', '.f-time', '.f-prod', '.f-with']));
 }
 function partnerTabValid(list) {
-    return [...list.querySelectorAll(':scope > div')].every(r => rowComplete(r, ['.f-date', '.f-name', '.f-area', '.f-time']));
+    const rows = [...list.querySelectorAll(':scope > div')];
+    if (!rows.length) return true;
+    return dateValid() && rows.every(r => rowComplete(r, ['.f-name', '.f-area', '.f-time']));
 }
 function tabValid(name) {
     if (name === 'doctor') return doctorTabValid();
@@ -272,13 +284,10 @@ const doctorList = document.getElementById('doctor-entry-list');
 const doctorHidden = document.getElementById('id_entries');
 let doctorIdx = 0;
 
-function renderDoctorEntry(initialDate) {
+function renderDoctorEntry() {
     const idx = doctorIdx++;
-    const defaultDate = initialDate || lastValue(doctorList, '.f-date') || '';
     const defaultArea = lastValue(doctorList, '.f-area');
     const row = makeRow(`
-        <div class="field" style="flex:0 1 170px"><label class="label">Date <span class="req">*</span></label>
-            <input type="hidden" class="f-date" name="d_date_${idx}" value="${defaultDate}"></div>
         <div class="field" style="flex:1 1 190px"><label class="label">Doctor <span class="req">*</span></label>
             <select class="select f-doc" name="d_doc_${idx}" required>
                 <option value="">Select doctor</option>
@@ -301,7 +310,6 @@ function renderDoctorEntry(initialDate) {
     row.addEventListener('input', syncDoctorEntries);
     row.addEventListener('change', syncDoctorEntries);
     doctorList.appendChild(row);
-    bsDateAttach(row.querySelector('.f-date'), { defaultToday: true });
     syncDoctorEntries();
 }
 
@@ -309,7 +317,7 @@ function syncDoctorEntries() {
     if (noDoctorCheck.checked) { doctorHidden.value = '[]'; return; }
     const rows = doctorList.querySelectorAll(':scope > div');
     doctorHidden.value = JSON.stringify([...rows].map(r => ({
-        report_date:          r.querySelector('.f-date')?.value  || '',
+        report_date:          globalDateInput.value      || '',
         doctor:               r.querySelector('.f-doc')?.value   || '',
         actual_working_place: r.querySelector('.f-area')?.value  || '',
         call_time:            r.querySelector('.f-time')?.value  || '',
@@ -330,13 +338,10 @@ const chemistList = document.getElementById('chemist-entry-list');
 const chemistHidden = document.getElementById('id_chemist_entries');
 let chemistIdx = 0;
 
-function renderChemistEntry(initialDate) {
+function renderChemistEntry() {
     const idx = chemistIdx++;
-    const defaultDate = initialDate || lastValue(chemistList, '.f-date') || lastValue(doctorList, '.f-date') || '';
     const defaultArea = lastValue(chemistList, '.f-area');
     const row = makeRow(`
-        <div class="field" style="flex:0 1 170px"><label class="label">Date <span class="req">*</span></label>
-            <input type="hidden" class="f-date" name="c_date_${idx}" value="${defaultDate}"></div>
         <div class="field" style="flex:1 1 190px"><label class="label">Chemist <span class="req">*</span></label>
             <select class="select f-name" name="c_name_${idx}" required>
                 <option value="">Select chemist</option>
@@ -355,14 +360,13 @@ function renderChemistEntry(initialDate) {
     row.addEventListener('input', syncChemistEntries);
     row.addEventListener('change', syncChemistEntries);
     chemistList.appendChild(row);
-    bsDateAttach(row.querySelector('.f-date'), { defaultToday: true });
     syncChemistEntries();
 }
 
 function syncChemistEntries() {
     const rows = chemistList.querySelectorAll(':scope > div');
     chemistHidden.value = JSON.stringify([...rows].map(r => ({
-        report_date: r.querySelector('.f-date')?.value || '',
+        report_date: globalDateInput.value     || '',
         name:        r.querySelector('.f-name')?.value || '',
         area:        r.querySelector('.f-area')?.value || '',
         call_time:   r.querySelector('.f-time')?.value || '',
@@ -376,7 +380,7 @@ document.getElementById('add-chemist-btn').addEventListener('click', () => {
                     text: 'Ask HR to add chemists first (HR Actions → Add chemist).' });
         return;
     }
-    renderChemistEntry('');
+    renderChemistEntry();
 });
 document.getElementById('clear-chemist-btn').addEventListener('click', () => {
     chemistList.innerHTML = ''; chemistHidden.value = '[]'; updateNav();
@@ -387,13 +391,10 @@ const stockistList = document.getElementById('stockist-entry-list');
 const stockistHidden = document.getElementById('id_stockist_entries');
 let stockistIdx = 0;
 
-function renderStockistEntry(initialDate) {
+function renderStockistEntry() {
     const idx = stockistIdx++;
-    const defaultDate = initialDate || lastValue(stockistList, '.f-date') || lastValue(doctorList, '.f-date') || '';
     const defaultArea = lastValue(stockistList, '.f-area');
     const row = makeRow(`
-        <div class="field" style="flex:0 1 170px"><label class="label">Date <span class="req">*</span></label>
-            <input type="hidden" class="f-date" name="s_date_${idx}" value="${defaultDate}"></div>
         <div class="field" style="flex:1 1 190px"><label class="label">Stockist <span class="req">*</span></label>
             <select class="select f-name" name="s_name_${idx}" required>
                 <option value="">Select stockist</option>
@@ -412,14 +413,13 @@ function renderStockistEntry(initialDate) {
     row.addEventListener('input', syncStockistEntries);
     row.addEventListener('change', syncStockistEntries);
     stockistList.appendChild(row);
-    bsDateAttach(row.querySelector('.f-date'), { defaultToday: true });
     syncStockistEntries();
 }
 
 function syncStockistEntries() {
     const rows = stockistList.querySelectorAll(':scope > div');
     stockistHidden.value = JSON.stringify([...rows].map(r => ({
-        report_date: r.querySelector('.f-date')?.value || '',
+        report_date: globalDateInput.value     || '',
         name:        r.querySelector('.f-name')?.value || '',
         area:        r.querySelector('.f-area')?.value || '',
         call_time:   r.querySelector('.f-time')?.value || '',
@@ -433,14 +433,20 @@ document.getElementById('add-stockist-btn').addEventListener('click', () => {
                     text: 'Ask HR to add stockists first (HR Actions → Add stockist).' });
         return;
     }
-    renderStockistEntry('');
+    renderStockistEntry();
 });
 document.getElementById('clear-stockist-btn').addEventListener('click', () => {
     stockistList.innerHTML = ''; stockistHidden.value = '[]'; updateNav();
 });
 
-// ── Seed first doctor row with pre-selected date ─────────────────────────────
-const initialDate = "{{ initial_date }}";
-renderDoctorEntry(initialDate);
+// ── Global date: changing it re-tags every already-added entry ──────────────
+globalDateInput.addEventListener('input', () => {
+    syncDoctorEntries();
+    syncChemistEntries();
+    syncStockistEntries();
+});
+
+// ── Seed first doctor row ─────────────────────────────────────────────────────
+renderDoctorEntry();
 </script>
 {% endblock %}

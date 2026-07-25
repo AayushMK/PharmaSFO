@@ -226,7 +226,7 @@ def daily_coverage_calendar(request, year=None, month=None):
 @login_required
 @never_cache
 def add_daily_coverage(request, selected_date=None):
-    initial_date = selected_date or request.GET.get("date") or ""
+    initial_date = selected_date or request.GET.get("date") or timezone.localdate().isoformat()
 
     form_error = None
 
