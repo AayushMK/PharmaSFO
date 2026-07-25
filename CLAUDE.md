@@ -168,7 +168,7 @@ PharmSFAO/
 ### DailyCoverage (daily_coverage.DailyCoverage)
 - `created_by` — FK to User (nullable)
 - `report_date` — DateField
-- `work_day` — choices: full_day / half_day / night_transit / meeting (default full_day); one **required** "Working day" select on the add form applies to all doctor entries in that submission
+- `work_day` — choices: full_day / half_day / night_transit / meeting (default full_day); one **required** "Working day" select on the add form applies to all doctor entries in that submission; both it and "No Doctor Coverage Available" are scoped to the single Date field described below (they read oddly as "per submission" settings otherwise)
 - `doctor` — FK to Doctor (PROTECT)
 - `actual_working_place` — FK to Area (PROTECT)
 - `call_time` — TimeField
@@ -207,6 +207,7 @@ Defined in `reports/views.py` as `SUPER_CORE_MAX = 25`, `CORE_MAX = 75`, `VISIT_
 6. All coverage (doctor/chemist/stockist) can be edited/deleted within 2 days from Coverage records; calendar shows "Added (n)" badge (doctor rows only) linking to list — the badge swaps its dot for a lock icon (+ tooltip and legend entry) once every entry on that day is past the edit window
 7. **Every non-muted calendar day is clickable** (`calendar.html`) except a locked "Added" day: approved days and "Added" days not yet locked go to Add Daily Coverage (`?date=`); "Added" is a `<div data-cell-href>` — its whole area targets Add Daily Coverage while the inner "Added (n)" badge keeps its own link to Coverage records, told apart by a delegated click/keydown handler (`e.target.closest('a')` wins) so the nested link isn't swallowed; pending and no-plan days are a plain `<a>` (new `.cal__cell--clickable` in `app.css`, since Lumo's `.cal__cell--approved` is semantically "approved") to Add Tour Plan (`?date=`), which reads that param in `add_tour_plan.html`'s JS to preset the first row's date (only the first — "Add another day" keeps incrementing from the last row as before)
 8. The add form walks Doctor → Chemist → Stockist with a footer Next button; Next and Save All stay disabled until every added row's required fields are complete (client-side; server re-validates)
+9. **One Date field for the whole add form**, shown once above the tabs (`initial_date` — from `?date=`/`selected_date`, else defaults server-side to today via `timezone.localdate()`; the page copy is singular — "your ... visits for the day" — this was always the intent). Doctor/Chemist/Stockist entry rows no longer have their own date picker; every entry (any tab) reads `report_date` from this one field at sync time, so adding several doctors (or chemists, or stockists) always means several people on the *same* day. Changing the date afterward re-tags every already-added row. Server-side is untouched — each entry in the posted JSON still carries its own `report_date` and is validated against `approved_dates` independently; the client now just always sends the same value for all of them.
 
 ## API Endpoints (Django Ninja)
 - `POST /api/token/pair` — Get JWT access + refresh tokens
