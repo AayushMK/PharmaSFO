@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block title %}Employees - PharmaSFO{% endblock %}
+{% block legacy_css %}{% endblock %}
+{% block breadcrumb %}<span>HR</span><span class="sep">/</span><span class="current">Employees</span>{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Employees</h1>
+    <p class="page-sub">Everyone with a login. Deactivate to block access without losing their history; delete is only available once deactivated.</p>
+  </div>
+  <div class="page-actions">
+    <a href="{% url 'add_user' %}" class="btn btn--primary">
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+      Add employee
+    </a>
+  </div>
+</div>
+
+{% if employees %}
+<div class="table-toolbar">
+  <div class="table-toolbar__filters">
+    <input type="search" id="employee-search" class="input" style="width:min(320px, 100%)"
+           placeholder="Search by name, username, email, or position" aria-label="Search employees">
+  </div>
+  <span class="t-caption" id="employee-count">{{ employees|length }} employee{{ employees|length|pluralize }}</span>
+</div>
+
+<div class="table-wrap">
+  <table class="table" id="employee-table">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Email</th>
+        <th>Position</th>
+        <th>Status</th>
+        <th class="col-actions">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for employee in employees %}
+      <tr data-search="{{ employee.get_full_name|default:''|lower }} {{ employee.username|lower }} {{ employee.email|default:''|lower }} {{ employee.get_type_display|lower }}">
+        <td>
+          <div class="cell-strong">{{ employee.get_full_name|default:employee.username }}</div>
+          <div class="cell-sub">@{{ employee.username }}</div>
+        </td>
+        <td>{% if employee.email %}<a href="mailto:{{ employee.email }}">{{ employee.email }}</a>{% else %}<span class="t-muted">—</span>{% endif %}</td>
+        <td>{{ employee.get_type_display }}</td>
+        <td>
+          {% if employee.is_active %}<span class="badge badge--success">Active</span>
+          {% else %}<span class="badge badge--neutral">Inactive</span>{% endif %}
+        </td>
+        <td class="col-actions">
+          <div style="display:inline-flex; gap:var(--space-2)">
+            <a href="{% url 'edit_user' employee.pk %}" class="btn btn--secondary btn--sm">Edit</a>
+            {% if employee.is_active %}
+              <form method="post" action="{% url 'deactivate_user' employee.pk %}"
+                    style="display:inline" onsubmit="return confirm('Deactivate {{ employee.username|escapejs }}? They will be logged out and unable to log in until reactivated.');">
+                {% csrf_token %}
+                <button type="submit" class="btn btn--danger btn--sm">Deactivate</button>
+              </form>
+            {% else %}
+              <form method="post" action="{% url 'reactivate_user' employee.pk %}"
+                    style="display:inline" onsubmit="return confirm('Reactivate {{ employee.username|escapejs }}?');">
+                {% csrf_token %}
+                <button type="submit" class="btn btn--secondary btn--sm">Reactivate</button>
+              </form>
+              <a href="{% url 'delete_user' employee.pk %}" class="btn btn--danger btn--sm">Delete</a>
+            {% endif %}
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <div class="empty" id="employee-no-results" style="display:none">
+    <div class="empty__glyph"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></div>
+    <div class="empty__title">No matching employees</div>
+    <div class="empty__text">Try a different name, username, email, or position.</div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const search = document.getElementById('employee-search');
+  const rows = Array.from(document.querySelectorAll('#employee-table tbody tr'));
+  const count = document.getElementById('employee-count');
+  const noResults = document.getElementById('employee-no-results');
+  const table = document.getElementById('employee-table');
+  const total = rows.length;
+
+  search.addEventListener('input', function () {
+    const q = this.value.toLowerCase().trim();
+    let visible = 0;
+    rows.forEach(function (row) {
+      const show = !q || row.dataset.search.indexOf(q) !== -1;
+      row.style.display = show ? '' : 'none';
+      if (show) visible++;
+    });
+    count.textContent = q ? visible + ' of ' + total + ' employees' : total + ' employee' + (total === 1 ? '' : 's');
+    table.style.display = visible ? '' : 'none';
+    noResults.style.display = visible ? 'none' : '';
+  });
+})();
+</script>
+{% else %}
+<div class="card">
+  <div class="card__body">
+    <div class="empty">
+      <div class="empty__glyph"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+      <div class="empty__title">No employees yet</div>
+      <div class="empty__text">Add the first employee to get started.</div>
+      <div class="empty__actions"><a href="{% url 'add_user' %}" class="btn btn--primary btn--sm">Add employee</a></div>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

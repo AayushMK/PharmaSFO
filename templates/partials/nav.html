@@ -99,9 +99,9 @@ data-collapsible click handler does the open/close toggling in both contexts).
       <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.27 6.96L12 12.01l8.73-5.05"/><path d="M12 22.08V12"/></svg>
       <span class="nav-item__label">Stockists</span>
     </a>
-    <a class="nav-item{% if url_name == 'add_user' %} is-active{% endif %}" href="{% url 'add_user' %}">
+    <a class="nav-item{% if url_name == 'user_list' or url_name == 'add_user' or url_name == 'edit_user' or url_name == 'delete_user' %} is-active{% endif %}" href="{% url 'user_list' %}">
       <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg>
-      <span class="nav-item__label">Add employee</span>
+      <span class="nav-item__label">Employees</span>
     </a>
   </div></div>
 </div>

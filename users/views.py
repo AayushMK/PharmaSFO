@@ -5,16 +5,17 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.db.models import Count
-from django.shortcuts import redirect, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.cache import never_cache
 
-from daily_coverage.models import DailyCoverage
+from daily_coverage.models import ChemistCoverage, DailyCoverage, StockistCoverage
 from doctor_employee_relation.models import DoctorEmployeeRelation
 from reports.views import CATEGORY_LABELS, VISIT_TARGETS, _doctor_category
 from tour_plans.models import TourPlan
 
-from .forms import UserCreateForm
+from .forms import UserCreateForm, UserEditForm
+from .models import User
 
 
 def _can_manage_users(user):
@@ -38,11 +39,116 @@ def add_user(request):
                 f"{new_user.get_full_name() or new_user.username} "
                 f"({new_user.get_type_display()}) added. They can log in now.",
             )
-            return redirect("add_user")
+            return redirect("user_list")
     else:
         form = UserCreateForm()
 
     return render(request, "users/add_user.html", {"form": form})
+
+
+@login_required
+@never_cache
+def user_list(request):
+    if not _can_manage_users(request.user):
+        raise PermissionDenied
+
+    employees = User.objects.all().order_by("first_name", "last_name", "username")
+    return render(request, "users/user_list.html", {"employees": employees})
+
+
+@login_required
+@never_cache
+def edit_user(request, pk):
+    if not _can_manage_users(request.user):
+        raise PermissionDenied
+
+    employee = get_object_or_404(User, pk=pk)
+    if request.method == "POST":
+        form = UserEditForm(request.POST, instance=employee)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f"{employee.get_full_name() or employee.username} updated.")
+            return redirect("user_list")
+    else:
+        form = UserEditForm(instance=employee)
+
+    return render(request, "users/edit_user.html", {"form": form, "employee": employee})
+
+
+@login_required
+def deactivate_user(request, pk):
+    if not _can_manage_users(request.user):
+        raise PermissionDenied
+
+    employee = get_object_or_404(User, pk=pk)
+    if employee.pk == request.user.pk:
+        messages.error(request, "You can't deactivate your own account.")
+        return redirect("user_list")
+
+    if request.method == "POST":
+        employee.is_active = False
+        employee.save(update_fields=["is_active"])
+        messages.success(
+            request,
+            f"{employee.get_full_name() or employee.username} deactivated. They can no longer log in.",
+        )
+
+    return redirect("user_list")
+
+
+@login_required
+def reactivate_user(request, pk):
+    if not _can_manage_users(request.user):
+        raise PermissionDenied
+
+    employee = get_object_or_404(User, pk=pk)
+    if request.method == "POST":
+        employee.is_active = True
+        employee.save(update_fields=["is_active"])
+        messages.success(request, f"{employee.get_full_name() or employee.username} reactivated.")
+
+    return redirect("user_list")
+
+
+@login_required
+@never_cache
+def delete_user(request, pk):
+    if not _can_manage_users(request.user):
+        raise PermissionDenied
+
+    employee = get_object_or_404(User, pk=pk)
+    if employee.pk == request.user.pk:
+        messages.error(request, "You can't delete your own account.")
+        return redirect("user_list")
+
+    if employee.is_active:
+        messages.error(request, "Deactivate this account before deleting it.")
+        return redirect("user_list")
+
+    record_counts = {
+        "tour plan": TourPlan.objects.filter(created_by=employee).count(),
+        "doctor assignment": DoctorEmployeeRelation.objects.filter(employee=employee).count(),
+        "daily coverage visit": DailyCoverage.objects.filter(created_by=employee).count(),
+        "chemist coverage visit": ChemistCoverage.objects.filter(created_by=employee).count(),
+        "stockist coverage visit": StockistCoverage.objects.filter(created_by=employee).count(),
+    }
+    record_counts = {label: n for label, n in record_counts.items() if n}
+
+    if request.method == "POST":
+        name = employee.get_full_name() or employee.username
+        employee.delete()
+        messages.success(request, f"{name} permanently deleted.")
+        return redirect("user_list")
+
+    return render(
+        request,
+        "users/delete_user.html",
+        {
+            "employee": employee,
+            "record_counts": record_counts,
+            "total_records": sum(record_counts.values()),
+        },
+    )
 
 
 def _month_visit_count(user, year, month):

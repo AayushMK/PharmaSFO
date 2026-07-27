@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block title %}Delete Employee - PharmaSFO{% endblock %}
+{% block legacy_css %}{% endblock %}
+{% block breadcrumb %}<span>HR</span><span class="sep">/</span><span>Employees</span><span class="sep">/</span><span class="current">Delete</span>{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Delete {{ employee.get_full_name|default:employee.username }}</h1>
+    <p class="page-sub">@{{ employee.username }} &middot; {{ employee.get_type_display }} &middot; deactivated</p>
+  </div>
+</div>
+
+{% if record_counts %}
+<div class="alert alert--warning" style="margin-bottom:var(--space-6)">
+  <svg class="alert__icon ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 16H3z"/><path d="M12 10v4M12 17h.01"/></svg>
+  <div class="alert__body">
+    <div class="alert__title">This account has {{ total_records }} logged record{{ total_records|pluralize }}</div>
+    <div class="alert__text">
+      Deleting {{ employee.get_full_name|default:employee.username }} also permanently deletes:
+      <ul style="margin:var(--space-2) 0 0; padding-left:var(--space-5)">
+        {% for label, count in record_counts.items %}
+        <li>{{ count }} {{ label }}{{ count|pluralize }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<div class="alert alert--danger" style="margin-bottom:var(--space-6)">
+  <svg class="alert__icon ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6M9 9l6 6"/></svg>
+  <div class="alert__body">
+    <div class="alert__title">This can't be undone</div>
+    <div class="alert__text">The account and everything listed above will be permanently erased.</div>
+  </div>
+</div>
+
+<div class="card" style="max-width:560px">
+  <div class="card__body">
+    <label class="label" for="confirm-username-input">
+      Type <strong>{{ employee.username }}</strong> to confirm
+    </label>
+    <input type="text" id="confirm-username-input" class="input" autocomplete="off" autocapitalize="off" spellcheck="false" style="margin-top:var(--space-2)">
+  </div>
+</div>
+
+<form method="post" id="delete-user-form">
+  {% csrf_token %}
+</form>
+<div class="row" style="gap:var(--space-3); margin-top:var(--space-4)">
+  <a href="{% url 'user_list' %}" class="btn btn--ghost">Cancel</a>
+  <button type="submit" form="delete-user-form" id="confirm-delete-btn" class="btn btn--danger" disabled>
+    Delete permanently
+  </button>
+</div>
+
+<script>
+(function () {
+  var expected = "{{ employee.username|escapejs }}";
+  var input = document.getElementById('confirm-username-input');
+  var btn = document.getElementById('confirm-delete-btn');
+  function sync() { btn.disabled = input.value !== expected; }
+  input.addEventListener('input', sync);
+  sync();
+})();
+</script>
+{% endblock %}
