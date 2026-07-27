@@ -52,11 +52,76 @@ def _add_partner(request, form_class, kind):
         if form.is_valid():
             partner = form.save()
             messages.success(request, f"{kind} “{partner.name}” added to the directory.")
-            return redirect(f"add_{kind.lower()}")
+            return redirect(f"{kind.lower()}_list")
     else:
         form = form_class()
 
-    return render(request, "daily_coverage/add_partner.html", {"form": form, "kind": kind})
+    return render(
+        request,
+        "daily_coverage/add_partner.html",
+        {"form": form, "kind": kind, "list_url": f"{kind.lower()}_list"},
+    )
+
+
+def _partner_list(request, model, kind):
+    """Shared HR view listing Chemist / Stockist master entries."""
+    if not _can_manage_directory(request.user):
+        raise PermissionDenied
+
+    partners = model.objects.select_related("area").order_by("name")
+    kind_lower = kind.lower()
+    return render(
+        request,
+        "daily_coverage/partner_list.html",
+        {
+            "partners": partners,
+            "kind": kind,
+            "add_url": f"add_{kind_lower}",
+            "edit_url": f"edit_{kind_lower}",
+            "delete_url": f"delete_{kind_lower}",
+        },
+    )
+
+
+def _edit_partner(request, model, form_class, pk, kind):
+    """Shared HR view for editing a Chemist / Stockist master entry."""
+    if not _can_manage_directory(request.user):
+        raise PermissionDenied
+
+    partner = get_object_or_404(model, pk=pk)
+    if request.method == "POST":
+        form = form_class(request.POST, instance=partner)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f"{kind} “{partner.name}” updated.")
+            return redirect(f"{kind.lower()}_list")
+    else:
+        form = form_class(instance=partner)
+
+    return render(
+        request,
+        "daily_coverage/edit_partner.html",
+        {"form": form, "kind": kind, "partner": partner, "list_url": f"{kind.lower()}_list"},
+    )
+
+
+def _delete_partner(request, model, pk, kind):
+    """Shared HR view for deleting a Chemist / Stockist master entry.
+
+    Unlike Doctor, ChemistCoverage/StockistCoverage store the name as plain
+    text (no FK), so there's no cascade/protect fallout to confirm — a
+    same-page JS confirm() before the POST is enough.
+    """
+    if not _can_manage_directory(request.user):
+        raise PermissionDenied
+
+    partner = get_object_or_404(model, pk=pk)
+    if request.method == "POST":
+        name = partner.name
+        partner.delete()
+        messages.success(request, f"{kind} “{name}” removed from the directory.")
+
+    return redirect(f"{kind.lower()}_list")
 
 
 @login_required
@@ -69,6 +134,40 @@ def add_chemist(request):
 @never_cache
 def add_stockist(request):
     return _add_partner(request, StockistForm, "Stockist")
+
+
+@login_required
+@never_cache
+def chemist_list(request):
+    return _partner_list(request, Chemist, "Chemist")
+
+
+@login_required
+@never_cache
+def edit_chemist(request, pk):
+    return _edit_partner(request, Chemist, ChemistForm, pk, "Chemist")
+
+
+@login_required
+def delete_chemist(request, pk):
+    return _delete_partner(request, Chemist, pk, "Chemist")
+
+
+@login_required
+@never_cache
+def stockist_list(request):
+    return _partner_list(request, Stockist, "Stockist")
+
+
+@login_required
+@never_cache
+def edit_stockist(request, pk):
+    return _edit_partner(request, Stockist, StockistForm, pk, "Stockist")
+
+
+@login_required
+def delete_stockist(request, pk):
+    return _delete_partner(request, Stockist, pk, "Stockist")
 
 
 @login_required

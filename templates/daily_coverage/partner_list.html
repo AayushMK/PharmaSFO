@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block title %}{{ kind }}s - PharmaSFO{% endblock %}
+{% block legacy_css %}{% endblock %}
+{% block breadcrumb %}<span>HR</span><span class="sep">/</span><span class="current">{{ kind }}s</span>{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">{{ kind }}s</h1>
+    <p class="page-sub">Master directory of {{ kind|lower }}s across all areas. Reps pick from this list when logging daily coverage.</p>
+  </div>
+  <div class="page-actions">
+    <a href="{% url add_url %}" class="btn btn--primary">
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+      Add {{ kind|lower }}
+    </a>
+  </div>
+</div>
+
+{% if partners %}
+<div class="table-toolbar">
+  <div class="table-toolbar__filters">
+    <input type="search" id="partner-search" class="input" style="width:min(320px, 100%)"
+           placeholder="Search by name, area, or phone" aria-label="Search {{ kind|lower }}s">
+  </div>
+  <span class="t-caption" id="partner-count">{{ partners|length }} {{ kind|lower }}{{ partners|length|pluralize }}</span>
+</div>
+
+<div class="table-wrap">
+  <table class="table" id="partner-table">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Area</th>
+        <th>Phone</th>
+        <th class="col-actions">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for partner in partners %}
+      <tr data-search="{{ partner.name|lower }} {{ partner.area.name|lower }} {{ partner.phone|default:''|lower }}">
+        <td><div class="cell-strong">{{ partner.name }}</div></td>
+        <td>{{ partner.area.name }}</td>
+        <td>{% if partner.phone %}<span class="t-mono">{{ partner.phone }}</span>{% else %}<span class="t-muted">—</span>{% endif %}</td>
+        <td class="col-actions">
+          <div style="display:inline-flex; gap:var(--space-2)">
+            <a href="{% url edit_url partner.pk %}" class="btn btn--secondary btn--sm">Edit</a>
+            <form method="post" action="{% url delete_url partner.pk %}"
+                  style="display:inline" onsubmit="return confirm('Remove {{ partner.name|escapejs }} from the directory?');">
+              {% csrf_token %}
+              <button type="submit" class="btn btn--danger btn--sm">Delete</button>
+            </form>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <div class="empty" id="partner-no-results" style="display:none">
+    <div class="empty__glyph"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></div>
+    <div class="empty__title">No matching {{ kind|lower }}s</div>
+    <div class="empty__text">Try a different name, area, or phone number.</div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const search = document.getElementById('partner-search');
+  const rows = Array.from(document.querySelectorAll('#partner-table tbody tr'));
+  const count = document.getElementById('partner-count');
+  const noResults = document.getElementById('partner-no-results');
+  const table = document.getElementById('partner-table');
+  const total = rows.length;
+
+  search.addEventListener('input', function () {
+    const q = this.value.toLowerCase().trim();
+    let visible = 0;
+    rows.forEach(function (row) {
+      const show = !q || row.dataset.search.indexOf(q) !== -1;
+      row.style.display = show ? '' : 'none';
+      if (show) visible++;
+    });
+    count.textContent = q ? visible + ' of ' + total + ' {{ kind|lower }}{{ partners|length|pluralize }}' : total + ' {{ kind|lower }}' + (total === 1 ? '' : 's');
+    table.style.display = visible ? '' : 'none';
+    noResults.style.display = visible ? 'none' : '';
+  });
+})();
+</script>
+{% else %}
+<div class="card">
+  <div class="card__body">
+    <div class="empty">
+      <div class="empty__glyph"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+      <div class="empty__title">No {{ kind|lower }}s yet</div>
+      <div class="empty__text">Add the first {{ kind|lower }} to start building the directory.</div>
+      <div class="empty__actions"><a href="{% url add_url %}" class="btn btn--primary btn--sm">Add {{ kind|lower }}</a></div>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
