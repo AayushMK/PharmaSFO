@@ -12,7 +12,15 @@ from reports.views import (
     yearly_activity_report,
     yearly_activity_report_excel,
 )
-from users.views import add_user, dashboard
+from users.views import (
+    add_user,
+    dashboard,
+    deactivate_user,
+    delete_user,
+    edit_user,
+    reactivate_user,
+    user_list,
+)
 from daily_coverage.views import (
     add_chemist,
     add_daily_coverage,
@@ -60,7 +68,12 @@ urlpatterns = [
     path("stockists/add/", add_stockist, name="add_stockist"),
     path("stockists/<int:pk>/edit/", edit_stockist, name="edit_stockist"),
     path("stockists/<int:pk>/delete/", delete_stockist, name="delete_stockist"),
+    path("users/", user_list, name="user_list"),
     path("users/add/", add_user, name="add_user"),
+    path("users/<int:pk>/edit/", edit_user, name="edit_user"),
+    path("users/<int:pk>/deactivate/", deactivate_user, name="deactivate_user"),
+    path("users/<int:pk>/reactivate/", reactivate_user, name="reactivate_user"),
+    path("users/<int:pk>/delete/", delete_user, name="delete_user"),
     path(
         "doctor_employee_relation/",
         doctor_employee_relation_list,
