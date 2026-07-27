@@ -1,14 +1,14 @@
 {% extends "base.html" %}
 
-{% block title %}Add {{ kind }} - PharmaSFO{% endblock %}
+{% block title %}Edit {{ kind }} - PharmaSFO{% endblock %}
 {% block legacy_css %}{% endblock %}
-{% block breadcrumb %}<span>HR</span><span class="sep">/</span><span>{{ kind }}s</span><span class="sep">/</span><span class="current">Add</span>{% endblock %}
+{% block breadcrumb %}<span>HR</span><span class="sep">/</span><span>{{ kind }}s</span><span class="sep">/</span><span class="current">Edit</span>{% endblock %}
 
 {% block content %}
 <div class="page-header">
   <div>
-    <h1 class="page-title">Add {{ kind }}</h1>
-    <p class="page-sub">Register a {{ kind|lower }} in the directory. Reps pick from it when logging daily coverage.</p>
+    <h1 class="page-title">Edit {{ partner.name }}</h1>
+    <p class="page-sub">Update this {{ kind|lower }}'s directory details.</p>
   </div>
 </div>
 
@@ -21,7 +21,7 @@
 
 <div class="card" style="max-width:720px">
   <div class="card__body">
-    <form method="post" id="add-partner-form">
+    <form method="post" id="edit-partner-form">
       {% csrf_token %}
       <div class="grid grid--2">
         <div class="field{% if form.name.errors %} is-error{% endif %}">
@@ -46,7 +46,7 @@
   <div class="card__footer">
     <a href="{% url list_url %}" class="btn btn--ghost">Cancel</a>
     <div class="spacer"></div>
-    <button type="submit" form="add-partner-form" class="btn btn--primary">Add {{ kind|lower }}</button>
+    <button type="submit" form="edit-partner-form" class="btn btn--primary">Save changes</button>
   </div>
 </div>
 {% endblock %}

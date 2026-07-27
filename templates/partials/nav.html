@@ -87,21 +87,17 @@ data-collapsible click handler does the open/close toggling in both contexts).
     <hr class="nav-sep">
     {% endif %}
     <div class="nav-label">Manage</div>
-    <a class="nav-item{% if url_name == 'doctor_list' %} is-active{% endif %}" href="{% url 'doctor_list' %}">
+    <a class="nav-item{% if url_name == 'doctor_list' or url_name == 'add_doctor' or url_name == 'edit_doctor' or url_name == 'delete_doctor' %} is-active{% endif %}" href="{% url 'doctor_list' %}">
       <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M2 7h20M2 17h20"/></svg>
-      <span class="nav-item__label">Doctor directory</span>
+      <span class="nav-item__label">Doctors</span>
     </a>
-    <a class="nav-item{% if url_name == 'add_doctor' %} is-active{% endif %}" href="{% url 'add_doctor' %}">
-      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
-      <span class="nav-item__label">Add doctor</span>
-    </a>
-    <a class="nav-item{% if url_name == 'add_chemist' %} is-active{% endif %}" href="{% url 'add_chemist' %}">
+    <a class="nav-item{% if url_name == 'chemist_list' or url_name == 'add_chemist' or url_name == 'edit_chemist' %} is-active{% endif %}" href="{% url 'chemist_list' %}">
       <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L4 7v13a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7l-2-5z"/><path d="M4 7h16"/><path d="M16 11a4 4 0 0 1-8 0"/></svg>
-      <span class="nav-item__label">Add chemist</span>
+      <span class="nav-item__label">Chemists</span>
     </a>
-    <a class="nav-item{% if url_name == 'add_stockist' %} is-active{% endif %}" href="{% url 'add_stockist' %}">
+    <a class="nav-item{% if url_name == 'stockist_list' or url_name == 'add_stockist' or url_name == 'edit_stockist' %} is-active{% endif %}" href="{% url 'stockist_list' %}">
       <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.27 6.96L12 12.01l8.73-5.05"/><path d="M12 22.08V12"/></svg>
-      <span class="nav-item__label">Add stockist</span>
+      <span class="nav-item__label">Stockists</span>
     </a>
     <a class="nav-item{% if url_name == 'add_user' %} is-active{% endif %}" href="{% url 'add_user' %}">
       <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg>
