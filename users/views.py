@@ -1,4 +1,5 @@
 import calendar
+from collections import defaultdict
 from datetime import timedelta
 
 from django.contrib import messages
@@ -149,6 +150,93 @@ def delete_user(request, pk):
             "total_records": sum(record_counts.values()),
         },
     )
+
+
+# Positions that sit outside the sales reporting tree — HR/Admin are staff
+# roles (HR already sees every report), so they are neither assigned a manager
+# nor offered as one.
+NON_TEAM_TYPES = {User.UserType.HR, User.UserType.ADMIN}
+
+
+def _team_users():
+    """All sales-line users (excludes HR/Admin/superusers), top position first."""
+    users = [
+        u for u in User.objects.select_related("manager").all()
+        if not u.is_superuser and u.type not in NON_TEAM_TYPES
+    ]
+    users.sort(key=lambda u: (
+        -u.hierarchy_level, u.first_name.lower(), u.last_name.lower(), u.username.lower()
+    ))
+    return users
+
+
+@login_required
+@never_cache
+def team_management(request):
+    if not _can_manage_users(request.user):
+        raise PermissionDenied
+
+    users = _team_users()
+    by_id = {u.pk: u for u in users}
+
+    if request.method == "POST":
+        changed = skipped = 0
+        for emp in users:
+            raw = (request.POST.get(f"manager_{emp.pk}") or "").strip()
+            new_manager_id = int(raw) if raw.isdigit() else None
+            if new_manager_id == emp.manager_id:
+                continue
+            if new_manager_id is not None:
+                manager = by_id.get(new_manager_id)
+                if (
+                    manager is None
+                    or manager.pk == emp.pk
+                    or manager.hierarchy_level <= emp.hierarchy_level
+                ):
+                    skipped += 1
+                    continue
+            emp.manager_id = new_manager_id
+            emp.save(update_fields=["manager"])
+            changed += 1
+
+        if changed:
+            messages.success(request, f"Updated team assignment for {changed} employee{'' if changed == 1 else 's'}.")
+        if skipped:
+            messages.error(request, f"{skipped} change{'' if skipped == 1 else 's'} skipped — a manager must hold a higher position than the employee.")
+        if not changed and not skipped:
+            messages.info(request, "No changes to save.")
+        return redirect("team_management")
+
+    # Per-employee row + the managers they may report to (higher position, active).
+    active_users = [u for u in users if u.is_active]
+    rows = [
+        {
+            "employee": emp,
+            "options": [m for m in active_users if m.hierarchy_level > emp.hierarchy_level],
+        }
+        for emp in users
+    ]
+
+    # Teams overview — each manager with at least one direct report.
+    reports_by_manager = defaultdict(list)
+    for u in users:
+        if u.manager_id:
+            reports_by_manager[u.manager_id].append(u)
+    for members in reports_by_manager.values():
+        members.sort(key=lambda u: (u.first_name.lower(), u.last_name.lower(), u.username.lower()))
+    teams = [
+        {"manager": mgr, "members": reports_by_manager[mgr.pk]}
+        for mgr in users if mgr.pk in reports_by_manager
+    ]
+    # Truly floating employees: no manager and not a manager themselves — only
+    # HR/superusers can see their reports until they're placed on a team.
+    unassigned = [u for u in users if not u.manager_id and u.pk not in reports_by_manager]
+
+    return render(request, "users/team_management.html", {
+        "rows": rows,
+        "teams": teams,
+        "unassigned": unassigned,
+    })
 
 
 def _month_visit_count(user, year, month):

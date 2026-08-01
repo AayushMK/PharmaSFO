@@ -19,6 +19,7 @@ from users.views import (
     delete_user,
     edit_user,
     reactivate_user,
+    team_management,
     user_list,
 )
 from daily_coverage.views import (
@@ -74,6 +75,7 @@ urlpatterns = [
     path("users/<int:pk>/deactivate/", deactivate_user, name="deactivate_user"),
     path("users/<int:pk>/reactivate/", reactivate_user, name="reactivate_user"),
     path("users/<int:pk>/delete/", delete_user, name="delete_user"),
+    path("teams/", team_management, name="team_management"),
     path(
         "doctor_employee_relation/",
         doctor_employee_relation_list,

@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+
+{% block title %}Teams - PharmaSFO{% endblock %}
+{% block legacy_css %}{% endblock %}
+{% block breadcrumb %}<span>HR</span><span class="sep">/</span><span class="current">Teams</span>{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Teams</h1>
+    <p class="page-sub">Assign who each employee reports to. A manager sees the reports of their whole team — direct reports and everyone beneath them in the chain. HR sees everyone.</p>
+  </div>
+</div>
+
+{% if unassigned %}
+<div class="alert alert--warning" style="margin-bottom:var(--space-6)">
+  <svg class="alert__icon ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 16H3z"/><path d="M12 10v4M12 17h.01"/></svg>
+  <div class="alert__body">
+    <div class="alert__title">{{ unassigned|length }} employee{{ unassigned|length|pluralize }} not on a team yet</div>
+    <div class="alert__text">
+      Until they report to someone, only HR can see their reports:
+      {% for u in unassigned %}<strong>{{ u.get_full_name|default:u.username }}</strong>{% if not forloop.last %}, {% endif %}{% endfor %}.
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- Teams overview -->
+<div class="card" style="margin-bottom:var(--space-6)">
+  <div class="card__body">
+    <h2 class="t-h4" style="margin:0 0 var(--space-4)">Current teams</h2>
+    {% if teams %}
+    <div class="grid grid--2" style="gap:var(--space-4)">
+      {% for team in teams %}
+      <div class="card" style="margin:0">
+        <div class="card__body">
+          <div class="cell-strong">{{ team.manager.get_full_name|default:team.manager.username }}</div>
+          <div class="cell-sub">{{ team.manager.get_type_display }} &middot; {{ team.members|length }} report{{ team.members|length|pluralize }}</div>
+          <ul style="margin:var(--space-3) 0 0; padding-left:var(--space-5)">
+            {% for m in team.members %}
+            <li>{{ m.get_full_name|default:m.username }} <span class="t-muted">— {{ m.get_type_display }}</span></li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty">
+      <div class="empty__glyph"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+      <div class="empty__title">No teams yet</div>
+      <div class="empty__text">Assign managers below to build your reporting structure.</div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Assignment table -->
+{% if rows %}
+<form method="post" id="team-form">
+  {% csrf_token %}
+  <div class="card">
+    <div class="card__body">
+      <div class="table-toolbar">
+        <div class="table-toolbar__filters">
+          <input type="search" id="team-search" class="input" style="width:min(320px, 100%)"
+                 placeholder="Search by name or position" aria-label="Search employees">
+        </div>
+        <span class="t-caption">Pick each employee's manager, then Save</span>
+      </div>
+      <div class="table-wrap">
+        <table class="table" id="team-table">
+          <thead>
+            <tr>
+              <th>Employee</th>
+              <th>Position</th>
+              <th>Reports to</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in rows %}
+            <tr data-search="{{ row.employee.get_full_name|default:''|lower }} {{ row.employee.username|lower }} {{ row.employee.get_type_display|lower }}">
+              <td data-label="Employee">
+                <div class="cell-strong">{{ row.employee.get_full_name|default:row.employee.username }}</div>
+                <div class="cell-sub">@{{ row.employee.username }}{% if not row.employee.is_active %} &middot; inactive{% endif %}</div>
+              </td>
+              <td data-label="Position">{{ row.employee.get_type_display }}</td>
+              <td data-label="Reports to">
+                {% if row.options %}
+                <select name="manager_{{ row.employee.pk }}" class="select">
+                  <option value="">— No manager —</option>
+                  {% for m in row.options %}
+                  <option value="{{ m.pk }}"{% if m.pk == row.employee.manager_id %} selected{% endif %}>{{ m.get_full_name|default:m.username }} ({{ m.get_type_display }})</option>
+                  {% endfor %}
+                </select>
+                {% else %}
+                <span class="t-muted">Top of the hierarchy — no higher manager</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        <div class="empty" id="team-no-results" style="display:none">
+          <div class="empty__glyph"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></div>
+          <div class="empty__title">No matching employees</div>
+          <div class="empty__text">Try a different name or position.</div>
+        </div>
+      </div>
+    </div>
+    <div class="card__footer">
+      <a href="{% url 'user_list' %}" class="btn btn--ghost">Cancel</a>
+      <div class="spacer"></div>
+      <button type="submit" class="btn btn--primary">Save assignments</button>
+    </div>
+  </div>
+</form>
+
+<script>
+(function () {
+  const search = document.getElementById('team-search');
+  const rows = Array.from(document.querySelectorAll('#team-table tbody tr'));
+  const table = document.getElementById('team-table');
+  const noResults = document.getElementById('team-no-results');
+  search.addEventListener('input', function () {
+    const q = this.value.toLowerCase().trim();
+    let visible = 0;
+    rows.forEach(function (row) {
+      const show = !q || row.dataset.search.indexOf(q) !== -1;
+      row.style.display = show ? '' : 'none';
+      if (show) visible++;
+    });
+    table.style.display = visible ? '' : 'none';
+    noResults.style.display = visible ? 'none' : '';
+  });
+})();
+</script>
+{% else %}
+<div class="card">
+  <div class="card__body">
+    <div class="empty">
+      <div class="empty__glyph"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+      <div class="empty__title">No employees to organise yet</div>
+      <div class="empty__text">Add employees first, then assign them to teams here.</div>
+      <div class="empty__actions"><a href="{% url 'add_user' %}" class="btn btn--primary btn--sm">Add employee</a></div>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
