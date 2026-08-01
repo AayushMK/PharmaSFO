@@ -114,9 +114,9 @@ function renderEntry(presetDate) {
                     ${userOptions.map(option => `<option value="${option.value}">${option.label}</option>`).join('')}
                 </select>
             </div>
-            <div class="field entry-fields__full">
+            <div class="field" style="flex:1 1 200px">
                 <label class="label">Remarks <span class="optional">(optional)</span></label>
-                <textarea class="textarea f-remarks" name="entries[${index}][remarks]" rows="2" placeholder="Any notes for this day…"></textarea>
+                <textarea class="textarea f-remarks" name="entries[${index}][remarks]" rows="1" placeholder="Any notes for this day…"></textarea>
             </div>
         </div>
     `;
