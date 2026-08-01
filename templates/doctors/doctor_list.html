@@ -24,7 +24,7 @@
 <div class="table-toolbar">
   <div class="table-toolbar__filters">
     <input type="search" id="doctor-search" class="input" style="width:min(320px, 100%)"
-           placeholder="Search by name, NMC, area, or contact" aria-label="Search doctors">
+           placeholder="Search by name, speciality, NMC, hospital, area, or contact" aria-label="Search doctors">
   </div>
   <span class="t-caption" id="doctor-count">{{ doctors|length }} doctor{{ doctors|length|pluralize }}</span>
 </div>
@@ -34,6 +34,7 @@
     <thead>
       <tr>
         <th>Doctor</th>
+        <th>Speciality</th>
         <th>NMC number</th>
         <th>Hospital</th>
         <th>Area</th>
@@ -43,13 +44,16 @@
     </thead>
     <tbody>
       {% for doctor in doctors %}
-      <tr data-search="{{ doctor.name|lower }} {{ doctor.nmc_number|lower }} {{ doctor.hospital.name|lower }} {{ doctor.area|lower }} {{ doctor.specialization|default:''|lower }} {{ doctor.phone|lower }} {{ doctor.email|lower }}">
+      <tr data-search="{{ doctor.name|lower }} {{ doctor.nmc_number|lower }} {{ doctor.hospital.name|lower }} {{ doctor.second_hospital|lower }} {{ doctor.area|lower }} {{ doctor.specialization|default:''|lower }} {{ doctor.phone|lower }} {{ doctor.email|lower }}">
         <td>
           <div class="cell-strong">Dr. {{ doctor.name }}</div>
-          {% if doctor.specialization %}<div class="cell-sub">{{ doctor.specialization }}</div>{% endif %}
         </td>
+        <td>{% if doctor.specialization %}{{ doctor.specialization }}{% else %}<span class="t-muted">—</span>{% endif %}</td>
         <td class="t-mono t-secondary">{{ doctor.nmc_number }}</td>
-        <td>{{ doctor.hospital.name }}</td>
+        <td>
+          {{ doctor.hospital.name }}
+          {% if doctor.second_hospital %}<div class="cell-sub">+ {{ doctor.second_hospital }}</div>{% endif %}
+        </td>
         <td>{{ doctor.area }}</td>
         <td>
           {% if doctor.phone %}<div class="t-mono">{{ doctor.phone }}</div>{% endif %}
