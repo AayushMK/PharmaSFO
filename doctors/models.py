@@ -28,6 +28,9 @@ class Doctor(models.Model):
     hospital = models.ForeignKey(
         Hospital, on_delete=models.PROTECT, related_name="doctors"
     )
+    # Secondary hospital/area free text (col G of the MSL universe import); the
+    # primary hospital is the normalized `hospital` FK above.
+    second_hospital = models.CharField(max_length=255, blank=True)
     area = models.CharField(max_length=255)
     specialization = models.CharField(max_length=255, blank=True)
     phone = models.CharField(max_length=20, blank=True)

@@ -33,3 +33,7 @@ TUNNEL_URL.txt
 tunnel_watchdog.log
 tunnel_watchdog.stderr.log
 tunnel_watchdog.stdout.log
+
+# Real doctor data (PII) — never commit
+MVTL MSL Universe.xlsx
+*.xlsx
