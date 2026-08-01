@@ -31,9 +31,10 @@ BS_MONTH_ABBR = ["Bai", "Jes", "Asa", "Shr", "Bha", "Asw",
 def _get_employee(request):
     """Resolve which employee's report to show.
 
-    Visibility follows the position hierarchy (users.User.TYPE_RANK): a user
-    sees their own reports plus those of anyone at a strictly lower position;
-    superusers see everyone. Requesting anyone outside that set 404s.
+    Visibility is team-scoped (users.User.viewable_report_users): a user sees
+    their own reports plus those of their entire downstream reporting team (via
+    the `manager` chain); HR and superusers see everyone. Requesting anyone
+    outside that set 404s.
     """
     viewer = request.user
     viewable = viewer.viewable_report_users()

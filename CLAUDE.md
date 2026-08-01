@@ -33,7 +33,7 @@ PharmSFAO/
 │   ├── admin.py            # UserAdmin with type in fieldsets
 │   ├── context_processors.py  # nav_counts — pending-approval counts for HR sidebar badges
 │   ├── forms.py            # UserCreateForm — HR onboarding form (Admin type excluded; HR type ⇒ is_staff)
-│   ├── views.py            # dashboard view (live stats, today's coverage, targets) + add_user (HR-only)
+│   ├── views.py            # dashboard view (live stats, today's coverage, targets) + HR-only: add/list/edit/deactivate/delete_user, team_management (assign managers)
 ├── doctors/                # Doctors app
 │   ├── models.py           # Doctor(name, nmc_number, area, specialization)
 │   ├── admin.py            # DoctorAdmin with search/filter
@@ -115,7 +115,8 @@ PharmSFAO/
 ### User (users.User)
 - Extends `AbstractUser` (has username, password, email, etc.)
 - `type` field — position, in **increasing hierarchy order**: MSO, Sr. MSO, DASM, ASM, Sr. ASM, DRSM, RSM, Sr. RSM, DSM, SM, Sr. SM, AGM, GM, Sr. GM, HR, Admin (default: MSO)
-- `TYPE_RANK` (position → rank), `hierarchy_level` property, and `viewable_report_users()` — self plus everyone at a strictly lower position (superusers see all)
+- `manager` — self-FK (`related_name="team_members"`, `on_delete=SET_NULL`), the higher-position person this employee reports to; forms the reporting tree. HR sets it on the Team management page (`/teams/`)
+- `TYPE_RANK` (position → rank), `hierarchy_level` property, and `viewable_report_users()` — **team-scoped**: self plus this user's entire downstream reporting subtree (all direct + indirect reports via `manager`, walked by `team_member_ids()`). HR-type users and superusers see everyone; employees with no manager are visible only to HR/superusers
 - Legacy types migrated in `users.0003`: MR → MSO, SGM → SR_GM
 - `AUTH_USER_MODEL = "users.User"` in settings
 
@@ -221,7 +222,7 @@ Defined in `reports/views.py` as `SUPER_CORE_MAX = 25`, `CORE_MAX = 75`, `VISIT_
 - Logout uses POST (Django 5+ requirement)
 - `@never_cache` on all authenticated views to prevent back-button access after logout
 - HR-only views check `user.is_superuser or (user.is_staff and user.type == "HR")` and raise `PermissionDenied`
-- **Reports:** hierarchy-based visibility via `_get_employee` (reports/views.py) — a user sees their own reports plus those of strictly lower positions; requesting anyone else 404s; template flag `can_view_others` shows the employee dropdown
+- **Reports:** team-scoped visibility via `_get_employee` (reports/views.py) → `User.viewable_report_users()` — a user sees their own reports plus their entire downstream reporting team (via the `manager` chain); HR/superusers see everyone; requesting anyone outside that set 404s; template flag `can_view_others` shows the employee dropdown
 
 ## Credentials (dev only)
 - **Admin login:** `admin` / `admin123` (type: GM, superuser)
@@ -235,6 +236,7 @@ Defined in `reports/views.py` as `SUPER_CORE_MAX = 25`, `CORE_MAX = 75`, `VISIT_
 - http://localhost:8000/chemists/add/ — HR: add a chemist to the directory
 - http://localhost:8000/stockists/add/ — HR: add a stockist to the directory
 - http://localhost:8000/users/add/ — HR: onboard a new employee (Admin position excluded; picking HR sets is_staff)
+- http://localhost:8000/teams/ — HR: Team management — assign each employee's manager (reporting chain); scopes report visibility to teams
 - http://localhost:8000/doctor_employee_relation/ — My assigned doctors (HR/superuser get an employee switcher to view anyone's list; `/<employee_id>/` variant)
 - http://localhost:8000/doctor_employee_relation/add/ — Request a doctor assignment
 - http://localhost:8000/review_requests/ — HR: pending doctor requests
