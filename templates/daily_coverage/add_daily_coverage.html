@@ -303,8 +303,8 @@ function renderDoctorEntry() {
                 <option value="Self" selected>Self</option>
                 ${workedWithOptions.map(o => `<option value="${esc(o)}">${esc(o)}</option>`).join('')}
             </select></div>
-        <div class="field entry-fields__full"><label class="label">Remarks <span class="optional">(optional)</span></label>
-            <textarea class="textarea f-rem" name="d_rem_${idx}" rows="2"></textarea></div>
+        <div class="field" style="flex:1 1 200px"><label class="label">Remarks <span class="optional">(optional)</span></label>
+            <textarea class="textarea f-rem" name="d_rem_${idx}" rows="1"></textarea></div>
     `, syncDoctorEntries, 'Entry ' + (idx + 1));
     row.querySelector('.f-area').value = defaultArea;
     row.addEventListener('input', syncDoctorEntries);

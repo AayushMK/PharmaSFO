@@ -244,8 +244,8 @@ button.nav-item {
    on desktop, so adding several entries isn't a long vertical scroll of
    mostly-empty label/control pairs. Individual field widths are set inline
    per row template (Date and Call Time stay narrow; Doctor/Products get more
-   room); a field marked .entry-fields__full (e.g. Remarks) always keeps its
-   own full-width line regardless of viewport. */
+   room). Remarks flows inline on the same wrapped line as the rest rather
+   than claiming its own full-width row. */
 .entry-fields { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--space-4); }
 @media (max-width: 860px) {
   .entry-fields { grid-template-columns: 1fr; }
@@ -253,5 +253,8 @@ button.nav-item {
 @media (min-width: 861px) {
   .entry-fields { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--space-3) var(--space-4); }
   .entry-fields > .field { min-width: 0; }
-  .entry-fields__full { flex: 1 1 100%; }
+  /* Remarks is a textarea (Lumo forces min-height:84px); on the shared desktop
+     line that dwarfs the single-line inputs, so match control height here and
+     let users drag it taller when they need to. */
+  .entry-fields .textarea { min-height: var(--control-height); height: var(--control-height); resize: vertical; }
 }
