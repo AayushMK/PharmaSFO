@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% load dc_tags %}
+
+{% block title %}Time Span Report - PharmaSFO{% endblock %}
+{% block legacy_css %}{% endblock %}
+{% block breadcrumb %}<span>Reports</span><span class="sep">/</span><span class="current">Time span</span>{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Time Span Report</h1>
+    <p class="page-sub">Activity totals and a per-day breakdown over any date range.</p>
+  </div>
+</div>
+
+<form method="get" class="table-toolbar">
+  <div class="table-toolbar__filters" style="align-items:flex-end">
+    <div class="field">
+      <label class="label" for="from-date">From</label>
+      <input type="date" name="from" id="from-date" class="input" style="width:170px" value="{{ from_str }}"
+             onchange="this.form.requestSubmit ? this.form.requestSubmit() : this.form.submit()">
+    </div>
+    <div class="field">
+      <label class="label" for="to-date">To</label>
+      <input type="date" name="to" id="to-date" class="input" style="width:170px" value="{{ to_str }}"
+             onchange="this.form.requestSubmit ? this.form.requestSubmit() : this.form.submit()">
+    </div>
+    {% if can_view_others %}
+    <div class="field">
+      <label class="label" for="report-employee">Employee</label>
+      <select name="employee_id" id="report-employee" class="select" style="width:240px"
+              onchange="this.form.requestSubmit ? this.form.requestSubmit() : this.form.submit()">
+        <option value="">Myself</option>
+        {% for emp in all_employees %}
+          <option value="{{ emp.pk }}" {% if emp.pk == selected_employee_id %}selected{% endif %}>
+            {{ emp.get_full_name|default:emp.username }} ({{ emp.get_type_display }})
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+    {% endif %}
+  </div>
+</form>
+
+{% if valid_range %}
+<div class="card" style="margin-bottom:var(--space-6)">
+  <div class="card__body" style="padding:var(--space-4) var(--space-6)">
+    <div class="grid grid--stats" style="gap:var(--space-4)">
+      <div><div class="t-eyebrow">Working days</div><div class="page-title" style="margin-top:var(--space-1)">{{ working_days }}</div></div>
+      <div><div class="t-eyebrow">Doctor calls</div><div class="page-title" style="margin-top:var(--space-1)">{{ totals.doctor }}</div></div>
+      <div><div class="t-eyebrow">Unique doctors</div><div class="page-title" style="margin-top:var(--space-1)">{{ unique_doctors }}</div></div>
+      <div><div class="t-eyebrow">Chemist calls</div><div class="page-title" style="margin-top:var(--space-1)">{{ totals.chemist }}</div></div>
+      <div><div class="t-eyebrow">Stockist calls</div><div class="page-title" style="margin-top:var(--space-1)">{{ totals.stockist }}</div></div>
+      <div><div class="t-eyebrow">Samples</div><div class="page-title" style="margin-top:var(--space-1)">{{ totals.samples }}</div></div>
+      <div><div class="t-eyebrow">Gifts</div><div class="page-title" style="margin-top:var(--space-1)">{{ totals.gifts }}</div></div>
+    </div>
+  </div>
+</div>
+
+{% if rows %}
+<div class="table-wrap">
+  <table class="table table--stack">
+    <thead>
+      <tr><th>Date</th><th>Doctor calls</th><th>Chemist calls</th><th>Stockist calls</th></tr>
+    </thead>
+    <tbody>
+      {% for row in rows %}
+      <tr>
+        <td data-label="Date" style="white-space:nowrap"><div>{{ row.date|bs_date }}</div><div class="cell-sub">{{ row.date|date:"j M Y" }}</div></td>
+        <td data-label="Doctor calls" class="t-mono">{{ row.doctor }}</td>
+        <td data-label="Chemist calls" class="t-mono">{{ row.chemist }}</td>
+        <td data-label="Stockist calls" class="t-mono">{{ row.stockist }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+    <tfoot>
+      <tr>
+        <td style="text-align:right; font-weight:600">Total</td>
+        <td class="t-mono" style="font-weight:600">{{ totals.doctor }}</td>
+        <td class="t-mono" style="font-weight:600">{{ totals.chemist }}</td>
+        <td class="t-mono" style="font-weight:600">{{ totals.stockist }}</td>
+      </tr>
+    </tfoot>
+  </table>
+</div>
+{% else %}
+<div class="card"><div class="card__body"><div class="empty">
+  <div class="empty__title">No activity in this range</div>
+  <div class="empty__text">Try a wider range or a different employee.</div>
+</div></div></div>
+{% endif %}
+
+{% else %}
+<div class="card"><div class="card__body"><div class="empty">
+  <div class="empty__glyph"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+  <div class="empty__title">Pick a date range</div>
+  <div class="empty__text">Choose a From and To date to see the activity summary.</div>
+</div></div></div>
+{% endif %}
+{% endblock %}

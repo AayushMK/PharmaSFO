@@ -7,8 +7,11 @@ from reports.views import (
     daily_activity_report,
     monthly_activity_report,
     monthly_activity_report_excel,
+    gift_report,
     monthly_target_report,
     monthly_target_report_excel,
+    sample_report,
+    time_span_report,
     yearly_activity_report,
     yearly_activity_report_excel,
 )
@@ -34,11 +37,19 @@ from daily_coverage.views import (
     delete_daily_coverage,
     delete_stockist,
     delete_stockist_coverage,
+    add_gift,
+    add_sample,
+    delete_gift,
+    delete_sample,
     edit_chemist,
     edit_chemist_coverage,
     edit_daily_coverage,
+    edit_gift,
+    edit_sample,
     edit_stockist,
     edit_stockist_coverage,
+    gift_list,
+    sample_list,
     stockist_list,
 )
 from doctors.views import add_doctor, delete_doctor, doctor_list, edit_doctor
@@ -50,6 +61,14 @@ from doctor_employee_relation.views import (
 )
 from tour_plans.views import add_tour_plan, hr_review_employee_tour_plans, hr_review_tour_plans, tour_plan_list
 from notifications.views import mark_all_read, mark_notification_read, notification_list
+from leaves.views import (
+    add_leave,
+    approve_leave,
+    delete_leave,
+    leave_list,
+    leave_review,
+    reject_leave,
+)
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -111,6 +130,23 @@ urlpatterns = [
     path("daily_coverage/add/", add_daily_coverage, name="add_daily_coverage"),
     path("daily_coverage/add/<str:selected_date>/", add_daily_coverage, name="add_daily_coverage_with_date"),
     path("daily_coverage/records/", daily_coverage_list, name="daily_coverage_list"),
+    path("samples/", sample_list, name="sample_list"),
+    path("samples/add/", add_sample, name="add_sample"),
+    path("samples/<int:pk>/edit/", edit_sample, name="edit_sample"),
+    path("samples/<int:pk>/delete/", delete_sample, name="delete_sample"),
+    path("reports/samples/", sample_report, name="sample_report"),
+    path("gifts/", gift_list, name="gift_list"),
+    path("gifts/add/", add_gift, name="add_gift"),
+    path("gifts/<int:pk>/edit/", edit_gift, name="edit_gift"),
+    path("gifts/<int:pk>/delete/", delete_gift, name="delete_gift"),
+    path("reports/gifts/", gift_report, name="gift_report"),
+    path("reports/time-span/", time_span_report, name="time_span_report"),
+    path("leave/", leave_list, name="leave_list"),
+    path("leave/add/", add_leave, name="add_leave"),
+    path("leave/<int:pk>/withdraw/", delete_leave, name="delete_leave"),
+    path("leave/review/", leave_review, name="leave_review"),
+    path("leave/<int:pk>/approve/", approve_leave, name="approve_leave"),
+    path("leave/<int:pk>/reject/", reject_leave, name="reject_leave"),
     path("reports/daily-activity/", daily_activity_report, name="daily_activity_report"),
     path("reports/monthly-activity/", monthly_activity_report, name="monthly_activity_report"),
     path("reports/monthly-activity/export/", monthly_activity_report_excel, name="monthly_activity_report_excel"),

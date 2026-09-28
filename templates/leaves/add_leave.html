@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}Request Leave - PharmaSFO{% endblock %}
+{% block legacy_css %}{% endblock %}
+{% block breadcrumb %}<span>My Work</span><span class="sep">/</span><span>Leave</span><span class="sep">/</span><span class="current">Request</span>{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Request Leave</h1>
+    <p class="page-sub">Submit a leave request for your manager to approve.</p>
+  </div>
+</div>
+
+{% if form.non_field_errors %}
+<div class="alert alert--danger" style="margin-bottom:var(--space-6)">
+  <div class="alert__body"><div class="alert__text">{{ form.non_field_errors|striptags }}</div></div>
+</div>
+{% endif %}
+
+<div class="card" style="max-width:720px">
+  <div class="card__body">
+    <form method="post" id="leave-form">
+      {% csrf_token %}
+      <div class="grid grid--2">
+        <div class="field{% if form.leave_type.errors %} is-error{% endif %}" style="grid-column:1 / -1">
+          <label class="label" for="{{ form.leave_type.id_for_label }}">Leave type <span class="req">*</span></label>
+          {{ form.leave_type }}
+          {% if form.leave_type.errors %}<span class="help">{{ form.leave_type.errors|striptags }}</span>{% endif %}
+        </div>
+        <div class="field{% if form.start_date.errors %} is-error{% endif %}">
+          <label class="label" for="{{ form.start_date.id_for_label }}">From <span class="req">*</span></label>
+          {{ form.start_date }}
+          {% if form.start_date.errors %}<span class="help">{{ form.start_date.errors|striptags }}</span>{% endif %}
+        </div>
+        <div class="field{% if form.end_date.errors %} is-error{% endif %}">
+          <label class="label" for="{{ form.end_date.id_for_label }}">To <span class="req">*</span></label>
+          {{ form.end_date }}
+          {% if form.end_date.errors %}<span class="help">{{ form.end_date.errors|striptags }}</span>{% endif %}
+        </div>
+        <div class="field{% if form.reason.errors %} is-error{% endif %}" style="grid-column:1 / -1">
+          <label class="label" for="{{ form.reason.id_for_label }}">Reason <span class="optional">(optional)</span></label>
+          {{ form.reason }}
+          {% if form.reason.errors %}<span class="help">{{ form.reason.errors|striptags }}</span>{% endif %}
+        </div>
+      </div>
+    </form>
+  </div>
+  <div class="card__footer">
+    <a href="{% url 'leave_list' %}" class="btn btn--ghost">Cancel</a>
+    <div class="spacer"></div>
+    <button type="submit" form="leave-form" class="btn btn--primary">Submit request</button>
+  </div>
+</div>
+{% endblock %}

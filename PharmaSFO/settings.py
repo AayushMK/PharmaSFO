@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     "tour_plans",
     "daily_coverage",
     "notifications",
+    "leaves",
 ]
 
 MIDDLEWARE = [

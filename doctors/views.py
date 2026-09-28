@@ -5,7 +5,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.decorators.cache import never_cache
 
-from daily_coverage.models import DailyCoverage
+from daily_coverage.models import DailyCoverage, GiftRecord, SampleRecord
 from doctor_employee_relation.models import DoctorEmployeeRelation
 from notifications.utils import notify
 
@@ -98,14 +98,18 @@ def delete_doctor(request, pk):
     relations = list(
         DoctorEmployeeRelation.objects.filter(doctor=doctor).select_related("employee")
     )
+    sample_count = SampleRecord.objects.filter(doctor=doctor).count()
+    gift_count = GiftRecord.objects.filter(doctor=doctor).count()
 
     if request.method == "POST":
-        if coverage_records and not request.POST.get("confirm_delete_coverage"):
-            messages.error(request, "Confirm removing the coverage records to delete this doctor.")
+        if (coverage_records or sample_count or gift_count) and not request.POST.get("confirm_delete_coverage"):
+            messages.error(request, "Confirm removing the logged records to delete this doctor.")
             return render(request, "doctors/delete_doctor.html", {
                 "doctor": doctor,
                 "coverage_records": coverage_records,
                 "relations": relations,
+                "sample_count": sample_count,
+                "gift_count": gift_count,
             })
 
         name = doctor.name
@@ -121,6 +125,10 @@ def delete_doctor(request, pk):
         coverage_count = len(coverage_records)
         if coverage_records:
             DailyCoverage.objects.filter(doctor=doctor).delete()
+        if sample_count:
+            SampleRecord.objects.filter(doctor=doctor).delete()
+        if gift_count:
+            GiftRecord.objects.filter(doctor=doctor).delete()
         doctor.delete()  # cascades DoctorEmployeeRelation
 
         for user_id, user in affected.items():
@@ -136,19 +144,21 @@ def delete_doctor(request, pk):
                 url=reverse("doctor_employee_relation"),
             )
 
-        messages.success(
-            request,
-            f"Dr. {name} removed from the directory"
-            + (
-                f" along with {coverage_count} coverage record{'s' if coverage_count != 1 else ''}"
-                if coverage_count else ""
-            )
-            + ".",
-        )
+        extras = []
+        if coverage_count:
+            extras.append(f"{coverage_count} coverage record{'s' if coverage_count != 1 else ''}")
+        if sample_count:
+            extras.append(f"{sample_count} sample record{'s' if sample_count != 1 else ''}")
+        if gift_count:
+            extras.append(f"{gift_count} gift record{'s' if gift_count != 1 else ''}")
+        suffix = (" along with " + " and ".join(extras)) if extras else ""
+        messages.success(request, f"Dr. {name} removed from the directory{suffix}.")
         return redirect("doctor_list")
 
     return render(request, "doctors/delete_doctor.html", {
         "doctor": doctor,
         "coverage_records": coverage_records,
         "relations": relations,
+        "sample_count": sample_count,
+        "gift_count": gift_count,
     })

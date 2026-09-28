@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% load dc_tags %}
+
+{% block title %}Leave Requests - PharmaSFO{% endblock %}
+{% block legacy_css %}{% endblock %}
+{% block breadcrumb %}<span>My Work</span><span class="sep">/</span><span class="current">Leave requests</span>{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Leave Requests</h1>
+    <p class="page-sub">Approve or reject leave for your team.</p>
+  </div>
+</div>
+
+<div class="row" style="gap:var(--space-2); border-bottom:1px solid var(--border); padding-bottom:var(--space-3); margin-bottom:var(--space-4)">
+  <a class="btn btn--sm {% if status == 'pending' %}btn--primary{% else %}btn--ghost{% endif %}" href="?status=pending">Pending</a>
+  <a class="btn btn--sm {% if status == 'approved' %}btn--primary{% else %}btn--ghost{% endif %}" href="?status=approved">Approved</a>
+  <a class="btn btn--sm {% if status == 'rejected' %}btn--primary{% else %}btn--ghost{% endif %}" href="?status=rejected">Rejected</a>
+</div>
+
+{% if requests %}
+<div class="table-wrap">
+  <table class="table table--stack">
+    <thead>
+      <tr>
+        <th>Employee</th>
+        <th>Type</th>
+        <th>From</th>
+        <th>To</th>
+        <th>Days</th>
+        <th>Reason</th>
+        <th class="col-actions">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in requests %}
+      <tr>
+        <td data-label="Employee"><div class="cell-strong">{{ r.created_by.get_full_name|default:r.created_by.username }}</div><div class="cell-sub">{{ r.created_by.get_type_display }}</div></td>
+        <td data-label="Type">{{ r.get_leave_type_display }}</td>
+        <td data-label="From" style="white-space:nowrap"><div>{{ r.start_date|bs_date }}</div><div class="cell-sub">{{ r.start_date|date:"j M Y" }}</div></td>
+        <td data-label="To" style="white-space:nowrap"><div>{{ r.end_date|bs_date }}</div><div class="cell-sub">{{ r.end_date|date:"j M Y" }}</div></td>
+        <td data-label="Days" class="t-mono">{{ r.days }}</td>
+        <td data-label="Reason" class="t-secondary">{{ r.reason|default:"—" }}</td>
+        <td data-label="Actions" class="col-actions">
+          {% if r.status == 'pending' %}
+          <div style="display:inline-flex; gap:var(--space-2)">
+            <form method="post" action="{% url 'approve_leave' r.pk %}" style="display:inline">
+              {% csrf_token %}<button type="submit" class="btn btn--primary btn--sm">Approve</button>
+            </form>
+            <form method="post" action="{% url 'reject_leave' r.pk %}" style="display:inline" onsubmit="return confirm('Reject this leave request?');">
+              {% csrf_token %}<button type="submit" class="btn btn--danger btn--sm">Reject</button>
+            </form>
+          </div>
+          {% elif r.status == 'approved' %}<span class="badge badge--success">Approved</span>
+          {% else %}<span class="badge badge--danger">Rejected</span>{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="card">
+  <div class="card__body">
+    <div class="empty">
+      <div class="empty__glyph"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>
+      <div class="empty__title">No {{ status }} leave requests</div>
+      <div class="empty__text">Requests from your team will appear here.</div>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

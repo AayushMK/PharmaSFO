@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% load dc_tags %}
+
+{% block title %}Gifts - PharmaSFO{% endblock %}
+{% block legacy_css %}{% endblock %}
+{% block breadcrumb %}<span>My Work</span><span class="sep">/</span><span class="current">Gifts</span>{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Gifts</h1>
+    <p class="page-sub">Gifts and items you've given to doctors. Entries can be edited for 2 days.</p>
+  </div>
+  <div class="page-actions">
+    <a href="{% url 'add_gift' %}" class="btn btn--primary">
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+      Log gift
+    </a>
+  </div>
+</div>
+
+<div class="table-toolbar">
+  <form method="get" class="table-toolbar__filters">
+    <label class="label" for="date-filter" style="margin-right:var(--space-1)">Date</label>
+    <input type="date" name="date" id="date-filter" class="input" style="width:180px"
+           value="{% if filter_date %}{{ filter_date|date:'Y-m-d' }}{% endif %}" onchange="this.form.submit()">
+    {% if filter_date %}<a href="{% url 'gift_list' %}" class="btn btn--ghost btn--sm">Clear</a>{% endif %}
+  </form>
+  <span class="t-caption">{{ total_count }} record{{ total_count|pluralize }}</span>
+</div>
+
+{% if page_obj.object_list %}
+<div class="table-wrap">
+  <table class="table table--stack">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Doctor</th>
+        <th>Item</th>
+        <th>Qty</th>
+        <th>Value (Rs.)</th>
+        <th>Remarks</th>
+        <th class="col-actions">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for record in page_obj %}
+      <tr>
+        <td data-label="Date" style="white-space:nowrap">
+          <div>{{ record.report_date|bs_date }}</div>
+          <div class="cell-sub">{{ record.report_date|date:"j M Y" }}</div>
+        </td>
+        <td data-label="Doctor">
+          <div class="cell-strong">{{ record.doctor.name }}</div>
+          {% if record.doctor.specialization %}<div class="cell-sub">{{ record.doctor.specialization }}</div>{% endif %}
+        </td>
+        <td data-label="Item"><div class="cell-strong">{{ record.item }}</div></td>
+        <td data-label="Qty" class="t-mono">{{ record.quantity }}</td>
+        <td data-label="Value (Rs.)" class="t-mono">{% if record.value %}{{ record.value }}{% else %}—{% endif %}</td>
+        <td data-label="Remarks" class="t-secondary">{{ record.remarks|default:"—" }}</td>
+        <td data-label="Actions" class="col-actions">
+          {% if record.editable %}
+            <div style="display:inline-flex; gap:var(--space-2)">
+              <a href="{% url 'edit_gift' record.pk %}" class="btn btn--secondary btn--sm">Edit</a>
+              <form method="post" action="{% url 'delete_gift' record.pk %}"
+                    style="display:inline" onsubmit="return confirm('Delete this gift record?');">
+                {% csrf_token %}
+                <button type="submit" class="btn btn--danger btn--sm">Delete</button>
+              </form>
+            </div>
+          {% else %}
+            <span class="badge badge--neutral">Locked</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% if page_obj.paginator.num_pages > 1 %}
+<div class="row row--between" style="margin-top:var(--space-4)">
+  <span class="t-caption">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+  <div class="row" style="gap:var(--space-2)">
+    {% if page_obj.has_previous %}
+      <a class="btn btn--sm" href="?{% if filter_date %}date={{ filter_date|date:'Y-m-d' }}&{% endif %}page={{ page_obj.previous_page_number }}">Previous</a>
+    {% else %}<span class="btn btn--sm" aria-disabled="true">Previous</span>{% endif %}
+    {% if page_obj.has_next %}
+      <a class="btn btn--sm" href="?{% if filter_date %}date={{ filter_date|date:'Y-m-d' }}&{% endif %}page={{ page_obj.next_page_number }}">Next</a>
+    {% else %}<span class="btn btn--sm" aria-disabled="true">Next</span>{% endif %}
+  </div>
+</div>
+{% endif %}
+
+{% else %}
+<div class="card">
+  <div class="card__body">
+    <div class="empty">
+      <div class="empty__glyph"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13M5 12v9h14v-9"/></svg></div>
+      <div class="empty__title">No gift records{% if filter_date %} on {{ filter_date|bs_date }}{% endif %}</div>
+      <div class="empty__text">Log the gifts you give to doctors and they'll appear here.</div>
+      <div class="empty__actions"><a href="{% url 'add_gift' %}" class="btn btn--primary btn--sm">Log gift</a></div>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

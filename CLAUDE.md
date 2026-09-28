@@ -57,8 +57,11 @@ PharmSFAO/
 │   ├── views.py            # calendar, add (bulk doctor/chemist/stockist), list, edit, delete
 │   ├── templatetags/
 │   │   └── dc_tags.py      # get_item filter (dict lookup in templates)
+├── leaves/                 # Leave management app (INSTALLED_APPS: "leaves")
+│   ├── models.py           # LeaveRequest (apply + manager/HR approval)
+│   ├── forms.py / views.py # apply, list, withdraw, review (approve/reject)
 ├── reports/                # Reporting module (no models, no INSTALLED_APPS entry needed)
-│   ├── views.py            # daily_activity, monthly_activity, monthly_target, yearly_activity
+│   ├── views.py            # daily_activity, monthly_activity, monthly_target, yearly_activity, sample_report, gift_report, time_span_report
 ├── api/                    # Django Ninja API
 │   ├── api.py              # NinjaAPI + JWT controller + /doctors endpoint
 ├── templates/
@@ -189,6 +192,18 @@ PharmSFAO/
 - Logging only chemist/stockist on a doctor-less day requires a "no doctor coverage" reason (gate only — the reason is validated but not persisted)
 - Listed in Coverage records via `?type=chemist|stockist` with edit/delete in the same 2-day window (`edit_chemist_coverage` etc.); also surfaced in the Daily Activity report
 
+### SampleRecord / GiftRecord (daily_coverage) — DKM-parity standalone modules
+- Rep logs samples/gifts given to a doctor. `created_by` (CASCADE), `report_date`, `doctor` (**PROTECT**, so `delete_doctor` surfaces + confirms them like coverage), free-text `product`/`item`, `quantity`; GiftRecord adds optional `value` (Decimal, Rs.)
+- Rep-facing CRUD at `/samples/` and `/gifts/` with the same 2-day edit window as coverage; the doctor select is limited to the rep's **approved** assignments (`_limit_doctor_choices` in forms). Nav: My Work → Samples / Gifts
+- Manager-facing **team-scoped** reports at `/reports/samples/` and `/reports/gifts/` (from/to date range + employee selector, totals; Gift report also totals value). Nav: Reports → Sample report / Gift report
+
+### LeaveRequest (leaves app) — DKM-parity leave management
+- Employee applies (`leave_type` sick/casual/annual/other, `start_date`, `end_date`, `reason`) at `/leave/`; withdraws while pending. `status` pending/approved/rejected, `reviewed_by`/`reviewed_at`, `days` property
+- **Manager-approved** (not HR-only): reviewer must be HR/superuser or have the applicant in their downstream team (`team_member_ids`). Review queue at `/leave/review/` (approve/reject + status filter); notifications on submit and decision. Nav: My Work → Leave (everyone) + Leave requests (managers/HR only, gated on `request.user.team_members.exists`)
+
+### Time Span report (reports, no model)
+- `/reports/time-span/` — team-scoped activity over any from/to range: summary tiles (working days, doctor/chemist/stockist calls, unique doctors, samples, gifts) + per-day breakdown. Nav: Reports → Time span
+
 ## Doctor Classification (MSL-based)
 Used across all reports and the daily coverage calendar:
 | Class | MSL range | Monthly visit target |
@@ -257,6 +272,10 @@ Defined in `reports/views.py` as `SUPER_CORE_MAX = 25`, `CORE_MAX = 75`, `VISIT_
 - http://localhost:8000/reports/monthly-target/export/ — Excel export of target report (status-tinted rows + summary)
 - http://localhost:8000/reports/yearly-activity/ — Yearly Activity Report (**BS year**: Baishakh–Chaitra grid + MSL frequency bar chart)
 - http://localhost:8000/reports/yearly-activity/export/ — Excel export of yearly report
+- http://localhost:8000/samples/ — Samples given to doctors (add/edit/delete, 2-day window); /reports/samples/ — team-scoped Sample report
+- http://localhost:8000/gifts/ — Gifts given to doctors (with value); /reports/gifts/ — team-scoped Gift report
+- http://localhost:8000/leave/ — My leave requests + apply; /leave/review/ — manager/HR approve/reject
+- http://localhost:8000/reports/time-span/ — Activity over a custom date range
 - http://localhost:8000/admin/ — Django admin (add doctors, areas, users here)
 - http://localhost:8000/api/docs — API documentation (Swagger)
 

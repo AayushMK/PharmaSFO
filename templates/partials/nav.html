@@ -26,6 +26,14 @@ data-collapsible click handler does the open/close toggling in both contexts).
       <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
       <span class="nav-item__label">Coverage</span>
     </a>
+    <a class="nav-item{% if url_name == 'sample_list' or url_name == 'add_sample' or url_name == 'edit_sample' %} is-active{% endif %}" href="{% url 'sample_list' %}">
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6M10 3v6l-4.5 8a2 2 0 0 0 1.8 3h9.4a2 2 0 0 0 1.8-3L14 9V3"/></svg>
+      <span class="nav-item__label">Samples</span>
+    </a>
+    <a class="nav-item{% if url_name == 'gift_list' or url_name == 'add_gift' or url_name == 'edit_gift' %} is-active{% endif %}" href="{% url 'gift_list' %}">
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13M5 12v9h14v-9M12 8C12 5 10 3 8 3a2 2 0 0 0 0 4h4zm0 0c0-3 2-5 4-5a2 2 0 0 1 0 4h-4z"/></svg>
+      <span class="nav-item__label">Gifts</span>
+    </a>
     <a class="nav-item{% if url_name == 'tour_plans' or url_name == 'add_tour_plan' %} is-active{% endif %}" href="{% url 'tour_plans' %}">
       <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
       <span class="nav-item__label">Tour plans</span>
@@ -34,6 +42,16 @@ data-collapsible click handler does the open/close toggling in both contexts).
       <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
       <span class="nav-item__label">My doctors</span>
     </a>
+    <a class="nav-item{% if url_name == 'leave_list' or url_name == 'add_leave' %} is-active{% endif %}" href="{% url 'leave_list' %}">
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="1.5"/><path d="M3 9h18M8 2v4M16 2v4"/><path d="M9 15l2 2 4-4"/></svg>
+      <span class="nav-item__label">Leave</span>
+    </a>
+    {% if request.user.team_members.exists or request.user.is_superuser or request.user.is_staff and request.user.type == 'HR' %}
+    <a class="nav-item{% if url_name == 'leave_review' %} is-active{% endif %}" href="{% url 'leave_review' %}">
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      <span class="nav-item__label">Leave requests</span>
+    </a>
+    {% endif %}
   </div></div>
 </div>
 
@@ -58,6 +76,18 @@ data-collapsible click handler does the open/close toggling in both contexts).
     <a class="nav-item{% if url_name == 'yearly_activity_report' %} is-active{% endif %}" href="{% url 'yearly_activity_report' %}">
       <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg>
       <span class="nav-item__label">Yearly activity</span>
+    </a>
+    <a class="nav-item{% if url_name == 'sample_report' %} is-active{% endif %}" href="{% url 'sample_report' %}">
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6M10 3v6l-4.5 8a2 2 0 0 0 1.8 3h9.4a2 2 0 0 0 1.8-3L14 9V3"/></svg>
+      <span class="nav-item__label">Sample report</span>
+    </a>
+    <a class="nav-item{% if url_name == 'gift_report' %} is-active{% endif %}" href="{% url 'gift_report' %}">
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13M5 12v9h14v-9M12 8C12 5 10 3 8 3a2 2 0 0 0 0 4h4zm0 0c0-3 2-5 4-5a2 2 0 0 1 0 4h-4z"/></svg>
+      <span class="nav-item__label">Gift report</span>
+    </a>
+    <a class="nav-item{% if url_name == 'time_span_report' %} is-active{% endif %}" href="{% url 'time_span_report' %}">
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+      <span class="nav-item__label">Time span</span>
     </a>
   </div></div>
 </div>
