@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load dc_tags %}
 
 {% block title %}Add Daily Coverage - PharmaSFO{% endblock %}
 {% block legacy_css %}{% endblock %}
@@ -12,6 +13,26 @@
   </div>
 </div>
 
+{% if blocking_days %}
+<div class="alert alert--warning" style="margin-bottom:var(--space-6)">
+  <svg class="alert__icon ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 16H3z"/><path d="M12 10v4M12 17h.01"/></svg>
+  <div class="alert__body">
+    <div class="alert__title">Provide previous day reports first</div>
+    <div class="alert__text">
+      You have {{ blocking_days|length }} earlier approved day{{ blocking_days|length|pluralize }} this month with no coverage logged. Fill {% if blocking_days|length == 1 %}it{% else %}them{% endif %} before logging this day:
+      <ul style="margin:var(--space-2) 0 0; padding-left:var(--space-5)">
+        {% for d in blocking_days %}
+        <li><a href="{% url 'add_daily_coverage' %}?date={{ d|date:'Y-m-d' }}">{{ d|bs_date }} &middot; {{ d|date:'j M Y' }}</a></li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>
+<div class="row" style="gap:var(--space-3)">
+  <a href="{% url 'daily_coverage_calendar' %}" class="btn btn--ghost">Back to calendar</a>
+  <a href="{% url 'add_daily_coverage' %}?date={{ blocking_days.0|date:'Y-m-d' }}" class="btn btn--primary">Log the earliest missing day</a>
+</div>
+{% else %}
 {% if form_error %}
 <div class="alert alert--danger" style="margin-bottom:var(--space-6)">
   <div class="alert__body"><div class="alert__text">{{ form_error }}</div></div>
@@ -449,4 +470,5 @@ globalDateInput.addEventListener('input', () => {
 // ── Seed first doctor row ─────────────────────────────────────────────────────
 renderDoctorEntry();
 </script>
+{% endif %}
 {% endblock %}

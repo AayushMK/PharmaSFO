@@ -332,12 +332,46 @@ def daily_coverage_calendar(request, year=None, month=None):
     )
 
 
+def _earlier_unfilled_days(user, target_date):
+    """Approved plan days earlier than target_date, in the SAME Bikram Sambat
+    month, that have no daily coverage — powers the sequential-reporting rule
+    ("provide previous day reports first"). Resets each BS month."""
+    if not target_date:
+        return []
+    try:
+        tbs = nepali_datetime.date.from_datetime_date(target_date)
+        month_start = nepali_datetime.date(tbs.year, tbs.month, 1).to_datetime_date()
+    except (ValueError, OverflowError):
+        return []
+    if month_start >= target_date:
+        return []
+    approved = set(
+        TourPlan.objects.filter(
+            created_by=user, status=TourPlan.Status.APPROVED,
+            plan_date__gte=month_start, plan_date__lt=target_date,
+        ).values_list("plan_date", flat=True)
+    )
+    if not approved:
+        return []
+    covered = set(
+        DailyCoverage.objects.filter(
+            created_by=user, report_date__in=approved,
+        ).values_list("report_date", flat=True)
+    )
+    return sorted(approved - covered)
+
+
 @login_required
 @never_cache
 def add_daily_coverage(request, selected_date=None):
     initial_date = selected_date or request.GET.get("date") or timezone.localdate().isoformat()
+    try:
+        initial_date_obj = datetime.strptime(initial_date, "%Y-%m-%d").date()
+    except (ValueError, TypeError):
+        initial_date_obj = timezone.localdate()
 
     form_error = None
+    blocking_days = []
 
     if request.method == "POST":
         form = DailyCoverageBulkForm(request.POST)
@@ -381,7 +415,19 @@ def add_daily_coverage(request, selected_date=None):
             ) if non_doctor_dates else set()
 
             truly_missing = non_doctor_dates - existing_doctor_dates
-            if truly_missing and not no_doctor_reason:
+
+            # Sequential reporting: block if an earlier approved day this BS month
+            # has no coverage yet ("provide previous day reports first").
+            all_submitted = submitted_doctor_dates | chemist_dates | stockist_dates
+            blocked_earlier = []
+            for sd in all_submitted:
+                blocked_earlier.extend(_earlier_unfilled_days(request.user, sd))
+            blocked_earlier = sorted(set(blocked_earlier))
+
+            if blocked_earlier:
+                blocking_days = blocked_earlier
+                form_error = "Provide previous day reports first."
+            elif truly_missing and not no_doctor_reason:
                 form_error = "You must add at least one doctor entry or provide a reason for no doctor coverage."
             else:
                 saved = {"doctor": 0, "chemist": 0, "stockist": 0}
@@ -477,6 +523,7 @@ def add_daily_coverage(request, selected_date=None):
                 return redirect("daily_coverage_calendar")
     else:
         form = DailyCoverageBulkForm()
+        blocking_days = _earlier_unfilled_days(request.user, initial_date_obj)
 
     area_options = [{"value": str(area.pk), "label": area.name} for area in Area.objects.order_by("name")]
     doctor_options = [{"value": str(doctor.pk), "label": doctor.name} for doctor in Doctor.objects.order_by("name")]
@@ -508,6 +555,7 @@ def add_daily_coverage(request, selected_date=None):
             "worked_with_options": json.dumps(worked_with_options),
             "initial_date": initial_date,
             "form_error": form_error,
+            "blocking_days": blocking_days,
         },
     )
 
