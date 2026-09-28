@@ -7,6 +7,7 @@ import openpyxl
 from openpyxl.styles import Alignment, Font, PatternFill
 
 from django.contrib.auth.decorators import login_required
+from django.db.models import Count
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, render
 from django.views.decorators.cache import never_cache
@@ -731,4 +732,63 @@ def gift_report(request):
         "total_qty": sum(r.quantity for r in records),
         "total_value": sum((r.value or 0) for r in records),
         "record_count": len(records),
+    })
+
+
+@login_required
+@never_cache
+def time_span_report(request):
+    """Activity summary + per-day breakdown over any custom date range."""
+    employee, all_employees, selected_employee_id, can_view_others = _get_employee(request)
+    from_str = request.GET.get("from", "")
+    to_str = request.GET.get("to", "")
+
+    def _parse(s):
+        try:
+            return datetime.strptime(s, "%Y-%m-%d").date()
+        except (ValueError, TypeError):
+            return None
+
+    from_date, to_date = _parse(from_str), _parse(to_str)
+    rows = []
+    totals = {"doctor": 0, "chemist": 0, "stockist": 0, "samples": 0, "gifts": 0}
+    unique_doctors = 0
+    working_days = 0
+    valid_range = bool(from_date and to_date and from_date <= to_date)
+
+    if valid_range:
+        rng = (from_date, to_date)
+        dc = DailyCoverage.objects.filter(created_by=employee, report_date__range=rng)
+        cc = ChemistCoverage.objects.filter(created_by=employee, report_date__range=rng)
+        sc = StockistCoverage.objects.filter(created_by=employee, report_date__range=rng)
+
+        per_day = defaultdict(lambda: {"doctor": 0, "chemist": 0, "stockist": 0})
+        for r in dc.values("report_date").annotate(n=Count("id")):
+            per_day[r["report_date"]]["doctor"] = r["n"]
+        for r in cc.values("report_date").annotate(n=Count("id")):
+            per_day[r["report_date"]]["chemist"] = r["n"]
+        for r in sc.values("report_date").annotate(n=Count("id")):
+            per_day[r["report_date"]]["stockist"] = r["n"]
+
+        rows = [{"date": d, **counts} for d, counts in sorted(per_day.items())]
+        totals["doctor"] = dc.count()
+        totals["chemist"] = cc.count()
+        totals["stockist"] = sc.count()
+        totals["samples"] = SampleRecord.objects.filter(created_by=employee, report_date__range=rng).count()
+        totals["gifts"] = GiftRecord.objects.filter(created_by=employee, report_date__range=rng).count()
+        unique_doctors = dc.values("doctor").distinct().count()
+        working_days = len(rows)
+
+    return render(request, "reports/time_span_report.html", {
+        "employee": employee,
+        "all_employees": all_employees,
+        "selected_employee_id": selected_employee_id,
+        "can_view_others": can_view_others,
+        "from_str": from_str,
+        "to_str": to_str,
+        "valid_range": valid_range,
+        "rows": rows,
+        "totals": totals,
+        "unique_doctors": unique_doctors,
+        "working_days": working_days,
     })

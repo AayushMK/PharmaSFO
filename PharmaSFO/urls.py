@@ -11,6 +11,7 @@ from reports.views import (
     monthly_target_report,
     monthly_target_report_excel,
     sample_report,
+    time_span_report,
     yearly_activity_report,
     yearly_activity_report_excel,
 )
@@ -139,6 +140,7 @@ urlpatterns = [
     path("gifts/<int:pk>/edit/", edit_gift, name="edit_gift"),
     path("gifts/<int:pk>/delete/", delete_gift, name="delete_gift"),
     path("reports/gifts/", gift_report, name="gift_report"),
+    path("reports/time-span/", time_span_report, name="time_span_report"),
     path("leave/", leave_list, name="leave_list"),
     path("leave/add/", add_leave, name="add_leave"),
     path("leave/<int:pk>/withdraw/", delete_leave, name="delete_leave"),
