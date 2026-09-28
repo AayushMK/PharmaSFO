@@ -301,6 +301,7 @@ Defined in `reports/views.py` as `SUPER_CORE_MAX = 25`, `CORE_MAX = 75`, `VISIT_
 - Report visibility follows the position hierarchy (see User model); "subordinate" currently means *any lower position* — direct-report chains would need a `manager` FK
 - HR users (is_staff=True, type="HR") approve doctor assignments and tour plans
 - Tour plan approval gates daily coverage entry for that date
+- **Sequential reporting** (`_earlier_unfilled_days` in daily_coverage/views.py): you can't log coverage for a day while an earlier **approved plan day in the same BS month** has no coverage — Add Daily Coverage hard-blocks (GET shows a "Provide previous day reports first" alert linking the missing day(s); POST refuses to save). Resets each BS month so an old skipped day never traps you
 - Doctor classification (Super Core/Core/VIP) derived from MSL number at report time, not stored
 - Daily coverage edit window is 2 days from `created_at` (defined as `EDIT_WINDOW_DAYS = 2`)
 - Chemist/Stockist coverage is implemented (models + bulk add form + list/edit/delete + Daily Activity report); inclusion in monthly/target/yearly reports is still pending
