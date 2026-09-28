@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}Profile - PharmaSFO{% endblock %}
+{% block legacy_css %}{% endblock %}
+{% block breadcrumb %}<span class="current">Profile</span>{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Change Profile</h1>
+    <p class="page-sub">Update your details and password. Your username ({{ user.username }}) and role are set by HR.</p>
+  </div>
+</div>
+
+<div class="stack" style="max-width:640px; display:flex; flex-direction:column; gap:var(--space-6)">
+  <!-- Details -->
+  <div class="card">
+    <div class="card__body">
+      <h2 class="t-h4" style="margin:0 0 var(--space-4)">Your details</h2>
+      <form method="post" id="details-form">
+        {% csrf_token %}
+        <input type="hidden" name="form" value="details">
+        <div class="grid grid--2">
+          <div class="field{% if dform.first_name.errors %} is-error{% endif %}">
+            <label class="label" for="{{ dform.first_name.id_for_label }}">First name <span class="req">*</span></label>
+            {{ dform.first_name }}
+            {% if dform.first_name.errors %}<span class="help">{{ dform.first_name.errors|striptags }}</span>{% endif %}
+          </div>
+          <div class="field{% if dform.last_name.errors %} is-error{% endif %}">
+            <label class="label" for="{{ dform.last_name.id_for_label }}">Last name <span class="req">*</span></label>
+            {{ dform.last_name }}
+            {% if dform.last_name.errors %}<span class="help">{{ dform.last_name.errors|striptags }}</span>{% endif %}
+          </div>
+          <div class="field{% if dform.email.errors %} is-error{% endif %}" style="grid-column:1 / -1">
+            <label class="label" for="{{ dform.email.id_for_label }}">Email <span class="optional">(optional)</span></label>
+            {{ dform.email }}
+            {% if dform.email.errors %}<span class="help">{{ dform.email.errors|striptags }}</span>{% endif %}
+          </div>
+        </div>
+      </form>
+    </div>
+    <div class="card__footer">
+      <div class="spacer"></div>
+      <button type="submit" form="details-form" class="btn btn--primary">Save details</button>
+    </div>
+  </div>
+
+  <!-- Password -->
+  <div class="card">
+    <div class="card__body">
+      <h2 class="t-h4" style="margin:0 0 var(--space-4)">Change password</h2>
+      {% if pform.non_field_errors %}
+      <div class="alert alert--danger" style="margin-bottom:var(--space-4)">
+        <div class="alert__body"><div class="alert__text">{{ pform.non_field_errors|striptags }}</div></div>
+      </div>
+      {% endif %}
+      <form method="post" id="password-form">
+        {% csrf_token %}
+        <input type="hidden" name="form" value="password">
+        {% for field in pform %}
+        <div class="field{% if field.errors %} is-error{% endif %}" style="margin-bottom:var(--space-4)">
+          <label class="label" for="{{ field.id_for_label }}">{{ field.label }} <span class="req">*</span></label>
+          {{ field }}
+          {% if field.errors %}<span class="help">{{ field.errors|striptags }}</span>
+          {% elif field.help_text %}<span class="help">{{ field.help_text|striptags }}</span>{% endif %}
+        </div>
+        {% endfor %}
+      </form>
+    </div>
+    <div class="card__footer">
+      <div class="spacer"></div>
+      <button type="submit" form="password-form" class="btn btn--primary">Change password</button>
+    </div>
+  </div>
+</div>
+{% endblock %}

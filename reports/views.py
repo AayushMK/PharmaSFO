@@ -10,6 +10,7 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Count
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, render
+from django.utils import timezone
 from django.views.decorators.cache import never_cache
 
 from daily_coverage.models import ChemistCoverage, DailyCoverage, GiftRecord, SampleRecord, StockistCoverage
@@ -791,4 +792,80 @@ def time_span_report(request):
         "totals": totals,
         "unique_doctors": unique_doctors,
         "working_days": working_days,
+    })
+
+
+def _default_bs_month_span():
+    """(start_ad, end_ad) covering the current Bikram Sambat month."""
+    tbs = nepali_datetime.date.from_datetime_date(timezone.localdate())
+    start_ad = nepali_datetime.date(tbs.year, tbs.month, 1).to_datetime_date()
+    ny, nm = (tbs.year + 1, 1) if tbs.month == 12 else (tbs.year, tbs.month + 1)
+    end_ad = nepali_datetime.date(ny, nm, 1).to_datetime_date() - timedelta(days=1)
+    return start_ad, end_ad
+
+
+def _range_from_request(request):
+    """from/to date params, defaulting to the current BS month."""
+    def _p(s):
+        try:
+            return datetime.strptime(s, "%Y-%m-%d").date()
+        except (ValueError, TypeError):
+            return None
+    d_start, d_end = _default_bs_month_span()
+    from_date = _p(request.GET.get("from")) or d_start
+    to_date = _p(request.GET.get("to")) or d_end
+    return from_date, to_date
+
+
+@login_required
+@never_cache
+def pending_reports(request):
+    """Compliance: approved tour-plan days with no daily coverage logged."""
+    employee, all_employees, selected_employee_id, can_view_others = _get_employee(request)
+    from_date, to_date = _range_from_request(request)
+
+    approved = list(
+        TourPlan.objects
+        .filter(created_by=employee, status=TourPlan.Status.APPROVED,
+                plan_date__range=(from_date, to_date))
+        .select_related("area").order_by("plan_date")
+    )
+    covered_dates = set(
+        DailyCoverage.objects
+        .filter(created_by=employee, report_date__range=(from_date, to_date))
+        .values_list("report_date", flat=True)
+    )
+    missing = [p for p in approved if p.plan_date not in covered_dates]
+    reported = len(approved) - len(missing)
+
+    return render(request, "reports/pending_reports.html", {
+        "employee": employee, "all_employees": all_employees,
+        "selected_employee_id": selected_employee_id, "can_view_others": can_view_others,
+        "from_str": from_date.strftime("%Y-%m-%d"), "to_str": to_date.strftime("%Y-%m-%d"),
+        "missing": missing, "approved_count": len(approved),
+        "reported_count": reported, "missing_count": len(missing),
+    })
+
+
+@login_required
+@never_cache
+def tourplan_reporting(request):
+    """Team-scoped tour-plan report: status breakdown + list over a range."""
+    employee, all_employees, selected_employee_id, can_view_others = _get_employee(request)
+    from_date, to_date = _range_from_request(request)
+
+    plans = list(
+        TourPlan.objects
+        .filter(created_by=employee, plan_date__range=(from_date, to_date))
+        .select_related("area", "worked_with").order_by("plan_date")
+    )
+    counts = {"approved": 0, "pending": 0, "rejected": 0}
+    for p in plans:
+        counts[p.status] = counts.get(p.status, 0) + 1
+
+    return render(request, "reports/tourplan_reporting.html", {
+        "employee": employee, "all_employees": all_employees,
+        "selected_employee_id": selected_employee_id, "can_view_others": can_view_others,
+        "from_str": from_date.strftime("%Y-%m-%d"), "to_str": to_date.strftime("%Y-%m-%d"),
+        "plans": plans, "counts": counts, "total": len(plans),
     })

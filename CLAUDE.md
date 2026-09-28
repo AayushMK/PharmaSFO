@@ -204,6 +204,15 @@ PharmSFAO/
 ### Time Span report (reports, no model)
 - `/reports/time-span/` — team-scoped activity over any from/to range: summary tiles (working days, doctor/chemist/stockist calls, unique doctors, samples, gifts) + per-day breakdown. Nav: Reports → Time span
 
+### Pending Reports + Tour Plan Report (reports, no model) — DKM parity
+- `/reports/pending/` — compliance: approved tour-plan days with **no** DailyCoverage logged (team-scoped; defaults to the current BS month via `_range_from_request`). `/reports/tour-plans/` — tour plans with status breakdown (approved/pending/rejected) + list. Nav: Reports → Pending reports / Tour plan report
+
+### Messages (notifications app) — DKM parity
+- `Notification.sender` (nullable FK) marks a person-to-person message vs a system notification. `/messages/send/` composes one to a recipient in the sender's scope (`_message_recipients`: downstream team + own manager; HR/superuser → anyone). Shows as "From: X" in the inbox + topbar bell. `notify(..., sender=)`. Nav: My Work → Send message
+
+### Change Profile (users app) — self-service
+- `/profile/` — a user edits their own first/last name + email (`ProfileForm`) and changes password (`StyledPasswordChangeForm` + `update_session_auth_hash`); username/role stay HR-managed. Linked from the topbar user menu
+
 ## Doctor Classification (MSL-based)
 Used across all reports and the daily coverage calendar:
 | Class | MSL range | Monthly visit target |
@@ -276,6 +285,8 @@ Defined in `reports/views.py` as `SUPER_CORE_MAX = 25`, `CORE_MAX = 75`, `VISIT_
 - http://localhost:8000/gifts/ — Gifts given to doctors (with value); /reports/gifts/ — team-scoped Gift report
 - http://localhost:8000/leave/ — My leave requests + apply; /leave/review/ — manager/HR approve/reject
 - http://localhost:8000/reports/time-span/ — Activity over a custom date range
+- http://localhost:8000/reports/pending/ — Approved plan days missing a report; /reports/tour-plans/ — Tour plan status report
+- http://localhost:8000/messages/send/ — Send an internal message; /profile/ — self-service profile + password
 - http://localhost:8000/admin/ — Django admin (add doctors, areas, users here)
 - http://localhost:8000/api/docs — API documentation (Swagger)
 

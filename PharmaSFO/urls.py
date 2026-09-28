@@ -10,8 +10,10 @@ from reports.views import (
     gift_report,
     monthly_target_report,
     monthly_target_report_excel,
+    pending_reports,
     sample_report,
     time_span_report,
+    tourplan_reporting,
     yearly_activity_report,
     yearly_activity_report_excel,
 )
@@ -21,6 +23,7 @@ from users.views import (
     deactivate_user,
     delete_user,
     edit_user,
+    profile,
     reactivate_user,
     team_management,
     user_list,
@@ -60,7 +63,7 @@ from doctor_employee_relation.views import (
     hr_review_requests,
 )
 from tour_plans.views import add_tour_plan, hr_review_employee_tour_plans, hr_review_tour_plans, tour_plan_list
-from notifications.views import mark_all_read, mark_notification_read, notification_list
+from notifications.views import mark_all_read, mark_notification_read, notification_list, send_message
 from leaves.views import (
     add_leave,
     approve_leave,
@@ -95,6 +98,7 @@ urlpatterns = [
     path("users/<int:pk>/reactivate/", reactivate_user, name="reactivate_user"),
     path("users/<int:pk>/delete/", delete_user, name="delete_user"),
     path("teams/", team_management, name="team_management"),
+    path("profile/", profile, name="profile"),
     path(
         "doctor_employee_relation/",
         doctor_employee_relation_list,
@@ -141,6 +145,8 @@ urlpatterns = [
     path("gifts/<int:pk>/delete/", delete_gift, name="delete_gift"),
     path("reports/gifts/", gift_report, name="gift_report"),
     path("reports/time-span/", time_span_report, name="time_span_report"),
+    path("reports/pending/", pending_reports, name="pending_reports"),
+    path("reports/tour-plans/", tourplan_reporting, name="tourplan_reporting"),
     path("leave/", leave_list, name="leave_list"),
     path("leave/add/", add_leave, name="add_leave"),
     path("leave/<int:pk>/withdraw/", delete_leave, name="delete_leave"),
@@ -160,6 +166,7 @@ urlpatterns = [
     path("daily_coverage/chemist/<int:pk>/delete/", delete_chemist_coverage, name="delete_chemist_coverage"),
     path("daily_coverage/stockist/<int:pk>/edit/", edit_stockist_coverage, name="edit_stockist_coverage"),
     path("daily_coverage/stockist/<int:pk>/delete/", delete_stockist_coverage, name="delete_stockist_coverage"),
+    path("messages/send/", send_message, name="send_message"),
     path("notifications/", notification_list, name="notification_list"),
     path("notifications/<int:pk>/read/", mark_notification_read, name="mark_notification_read"),
     path("notifications/mark-all-read/", mark_all_read, name="mark_all_read"),
