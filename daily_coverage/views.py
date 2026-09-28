@@ -23,6 +23,7 @@ from .forms import (
     ChemistForm,
     DailyCoverageBulkForm,
     DailyCoverageForm,
+    GiftRecordForm,
     SampleRecordForm,
     StockistCoverageForm,
     StockistForm,
@@ -31,6 +32,7 @@ from .models import (
     Chemist,
     ChemistCoverage,
     DailyCoverage,
+    GiftRecord,
     SampleRecord,
     Stockist,
     StockistCoverage,
@@ -729,3 +731,79 @@ def delete_sample(request, pk):
         record.delete()
         messages.success(request, f"Sample record for Dr. {name} deleted.")
     return redirect("sample_list")
+
+
+# ---- Gift tracking (standalone module) -----------------------------------
+
+@login_required
+@never_cache
+def gift_list(request):
+    filter_date_str = request.GET.get("date")
+    filter_date = None
+    if filter_date_str:
+        try:
+            filter_date = datetime.strptime(filter_date_str, "%Y-%m-%d").date()
+        except ValueError:
+            pass
+
+    records_qs = GiftRecord.objects.filter(created_by=request.user).select_related("doctor")
+    if filter_date:
+        records_qs = records_qs.filter(report_date=filter_date)
+
+    paginator = Paginator(records_qs, 25)
+    page_obj = paginator.get_page(request.GET.get("page", 1))
+    cutoff = timezone.now() - timedelta(days=EDIT_WINDOW_DAYS)
+    for record in page_obj:
+        record.editable = record.created_at >= cutoff
+
+    return render(request, "daily_coverage/gift_list.html", {
+        "page_obj": page_obj,
+        "filter_date": filter_date,
+        "total_count": paginator.count,
+    })
+
+
+@login_required
+@never_cache
+def add_gift(request):
+    if request.method == "POST":
+        form = GiftRecordForm(request.POST, user=request.user)
+        if form.is_valid():
+            rec = form.save(commit=False)
+            rec.created_by = request.user
+            rec.save()
+            messages.success(request, f"Gift logged: {rec.item} for Dr. {rec.doctor.name}.")
+            return redirect("gift_list")
+    else:
+        form = GiftRecordForm(user=request.user, initial={"report_date": timezone.localdate()})
+    return render(request, "daily_coverage/add_gift.html", {"form": form})
+
+
+@login_required
+@never_cache
+def edit_gift(request, pk):
+    record = get_object_or_404(GiftRecord, pk=pk, created_by=request.user)
+    if not _can_edit(record):
+        raise PermissionDenied
+
+    if request.method == "POST":
+        form = GiftRecordForm(request.POST, instance=record, user=request.user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f"Gift record for Dr. {record.doctor.name} updated.")
+            return redirect("gift_list")
+    else:
+        form = GiftRecordForm(instance=record, user=request.user)
+    return render(request, "daily_coverage/edit_gift.html", {"form": form, "record": record})
+
+
+@login_required
+def delete_gift(request, pk):
+    record = get_object_or_404(GiftRecord, pk=pk, created_by=request.user)
+    if not _can_edit(record):
+        raise PermissionDenied
+    if request.method == "POST":
+        name = record.doctor.name
+        record.delete()
+        messages.success(request, f"Gift record for Dr. {name} deleted.")
+    return redirect("gift_list")

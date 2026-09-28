@@ -8,10 +8,47 @@ from .models import (
     Chemist,
     ChemistCoverage,
     DailyCoverage,
+    GiftRecord,
     SampleRecord,
     Stockist,
     StockistCoverage,
 )
+
+
+def _limit_doctor_choices(field, user):
+    """Restrict a doctor ModelChoiceField to the user's approved assignments."""
+    qs = Doctor.objects.order_by("name")
+    if user is not None:
+        assigned = qs.filter(
+            doctor_employee_relations__employee=user,
+            doctor_employee_relations__status=DoctorEmployeeRelation.Status.APPROVED,
+        ).distinct()
+        if assigned.exists():
+            qs = assigned
+    field.queryset = qs
+    field.empty_label = "Select doctor"
+
+
+class GiftRecordForm(forms.ModelForm):
+    """Rep form to log a gift/item given to a doctor (with optional value)."""
+
+    class Meta:
+        model = GiftRecord
+        fields = ["report_date", "doctor", "item", "quantity", "value", "remarks"]
+        widgets = {
+            "report_date": forms.DateInput(attrs={"type": "date", "class": "input"}),
+            "doctor": forms.Select(attrs={"class": "select"}),
+            "item": forms.TextInput(attrs={"class": "input", "placeholder": "e.g. Diary, Pen set", "autofocus": True}),
+            "quantity": forms.NumberInput(attrs={"class": "input", "min": 1}),
+            "value": forms.NumberInput(attrs={"class": "input", "min": 0, "step": "0.01", "placeholder": "Rs. (optional)"}),
+            "remarks": forms.Textarea(attrs={"class": "textarea", "rows": 2, "placeholder": "Optional notes"}),
+        }
+
+    def __init__(self, *args, user=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["report_date"].required = True
+        self.fields["quantity"].required = True
+        _limit_doctor_choices(self.fields["doctor"], user)
 
 
 class SampleRecordForm(forms.ModelForm):
@@ -33,16 +70,7 @@ class SampleRecordForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields["report_date"].required = True
         self.fields["quantity"].required = True
-        qs = Doctor.objects.order_by("name")
-        if user is not None:
-            assigned = qs.filter(
-                doctor_employee_relations__employee=user,
-                doctor_employee_relations__status=DoctorEmployeeRelation.Status.APPROVED,
-            ).distinct()
-            if assigned.exists():
-                qs = assigned
-        self.fields["doctor"].queryset = qs
-        self.fields["doctor"].empty_label = "Select doctor"
+        _limit_doctor_choices(self.fields["doctor"], user)
 
 
 class _PartnerForm(forms.ModelForm):

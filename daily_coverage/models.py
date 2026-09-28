@@ -142,3 +142,33 @@ class SampleRecord(models.Model):
 
     def __str__(self):
         return f"{self.report_date} - {self.doctor} - {self.product}"
+
+
+class GiftRecord(models.Model):
+    """A gift/item given to a doctor by a rep (standalone module). Tracks an
+    optional monetary value for spend/compliance reporting. doctor is PROTECT
+    to match coverage, surfacing these in the delete-doctor flow."""
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="gift_records",
+        null=True,
+        blank=True,
+    )
+    report_date = models.DateField()
+    doctor = models.ForeignKey(Doctor, on_delete=models.PROTECT, related_name="gift_records")
+    item = models.CharField(max_length=255)
+    quantity = models.PositiveIntegerField(default=1)
+    value = models.DecimalField(
+        max_digits=10, decimal_places=2, null=True, blank=True,
+        help_text="Total value in Rs. (optional)",
+    )
+    remarks = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-report_date", "-created_at"]
+
+    def __str__(self):
+        return f"{self.report_date} - {self.doctor} - {self.item}"
