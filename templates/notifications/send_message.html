@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}Send Message - PharmaSFO{% endblock %}
+{% block legacy_css %}{% endblock %}
+{% block breadcrumb %}<span>My Work</span><span class="sep">/</span><span class="current">Send message</span>{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Send Message</h1>
+    <p class="page-sub">Send a note or reminder to your team or manager. It appears in their notifications.</p>
+  </div>
+</div>
+
+{% if recipients %}
+<div class="card" style="max-width:640px">
+  <div class="card__body">
+    <form method="post" id="message-form">
+      {% csrf_token %}
+      <div class="field">
+        <label class="label" for="recipient">To <span class="req">*</span></label>
+        <select name="recipient" id="recipient" class="select" required autofocus>
+          <option value="">Select recipient</option>
+          {% for u in recipients %}
+          <option value="{{ u.pk }}">{{ u.get_full_name|default:u.username }} ({{ u.get_type_display }})</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field" style="margin-top:var(--space-4)">
+        <label class="label" for="message">Message <span class="req">*</span></label>
+        <textarea name="message" id="message" class="textarea" rows="4" maxlength="255" required placeholder="Type your message…"></textarea>
+        <span class="help">Up to 255 characters.</span>
+      </div>
+    </form>
+  </div>
+  <div class="card__footer">
+    <a href="{% url 'notification_list' %}" class="btn btn--ghost">My notifications</a>
+    <div class="spacer"></div>
+    <button type="submit" form="message-form" class="btn btn--primary">Send</button>
+  </div>
+</div>
+{% else %}
+<div class="card">
+  <div class="card__body">
+    <div class="empty">
+      <div class="empty__glyph"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v12H5.17L4 17.17z"/></svg></div>
+      <div class="empty__title">No one to message yet</div>
+      <div class="empty__text">Once you have a manager or team members, you can message them here.</div>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

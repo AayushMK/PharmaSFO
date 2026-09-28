@@ -84,7 +84,7 @@
             <form method="post" action="{% url 'mark_notification_read' n.pk %}" class="notif-row{% if not n.is_read %} is-unread{% endif %}">
               {% csrf_token %}
               <button type="submit" class="notif-row__btn">
-                <span class="notif-row__msg">{{ n.message }}</span>
+                <span class="notif-row__msg">{% if n.sender %}<strong>{{ n.sender.get_full_name|default:n.sender.username }}:</strong> {% endif %}{{ n.message }}</span>
                 <span class="notif-row__time">{{ n.created_at|timesince }} ago</span>
               </button>
             </form>

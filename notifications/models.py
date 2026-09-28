@@ -6,6 +6,11 @@ class Notification(models.Model):
     recipient = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="notifications"
     )
+    # A person-to-person message sets sender; system notifications leave it null.
+    sender = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="sent_notifications",
+    )
     message = models.CharField(max_length=255)
     url = models.CharField(max_length=255, blank=True)
     is_read = models.BooleanField(default=False)

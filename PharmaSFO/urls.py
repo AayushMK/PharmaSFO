@@ -62,7 +62,7 @@ from doctor_employee_relation.views import (
     hr_review_requests,
 )
 from tour_plans.views import add_tour_plan, hr_review_employee_tour_plans, hr_review_tour_plans, tour_plan_list
-from notifications.views import mark_all_read, mark_notification_read, notification_list
+from notifications.views import mark_all_read, mark_notification_read, notification_list, send_message
 from leaves.views import (
     add_leave,
     approve_leave,
@@ -164,6 +164,7 @@ urlpatterns = [
     path("daily_coverage/chemist/<int:pk>/delete/", delete_chemist_coverage, name="delete_chemist_coverage"),
     path("daily_coverage/stockist/<int:pk>/edit/", edit_stockist_coverage, name="edit_stockist_coverage"),
     path("daily_coverage/stockist/<int:pk>/delete/", delete_stockist_coverage, name="delete_stockist_coverage"),
+    path("messages/send/", send_message, name="send_message"),
     path("notifications/", notification_list, name="notification_list"),
     path("notifications/<int:pk>/read/", mark_notification_read, name="mark_notification_read"),
     path("notifications/mark-all-read/", mark_all_read, name="mark_all_read"),
