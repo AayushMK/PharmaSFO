@@ -1,6 +1,13 @@
 from django.contrib import admin
 
-from .models import Chemist, DailyCoverage, Stockist
+from .models import Chemist, DailyCoverage, SampleRecord, Stockist
+
+
+@admin.register(SampleRecord)
+class SampleRecordAdmin(admin.ModelAdmin):
+    list_display = ("report_date", "doctor", "product", "quantity", "created_by")
+    search_fields = ("doctor__name", "product", "remarks")
+    list_filter = ("report_date",)
 
 
 @admin.register(DailyCoverage)

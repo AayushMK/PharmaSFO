@@ -115,3 +115,30 @@ class DailyCoverage(models.Model):
 
     def __str__(self):
         return f"{self.report_date} - {self.doctor}"
+
+
+class SampleRecord(models.Model):
+    """A product sample given to a doctor by a rep (standalone module).
+
+    Free-text product name (like DailyCoverage.products); doctor is PROTECT to
+    match coverage, so doctor deletion surfaces these in the delete-doctor flow."""
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="sample_records",
+        null=True,
+        blank=True,
+    )
+    report_date = models.DateField()
+    doctor = models.ForeignKey(Doctor, on_delete=models.PROTECT, related_name="sample_records")
+    product = models.CharField(max_length=255)
+    quantity = models.PositiveIntegerField(default=1)
+    remarks = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-report_date", "-created_at"]
+
+    def __str__(self):
+        return f"{self.report_date} - {self.doctor} - {self.product}"

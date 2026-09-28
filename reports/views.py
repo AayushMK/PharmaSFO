@@ -11,7 +11,7 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, render
 from django.views.decorators.cache import never_cache
 
-from daily_coverage.models import ChemistCoverage, DailyCoverage, StockistCoverage
+from daily_coverage.models import ChemistCoverage, DailyCoverage, SampleRecord, StockistCoverage
 from doctor_employee_relation.models import DoctorEmployeeRelation
 from tour_plans.models import TourPlan
 
@@ -649,3 +649,44 @@ def monthly_target_report_excel(request):
     )
     wb.save(response)
     return response
+
+
+@login_required
+@never_cache
+def sample_report(request):
+    """Team-scoped report of samples given to doctors, over a date range."""
+    employee, all_employees, selected_employee_id, can_view_others = _get_employee(request)
+    from_str = request.GET.get("from", "")
+    to_str = request.GET.get("to", "")
+
+    def _parse(s):
+        try:
+            return datetime.strptime(s, "%Y-%m-%d").date()
+        except (ValueError, TypeError):
+            return None
+
+    from_date, to_date = _parse(from_str), _parse(to_str)
+
+    qs = (
+        SampleRecord.objects
+        .filter(created_by=employee)
+        .select_related("doctor")
+        .order_by("-report_date", "doctor__name")
+    )
+    if from_date:
+        qs = qs.filter(report_date__gte=from_date)
+    if to_date:
+        qs = qs.filter(report_date__lte=to_date)
+    records = list(qs)
+
+    return render(request, "reports/sample_report.html", {
+        "employee": employee,
+        "all_employees": all_employees,
+        "selected_employee_id": selected_employee_id,
+        "can_view_others": can_view_others,
+        "from_str": from_str,
+        "to_str": to_str,
+        "records": records,
+        "total_qty": sum(r.quantity for r in records),
+        "record_count": len(records),
+    })

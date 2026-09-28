@@ -23,10 +23,18 @@ from .forms import (
     ChemistForm,
     DailyCoverageBulkForm,
     DailyCoverageForm,
+    SampleRecordForm,
     StockistCoverageForm,
     StockistForm,
 )
-from .models import Chemist, ChemistCoverage, DailyCoverage, Stockist, StockistCoverage
+from .models import (
+    Chemist,
+    ChemistCoverage,
+    DailyCoverage,
+    SampleRecord,
+    Stockist,
+    StockistCoverage,
+)
 
 EDIT_WINDOW_DAYS = 2
 
@@ -645,3 +653,79 @@ def edit_stockist_coverage(request, pk):
 @login_required
 def delete_stockist_coverage(request, pk):
     return _delete_partner_coverage(request, StockistCoverage, pk, "stockist")
+
+
+# ---- Sample tracking (standalone module) ---------------------------------
+
+@login_required
+@never_cache
+def sample_list(request):
+    filter_date_str = request.GET.get("date")
+    filter_date = None
+    if filter_date_str:
+        try:
+            filter_date = datetime.strptime(filter_date_str, "%Y-%m-%d").date()
+        except ValueError:
+            pass
+
+    records_qs = SampleRecord.objects.filter(created_by=request.user).select_related("doctor")
+    if filter_date:
+        records_qs = records_qs.filter(report_date=filter_date)
+
+    paginator = Paginator(records_qs, 25)
+    page_obj = paginator.get_page(request.GET.get("page", 1))
+    cutoff = timezone.now() - timedelta(days=EDIT_WINDOW_DAYS)
+    for record in page_obj:
+        record.editable = record.created_at >= cutoff
+
+    return render(request, "daily_coverage/sample_list.html", {
+        "page_obj": page_obj,
+        "filter_date": filter_date,
+        "total_count": paginator.count,
+    })
+
+
+@login_required
+@never_cache
+def add_sample(request):
+    if request.method == "POST":
+        form = SampleRecordForm(request.POST, user=request.user)
+        if form.is_valid():
+            rec = form.save(commit=False)
+            rec.created_by = request.user
+            rec.save()
+            messages.success(request, f"Sample logged: {rec.product} for Dr. {rec.doctor.name}.")
+            return redirect("sample_list")
+    else:
+        form = SampleRecordForm(user=request.user, initial={"report_date": timezone.localdate()})
+    return render(request, "daily_coverage/add_sample.html", {"form": form})
+
+
+@login_required
+@never_cache
+def edit_sample(request, pk):
+    record = get_object_or_404(SampleRecord, pk=pk, created_by=request.user)
+    if not _can_edit(record):
+        raise PermissionDenied
+
+    if request.method == "POST":
+        form = SampleRecordForm(request.POST, instance=record, user=request.user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f"Sample record for Dr. {record.doctor.name} updated.")
+            return redirect("sample_list")
+    else:
+        form = SampleRecordForm(instance=record, user=request.user)
+    return render(request, "daily_coverage/edit_sample.html", {"form": form, "record": record})
+
+
+@login_required
+def delete_sample(request, pk):
+    record = get_object_or_404(SampleRecord, pk=pk, created_by=request.user)
+    if not _can_edit(record):
+        raise PermissionDenied
+    if request.method == "POST":
+        name = record.doctor.name
+        record.delete()
+        messages.success(request, f"Sample record for Dr. {name} deleted.")
+    return redirect("sample_list")

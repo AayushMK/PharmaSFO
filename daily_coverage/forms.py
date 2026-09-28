@@ -1,9 +1,48 @@
 from django import forms
 
 from doctors.models import Doctor
+from doctor_employee_relation.models import DoctorEmployeeRelation
 from tour_plans.models import Area
 
-from .models import Chemist, ChemistCoverage, DailyCoverage, Stockist, StockistCoverage
+from .models import (
+    Chemist,
+    ChemistCoverage,
+    DailyCoverage,
+    SampleRecord,
+    Stockist,
+    StockistCoverage,
+)
+
+
+class SampleRecordForm(forms.ModelForm):
+    """Rep form to log a product sample given to a doctor. Doctor choices are
+    limited to the rep's approved-assigned doctors (falls back to all)."""
+
+    class Meta:
+        model = SampleRecord
+        fields = ["report_date", "doctor", "product", "quantity", "remarks"]
+        widgets = {
+            "report_date": forms.DateInput(attrs={"type": "date", "class": "input"}),
+            "doctor": forms.Select(attrs={"class": "select"}),
+            "product": forms.TextInput(attrs={"class": "input", "placeholder": "e.g. ProCard 500", "autofocus": True}),
+            "quantity": forms.NumberInput(attrs={"class": "input", "min": 1}),
+            "remarks": forms.Textarea(attrs={"class": "textarea", "rows": 2, "placeholder": "Optional notes"}),
+        }
+
+    def __init__(self, *args, user=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["report_date"].required = True
+        self.fields["quantity"].required = True
+        qs = Doctor.objects.order_by("name")
+        if user is not None:
+            assigned = qs.filter(
+                doctor_employee_relations__employee=user,
+                doctor_employee_relations__status=DoctorEmployeeRelation.Status.APPROVED,
+            ).distinct()
+            if assigned.exists():
+                qs = assigned
+        self.fields["doctor"].queryset = qs
+        self.fields["doctor"].empty_label = "Select doctor"
 
 
 class _PartnerForm(forms.ModelForm):

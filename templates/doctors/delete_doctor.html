@@ -54,11 +54,26 @@
       </tbody>
     </table>
   </div>
-  <div class="card__body" style="border-top:1px solid var(--border)">
+</div>
+{% endif %}
+
+{% if sample_count %}
+<div class="alert alert--warning" style="margin-bottom:var(--space-6)">
+  <svg class="alert__icon ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 16H3z"/><path d="M12 10v4M12 17h.01"/></svg>
+  <div class="alert__body">
+    <div class="alert__title">{{ sample_count }} sample record{{ sample_count|pluralize }} for this doctor</div>
+    <div class="alert__text">Deleting Dr. {{ doctor.name }} will also permanently delete these sample records.</div>
+  </div>
+</div>
+{% endif %}
+
+{% if coverage_records or sample_count %}
+<div class="card" style="margin-bottom:var(--space-6)">
+  <div class="card__body">
     <label class="choice">
       <input type="checkbox" id="confirm-delete-coverage" name="confirm_delete_coverage" value="1" form="delete-doctor-form">
       <span style="color:var(--danger); font-weight:var(--weight-semibold)">
-        Also permanently delete these {{ coverage_records|length }} coverage record{{ coverage_records|length|pluralize }}
+        Also permanently delete the logged coverage and sample records for this doctor
       </span>
     </label>
   </div>
@@ -79,11 +94,11 @@
 <div class="row" style="gap:var(--space-3)">
   <a href="{% url 'doctor_list' %}" class="btn btn--ghost">Cancel</a>
   <button type="submit" form="delete-doctor-form" id="confirm-delete-btn" class="btn btn--danger">
-    Delete{% if coverage_records %} anyway{% endif %}
+    Delete{% if coverage_records or sample_count %} anyway{% endif %}
   </button>
 </div>
 
-{% if coverage_records %}
+{% if coverage_records or sample_count %}
 <script>
 (function () {
   var box = document.getElementById('confirm-delete-coverage');

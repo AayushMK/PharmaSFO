@@ -26,6 +26,10 @@ data-collapsible click handler does the open/close toggling in both contexts).
       <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
       <span class="nav-item__label">Coverage</span>
     </a>
+    <a class="nav-item{% if url_name == 'sample_list' or url_name == 'add_sample' or url_name == 'edit_sample' %} is-active{% endif %}" href="{% url 'sample_list' %}">
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6M10 3v6l-4.5 8a2 2 0 0 0 1.8 3h9.4a2 2 0 0 0 1.8-3L14 9V3"/></svg>
+      <span class="nav-item__label">Samples</span>
+    </a>
     <a class="nav-item{% if url_name == 'tour_plans' or url_name == 'add_tour_plan' %} is-active{% endif %}" href="{% url 'tour_plans' %}">
       <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
       <span class="nav-item__label">Tour plans</span>
@@ -58,6 +62,10 @@ data-collapsible click handler does the open/close toggling in both contexts).
     <a class="nav-item{% if url_name == 'yearly_activity_report' %} is-active{% endif %}" href="{% url 'yearly_activity_report' %}">
       <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg>
       <span class="nav-item__label">Yearly activity</span>
+    </a>
+    <a class="nav-item{% if url_name == 'sample_report' %} is-active{% endif %}" href="{% url 'sample_report' %}">
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6M10 3v6l-4.5 8a2 2 0 0 0 1.8 3h9.4a2 2 0 0 0 1.8-3L14 9V3"/></svg>
+      <span class="nav-item__label">Sample report</span>
     </a>
   </div></div>
 </div>
