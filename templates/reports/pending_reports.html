@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% load dc_tags %}
+
+{% block title %}Pending Reports - PharmaSFO{% endblock %}
+{% block legacy_css %}{% endblock %}
+{% block breadcrumb %}<span>Reports</span><span class="sep">/</span><span class="current">Pending reports</span>{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Pending Reports</h1>
+    <p class="page-sub">Approved tour-plan days with no daily coverage logged yet.</p>
+  </div>
+</div>
+
+<form method="get" class="table-toolbar">
+  <div class="table-toolbar__filters" style="align-items:flex-end">
+    <div class="field">
+      <label class="label" for="from-date">From</label>
+      <input type="date" name="from" id="from-date" class="input" style="width:170px" value="{{ from_str }}"
+             onchange="this.form.requestSubmit ? this.form.requestSubmit() : this.form.submit()">
+    </div>
+    <div class="field">
+      <label class="label" for="to-date">To</label>
+      <input type="date" name="to" id="to-date" class="input" style="width:170px" value="{{ to_str }}"
+             onchange="this.form.requestSubmit ? this.form.requestSubmit() : this.form.submit()">
+    </div>
+    {% if can_view_others %}
+    <div class="field">
+      <label class="label" for="report-employee">Employee</label>
+      <select name="employee_id" id="report-employee" class="select" style="width:240px"
+              onchange="this.form.requestSubmit ? this.form.requestSubmit() : this.form.submit()">
+        <option value="">Myself</option>
+        {% for emp in all_employees %}
+          <option value="{{ emp.pk }}" {% if emp.pk == selected_employee_id %}selected{% endif %}>
+            {{ emp.get_full_name|default:emp.username }} ({{ emp.get_type_display }})
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+    {% endif %}
+  </div>
+</form>
+
+<div class="card" style="margin-bottom:var(--space-6)">
+  <div class="card__body" style="padding:var(--space-4) var(--space-6)">
+    <div class="grid grid--stats" style="gap:var(--space-4)">
+      <div><div class="t-eyebrow">Approved plan days</div><div class="page-title" style="margin-top:var(--space-1)">{{ approved_count }}</div></div>
+      <div><div class="t-eyebrow">Reported</div><div class="page-title" style="margin-top:var(--space-1); color:var(--success)">{{ reported_count }}</div></div>
+      <div><div class="t-eyebrow">Missing</div><div class="page-title" style="margin-top:var(--space-1); color:var(--danger)">{{ missing_count }}</div></div>
+    </div>
+  </div>
+</div>
+
+{% if missing %}
+<div class="table-wrap">
+  <table class="table table--stack">
+    <thead>
+      <tr><th>Date</th><th>Planned area</th><th>Status</th></tr>
+    </thead>
+    <tbody>
+      {% for p in missing %}
+      <tr>
+        <td data-label="Date" style="white-space:nowrap"><div>{{ p.plan_date|bs_date }}</div><div class="cell-sub">{{ p.plan_date|date:"j M Y" }}</div></td>
+        <td data-label="Planned area">{{ p.area.name }}</td>
+        <td data-label="Status"><span class="badge badge--danger">No report</span></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="card"><div class="card__body"><div class="empty">
+  <div class="empty__glyph"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
+  <div class="empty__title">All caught up</div>
+  <div class="empty__text">No approved plan days are missing a report in this range.</div>
+</div></div></div>
+{% endif %}
+{% endblock %}
