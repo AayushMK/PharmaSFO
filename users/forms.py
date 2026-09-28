@@ -1,7 +1,34 @@
 from django import forms
-from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.forms import PasswordChangeForm, UserCreationForm
 
 from .models import User
+
+
+class ProfileForm(forms.ModelForm):
+    """Self-service profile edit — name + email only (not username or role)."""
+
+    class Meta:
+        model = User
+        fields = ["first_name", "last_name", "email"]
+        widgets = {
+            "first_name": forms.TextInput(attrs={"class": "input", "autofocus": True}),
+            "last_name": forms.TextInput(attrs={"class": "input"}),
+            "email": forms.EmailInput(attrs={"class": "input", "placeholder": "name@company.com"}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["first_name"].required = True
+        self.fields["last_name"].required = True
+
+
+class StyledPasswordChangeForm(PasswordChangeForm):
+    """Django's password change form with Lumo input styling."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields.values():
+            field.widget.attrs.update({"class": "input"})
 
 
 class UserCreateForm(UserCreationForm):

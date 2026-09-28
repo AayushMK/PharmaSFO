@@ -15,7 +15,9 @@ from doctor_employee_relation.models import DoctorEmployeeRelation
 from reports.views import CATEGORY_LABELS, VISIT_TARGETS, _doctor_category
 from tour_plans.models import TourPlan
 
-from .forms import UserCreateForm, UserEditForm
+from django.contrib.auth import update_session_auth_hash
+
+from .forms import ProfileForm, StyledPasswordChangeForm, UserCreateForm, UserEditForm
 from .models import User
 
 
@@ -373,3 +375,30 @@ def dashboard(request):
         "todays_coverage": todays_coverage,
         "upcoming_plans": upcoming_plans,
     })
+
+
+@login_required
+@never_cache
+def profile(request):
+    """Self-service: edit own name/email and change password (two forms)."""
+    user = request.user
+    dform = ProfileForm(instance=user)
+    pform = StyledPasswordChangeForm(user)
+
+    if request.method == "POST":
+        which = request.POST.get("form")
+        if which == "details":
+            dform = ProfileForm(request.POST, instance=user)
+            if dform.is_valid():
+                dform.save()
+                messages.success(request, "Profile updated.")
+                return redirect("profile")
+        elif which == "password":
+            pform = StyledPasswordChangeForm(user, request.POST)
+            if pform.is_valid():
+                pform.save()
+                update_session_auth_hash(request, pform.user)  # keep the user logged in
+                messages.success(request, "Password changed.")
+                return redirect("profile")
+
+    return render(request, "users/profile.html", {"dform": dform, "pform": pform})
