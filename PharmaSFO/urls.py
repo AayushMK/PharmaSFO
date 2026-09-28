@@ -60,6 +60,14 @@ from doctor_employee_relation.views import (
 )
 from tour_plans.views import add_tour_plan, hr_review_employee_tour_plans, hr_review_tour_plans, tour_plan_list
 from notifications.views import mark_all_read, mark_notification_read, notification_list
+from leaves.views import (
+    add_leave,
+    approve_leave,
+    delete_leave,
+    leave_list,
+    leave_review,
+    reject_leave,
+)
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -131,6 +139,12 @@ urlpatterns = [
     path("gifts/<int:pk>/edit/", edit_gift, name="edit_gift"),
     path("gifts/<int:pk>/delete/", delete_gift, name="delete_gift"),
     path("reports/gifts/", gift_report, name="gift_report"),
+    path("leave/", leave_list, name="leave_list"),
+    path("leave/add/", add_leave, name="add_leave"),
+    path("leave/<int:pk>/withdraw/", delete_leave, name="delete_leave"),
+    path("leave/review/", leave_review, name="leave_review"),
+    path("leave/<int:pk>/approve/", approve_leave, name="approve_leave"),
+    path("leave/<int:pk>/reject/", reject_leave, name="reject_leave"),
     path("reports/daily-activity/", daily_activity_report, name="daily_activity_report"),
     path("reports/monthly-activity/", monthly_activity_report, name="monthly_activity_report"),
     path("reports/monthly-activity/export/", monthly_activity_report_excel, name="monthly_activity_report_excel"),

@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% load dc_tags %}
+
+{% block title %}Leave - PharmaSFO{% endblock %}
+{% block legacy_css %}{% endblock %}
+{% block breadcrumb %}<span>My Work</span><span class="sep">/</span><span class="current">Leave</span>{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Leave</h1>
+    <p class="page-sub">Your leave requests. Pending ones can be withdrawn until your manager acts.</p>
+  </div>
+  <div class="page-actions">
+    <a href="{% url 'add_leave' %}" class="btn btn--primary">
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+      Request leave
+    </a>
+  </div>
+</div>
+
+{% if requests %}
+<div class="table-wrap">
+  <table class="table table--stack">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>From</th>
+        <th>To</th>
+        <th>Days</th>
+        <th>Reason</th>
+        <th>Status</th>
+        <th>Reviewed by</th>
+        <th class="col-actions">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in requests %}
+      <tr>
+        <td data-label="Type"><div class="cell-strong">{{ r.get_leave_type_display }}</div></td>
+        <td data-label="From" style="white-space:nowrap"><div>{{ r.start_date|bs_date }}</div><div class="cell-sub">{{ r.start_date|date:"j M Y" }}</div></td>
+        <td data-label="To" style="white-space:nowrap"><div>{{ r.end_date|bs_date }}</div><div class="cell-sub">{{ r.end_date|date:"j M Y" }}</div></td>
+        <td data-label="Days" class="t-mono">{{ r.days }}</td>
+        <td data-label="Reason" class="t-secondary">{{ r.reason|default:"—" }}</td>
+        <td data-label="Status">
+          {% if r.status == 'approved' %}<span class="badge badge--success">Approved</span>
+          {% elif r.status == 'rejected' %}<span class="badge badge--danger">Rejected</span>
+          {% else %}<span class="badge badge--warning">Pending</span>{% endif %}
+        </td>
+        <td data-label="Reviewed by">{% if r.reviewed_by %}{{ r.reviewed_by.get_full_name|default:r.reviewed_by.username }}{% else %}<span class="t-muted">—</span>{% endif %}</td>
+        <td data-label="Actions" class="col-actions">
+          {% if r.status == 'pending' %}
+          <form method="post" action="{% url 'delete_leave' r.pk %}" style="display:inline" onsubmit="return confirm('Withdraw this leave request?');">
+            {% csrf_token %}
+            <button type="submit" class="btn btn--danger btn--sm">Withdraw</button>
+          </form>
+          {% else %}<span class="t-muted">—</span>{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="card">
+  <div class="card__body">
+    <div class="empty">
+      <div class="empty__glyph"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="1.5"/><path d="M3 9h18M8 2v4M16 2v4"/></svg></div>
+      <div class="empty__title">No leave requests yet</div>
+      <div class="empty__text">Request time off and track its approval here.</div>
+      <div class="empty__actions"><a href="{% url 'add_leave' %}" class="btn btn--primary btn--sm">Request leave</a></div>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
